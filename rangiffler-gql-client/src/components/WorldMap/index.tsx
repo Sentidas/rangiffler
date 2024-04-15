@@ -21,6 +21,10 @@ export const WorldMap: FC<WorldMapInterface> = ({data = [], setPhotoFilter, mapT
         value: v.count,
     }));
 
+    const getHref = ({countryCode}: CountryContext) => ({
+        id: countryCode,
+    });
+
     const handleCountryClick = (context: CountryContext) => {
         setMapTitle(context.countryName);
         setPhotoFilter(context.countryCode);
@@ -34,6 +38,7 @@ export const WorldMap: FC<WorldMapInterface> = ({data = [], setPhotoFilter, mapT
                 title={mapTitle}
                 data={mapData}
                 richInteraction={true}
+                hrefFunction={getHref}
                 onClickFunction={handleCountryClick}
             />
     );

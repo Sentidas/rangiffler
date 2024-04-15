@@ -86,7 +86,9 @@ export const ImageUpload: FC<ImageUploadInterface> = ({onFileUpload, buttonText,
             <label htmlFor="image__input">
                 <Button variant="contained" component="span" sx={{marginTop: 1}}>{buttonText}</Button>
             </label>
-            <Box sx={{
+            <Box
+                id={"image-helper-text"}
+                sx={{
                 color: theme.palette.error.main
             }}>{error && helperText}</Box>
         </Box>

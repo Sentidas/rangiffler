@@ -12,6 +12,7 @@ export const AuthorizedPage = () => {
         const res = await authClient.getToken("oauth2/token", data);
         if (res?.id_token) {
             localStorage.setItem("id_token", res.id_token);
+            localStorage.setItem("refresh_token", res.refresh_token);
             setTimeout(async () => {
                 navigate("/", {replace: true});
             }, 500);

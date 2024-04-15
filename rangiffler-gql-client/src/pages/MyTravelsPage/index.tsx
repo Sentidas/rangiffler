@@ -3,13 +3,17 @@ import {PhotoContainer} from "../../components/PhotoContainer";
 import {WorldMap} from "../../components/WorldMap";
 import {Toggle} from "../../components/Toggle";
 import {useMemo, useState} from "react";
-import { PhotoModal } from "../../components/PhotoModal";
-import {PhotoFormProps, formInitialState} from "../../components/PhotoModal/formValidate";
-import { Photo } from "../../types/Photo";
-import { useGetFeed } from "../../hooks/useGetFeed";
+import {PhotoModal} from "../../components/PhotoModal";
+import {formInitialState, PhotoFormProps} from "../../components/PhotoModal/formValidate";
+import {Photo} from "../../types/Photo";
+import {useGetFeed} from "../../hooks/useGetFeed";
 
 export const MyTravelsPage = () => {
-    const [modalState, setModalState] = useState<{ isVisible: boolean, formData: PhotoFormProps | null, photoId: string | null,}>({
+    const [modalState, setModalState] = useState<{
+        isVisible: boolean,
+        formData: PhotoFormProps | null,
+        photoId: string | null,
+    }>({
         isVisible: false,
         formData: null,
         photoId: null,
@@ -31,16 +35,21 @@ export const MyTravelsPage = () => {
     const handleSelectImage = (photo: Photo) => {
         setModalState({
             isVisible: true,
-            formData: {...formInitialState,
-                    description: {
+            formData: {
+                ...formInitialState,
+                description: {
                     ...formInitialState.description,
-                        value: photo.description
-                    },
-                    src: {
-                    ...formInitialState.src,
-                        value: photo.src,
-                    }
+                    value: photo.description
                 },
+                src: {
+                    ...formInitialState.src,
+                    value: photo.src,
+                },
+                country: {
+                    ...formInitialState.country,
+                    value: photo.country.code,
+                },
+            },
             photoId: photo.id
         });
     }
@@ -99,7 +108,7 @@ export const MyTravelsPage = () => {
                     >Add photo
                     </Button>
                     <Button
-                        disabled={photoFilter===null}
+                        disabled={photoFilter === null}
                         variant="outlined"
                         sx={{
                             width: "100%",
@@ -126,7 +135,7 @@ export const MyTravelsPage = () => {
                     setModalState({
                         isVisible: false,
                         formData: null,
-                        photoId: modalState.photoId,
+                        photoId: null,
                     });
                 }}
             />

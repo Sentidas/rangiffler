@@ -68,6 +68,7 @@ const clearSession = () => {
     localStorage.removeItem('codeVerifier');
     localStorage.removeItem('codeChallenge');
     localStorage.removeItem('id_token');
+    localStorage.removeItem('refresh_token');
 }
 
 export {generateCodeChallenge, generateCodeVerifier, getAuthLink, getTokenFromUrlEncodedParams, clearSession, initLocalStorageAndRedirectToAuth, refreshToken};

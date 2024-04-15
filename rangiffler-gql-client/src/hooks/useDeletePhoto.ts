@@ -24,6 +24,9 @@ type DeletePhotoReturnType = {
 
 export const useDeletePhoto = (req: DeletePhotoRequestType) : DeletePhotoReturnType => {
     const [deletePhoto, {loading}] = useMutation(DELETE_PHOTO, {
+        refetchQueries: [
+            'GetFeed'
+        ],
         onError: req.onError,
         onCompleted: req.onCompleted,
     });

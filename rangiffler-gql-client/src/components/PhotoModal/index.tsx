@@ -38,16 +38,16 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
         onError: () => snackbar.showSnackBar("Can not create new post", "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
     });
+    const {updatePhoto} = useUpdatePhoto({
+        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
+    });
 
     const [formValues, setFormValues] = useState<PhotoFormProps>(modalState.formData ?? formInitialState);
 
     useEffect(() => {
         setFormValues(modalState.formData ?? formInitialState);
     }, [modalState.formData]);
-    const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
-        onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
-    });
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
