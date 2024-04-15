@@ -52,7 +52,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     }
 
     return (
-            <Paper elevation={3}>
+            <Paper elevation={3} className="photo-card__container">
                 <img
                     className="photo-card__image"
                     src={photo.src}
