@@ -45,7 +45,7 @@ const refreshToken = async () => {
     const data = getRefreshTokenFromUrlEncodedParams(refreshToken);
     try {
         const res = await authClient.refreshToken("oauth2/token", data);
-        if (res?.access_token) {
+        if (res?.id_token) {
             localStorage.setItem("id_token", res.id_token);
             localStorage.setItem("refresh_token", res.refresh_token);
         }
