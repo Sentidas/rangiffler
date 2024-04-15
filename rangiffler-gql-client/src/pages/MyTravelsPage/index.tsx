@@ -16,7 +16,7 @@ export const MyTravelsPage = () => {
 
     const [withMyFriends, setWithMyFriends] = useState(false);
     const [page, setPage] = useState(0);
-    const {photos, stat} = useGetFeed({page, withFriends: withMyFriends});
+    const {photos, stat, hasPreviousPage, hasNextPage} = useGetFeed({page, withFriends: withMyFriends});
 
     const handleSelectImage = (photo: Photo) => {
         setModalState({
@@ -36,6 +36,7 @@ export const MyTravelsPage = () => {
 
     return (
         <Container sx={{
+            height: '100%',
             paddingBottom: 5,
         }}>
             <Typography
@@ -80,7 +81,14 @@ export const MyTravelsPage = () => {
                     </Button>
                 </Box>
             </Box>
-            <PhotoContainer onSelectImage={handleSelectImage} data={photos}/>
+            <PhotoContainer
+                onSelectImage={handleSelectImage}
+                data={photos}
+                page={page}
+                setPage={setPage}
+                hasNextPage={hasNextPage}
+                hasPreviousPage={hasPreviousPage}
+            />
             <PhotoModal
                 modalState={modalState}
                 isEdit={!!(modalState.formData)}
