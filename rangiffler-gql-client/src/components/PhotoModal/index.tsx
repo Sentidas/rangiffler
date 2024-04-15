@@ -1,10 +1,11 @@
 import {Box, Button, FormControl, Grid, InputLabel, MenuItem, Modal as MuiModal,
     OutlinedInput, Select, SelectChangeEvent, TextField, Typography} from "@mui/material";
-import {ChangeEvent, FormEvent, FC, useState } from "react";
+import {ChangeEvent, FormEvent, FC, useState, useEffect} from "react";
 import { ImageUpload } from "../ImageUpload";
 import { PhotoFormProps, formHasErrors, formInitialState, formValidate } from "./formValidate";
 import { useCountries } from "../../context/CountriesContext";
 import { useCreatePhoto } from "../../hooks/useCreatePhoto";
+import {useUpdatePhoto} from "../../hooks/useUpdatePhoto";
 import { useSnackBar } from "../../context/SnackBarContext";
 import { MenuProps } from "../CountrySelect";
 
@@ -24,6 +25,7 @@ interface PhotoModalInterface {
     modalState: {
         isVisible: boolean,
         formData: PhotoFormProps | null,
+        photoId: string | null,
     };
     onClose: () => void;
     isEdit: boolean;
@@ -38,6 +40,14 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
     });
 
     const [formValues, setFormValues] = useState<PhotoFormProps>(modalState.formData ?? formInitialState);
+
+    useEffect(() => {
+        setFormValues(modalState.formData ?? formInitialState);
+    }, [modalState.formData]);
+    const {updatePhoto} = useUpdatePhoto({
+        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
+    });
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
         const {name, value} = event.target;
@@ -71,17 +81,31 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
         const validatedData = formValidate(formValues);
         setFormValues(validatedData);
         if (!formHasErrors(validatedData)) {
-            createPhoto({
-                variables: {
-                    input: {
-                        src: formValues.src.value!!,
-                        description: formValues.description.value,
-                        country: {
-                            code: formValues.country.value,
+            if (isEdit && modalState.photoId) {
+                updatePhoto({
+                    variables: {
+                        input: {
+                            id: modalState.photoId,
+                            description: formValues.description.value,
+                            country: {
+                                code: formValues.country.value,
+                            }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                createPhoto({
+                    variables: {
+                        input: {
+                            src: formValues.src.value!!,
+                            description: formValues.description.value,
+                            country: {
+                                code: formValues.country.value,
+                            }
+                        }
+                    }
+                });
+            }
             handleClose();
         } else {
 
@@ -96,19 +120,39 @@ export const PhotoModal: FC<PhotoModalInterface> = ({modalState, onClose, isEdit
             aria-describedby="modal-modal-description"
         >
             <Box sx={style} component="form" noValidate onSubmit={handleSubmit}>
-                <Typography id="modal-modal-title" variant="h5" component="h2" sx={{textAlign: "center"}}>
-                    Add new photo
-                </Typography>
+                {
+                    isEdit ?
+                        <Typography id="modal-modal-title" variant="h5" component="h2" sx={{textAlign: "center"}}>
+                            Edit photo
+                        </Typography>
+                        :
+                        <Typography id="modal-modal-title" variant="h5" component="h2" sx={{textAlign: "center"}}>
+                            Add new photo
+                        </Typography>
+                }
                 <Grid container spacing={2}>
                     <Grid item xs={12}>
                         {
-                            isEdit ? 
-                                <img
-                                    width={300}
-                                    height={300}
-                                    src={formValues.src.value}
-                                    alt={formValues.description.value ?? "Фото пользователя"}
-                                />
+                            isEdit ?
+                                <div
+                                    style={{
+                                        width: "100%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        textAlign: "center",
+                                        flexDirection: "column",
+                                    }}
+                                >
+                                    <img
+                                        style={{
+                                            margin: "0 auto"
+                                        }}
+                                        width={300}
+                                        height={300}
+                                        src={formValues.src.value}
+                                        alt={formValues.description.value ?? "Фото пользователя"}
+                                    />
+                                </div>
                             :
                             <ImageUpload
                                 buttonText="Upload new image"

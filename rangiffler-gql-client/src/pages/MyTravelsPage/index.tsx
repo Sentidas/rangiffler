@@ -9,9 +9,10 @@ import { Photo } from "../../types/Photo";
 import { useGetFeed } from "../../hooks/useGetFeed";
 
 export const MyTravelsPage = () => {
-    const [modalState, setModalState] = useState<{ isVisible: boolean, formData: PhotoFormProps | null, }>({
+    const [modalState, setModalState] = useState<{ isVisible: boolean, formData: PhotoFormProps | null, photoId: string | null,}>({
         isVisible: false,
-        formData: null
+        formData: null,
+        photoId: null,
     });
 
     const [withMyFriends, setWithMyFriends] = useState(false);
@@ -30,7 +31,8 @@ export const MyTravelsPage = () => {
                     ...formInitialState.src,
                         value: photo.src,
                     }
-                }
+                },
+            photoId: photo.id
         });
     }
 
@@ -75,6 +77,7 @@ export const MyTravelsPage = () => {
                             setModalState({
                                 isVisible: true,
                                 formData: null,
+                                photoId: null,
                             })
                         }}
                     >Add photo
@@ -96,6 +99,7 @@ export const MyTravelsPage = () => {
                     setModalState({
                         isVisible: false,
                         formData: null,
+                        photoId: modalState.photoId,
                     });
                 }}
             />
