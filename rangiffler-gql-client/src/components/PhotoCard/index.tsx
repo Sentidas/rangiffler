@@ -26,8 +26,8 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     });
 
     const {likePhoto} = useLikePhoto({
-        onError: () => snackbar.showSnackBar("Post was not liked", "error"),
-        onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
+        onError: () => snackbar.showSnackBar("Can not change like status", "error"),
+        onCompleted: () => snackbar.showSnackBar("Like status was changed", "success"),
     });
 
     const handleDeletePhoto = () => {
@@ -52,7 +52,7 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick}) => {
     }
 
     return (
-            <Paper elevation={3}>
+            <Paper elevation={3} className="photo-card__container">
                 <img
                     className="photo-card__image"
                     src={photo.src}

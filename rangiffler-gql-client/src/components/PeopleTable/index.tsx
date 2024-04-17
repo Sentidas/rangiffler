@@ -115,7 +115,6 @@ export const PeopleTable: FC<PeopleTableInterface> = ({data, page, hasPreviousPa
                     {!data?.length &&  (
                         <Box sx={{
                             textAlign: "center",
-                            width: "100%",
                             margin: 10,
                             color: theme.palette.primary.main,
                         }}>

@@ -12,7 +12,7 @@ interface PhotoInput {
     }
 }
 
-const CREATE_PHOTO = gql(`
+const UPDATE_PHOTO = gql(`
     mutation UpdatePhoto($input: PhotoInput!) {
         photo(input: $input) {
             id
@@ -40,8 +40,8 @@ type UpdatePhotoReturnType = {
     loading: boolean,
 }
 
-export const useCreatePhoto = (req: UpdatePhotoRequestType) : UpdatePhotoReturnType => {
-    const [updatePhoto, {loading}] = useMutation(CREATE_PHOTO, {
+export const useUpdatePhoto = (req: UpdatePhotoRequestType) : UpdatePhotoReturnType => {
+    const [updatePhoto, {loading}] = useMutation(UPDATE_PHOTO, {
         onError: req.onError,
         onCompleted: req.onCompleted,
     });

@@ -1,5 +1,5 @@
 import {Avatar, Box, Button, useTheme} from "@mui/material"
-import {ChangeEvent, FC } from "react";
+import {ChangeEvent, FC, useEffect, useState} from "react";
 import PhotoCameraRoundedIcon from '@mui/icons-material/PhotoCameraRounded';
 import "./styles.css";
 
@@ -13,7 +13,14 @@ interface ImageUploadInterface {
 }
 export const ImageUpload: FC<ImageUploadInterface> = ({onFileUpload, buttonText, file, error = false, helperText, isAvatar = false}) => {
 
+    const [fileInputValue, setFileInputValue] = useState("");
     const theme = useTheme();
+
+    useEffect(() => {
+        if (file == "") {
+            setFileInputValue(file)
+        }
+    }, [file]);
 
     const handleUpload = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -37,6 +44,7 @@ export const ImageUpload: FC<ImageUploadInterface> = ({onFileUpload, buttonText,
             flexDirection: "column",
         }}>
             <input
+                value={fileInputValue}
                 accept={"image/*"}
                 id="image__input"
                 type="file"
@@ -78,7 +86,9 @@ export const ImageUpload: FC<ImageUploadInterface> = ({onFileUpload, buttonText,
             <label htmlFor="image__input">
                 <Button variant="contained" component="span" sx={{marginTop: 1}}>{buttonText}</Button>
             </label>
-            <Box sx={{
+            <Box
+                id={"image-helper-text"}
+                sx={{
                 color: theme.palette.error.main
             }}>{error && helperText}</Box>
         </Box>

@@ -42,6 +42,9 @@ type CreatePhotoReturnType = {
 
 export const useCreatePhoto = (req: CreatePhotoRequestType) : CreatePhotoReturnType => {
     const [createPhoto, {loading}] = useMutation(CREATE_PHOTO, {
+        refetchQueries: [
+            'GetFeed'
+        ],
         onError: req.onError,
         onCompleted: req.onCompleted,
     });
