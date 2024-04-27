@@ -1,4 +1,12 @@
-import {ApolloClient, InMemoryCache, createHttpLink, Observable, FetchResult, ApolloLink} from "@apollo/client";
+import {
+    ApolloClient,
+    InMemoryCache,
+    createHttpLink,
+    Observable,
+    FetchResult,
+    ApolloLink,
+    ServerError
+} from "@apollo/client";
 import {setContext} from "@apollo/client/link/context";
 import {onError} from "@apollo/client/link/error";
 import {refreshToken} from "./authUtils.ts";
@@ -11,7 +19,7 @@ const apolloHttpLink = createHttpLink({
 })
 const errorLink = onError(
     ({ networkError, operation, forward }) => {
-        if ((networkError?.statusCode === 401)) {
+        if ((networkError && (networkError as ServerError).statusCode === 401)) {
             return new Observable<FetchResult<Record<string, any>>>(
                 (observer) => {
                     (async () => {
