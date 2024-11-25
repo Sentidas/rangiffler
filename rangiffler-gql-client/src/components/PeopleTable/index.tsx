@@ -1,15 +1,4 @@
-import {
-    Avatar,
-    Box,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableRow,
-    Typography,
-    useTheme
-} from "@mui/material";
+import {Avatar, Box, Table, TableBody, TableCell, TableContainer, TableRow, Typography, useTheme} from "@mui/material";
 import {HeadCell} from "../Table/HeadCell";
 import {TableHead} from "../Table/TableHead";
 import {TablePagination} from "../Table/Pagination";
@@ -62,85 +51,101 @@ interface PeopleTableInterface {
     onSearchSubmit: () => void;
 }
 
-export const PeopleTable: FC<PeopleTableInterface> = ({data, page, hasPreviousPage, hasNextPage, setPage, setSearch, onSearchSubmit}) => {
+export const PeopleTable: FC<PeopleTableInterface> = ({
+                                                          data,
+                                                          page,
+                                                          hasPreviousPage,
+                                                          hasNextPage,
+                                                          setPage,
+                                                          setSearch,
+                                                          onSearchSubmit
+                                                      }) => {
 
     const theme = useTheme();
 
     return (
-        <Paper sx={{width: '100%', mb: 2}}>
-            <TableContainer>
-                <TableToolbar setSearch={setSearch} onSearchSubmit={onSearchSubmit}/>
-                <>
-                    <Table sx={{minWidth: 750}}
-                           aria-labelledby="tableTitle"
-                    >
-                        <TableHead headCells={headCells}/>
-                        {data?.length > 0 && (
-                                <TableBody>
-                                    {data.map((row: User) => {
-                                        return (
-                                            <TableRow
-                                                hover
-                                                tabIndex={-1}
-                                                key={row.id}
-                                            >
-                                                <TableCell
-                                                    component="th"
-                                                    scope="row"
-                                                    sx={{
-                                                        paddingTop: 0,
-                                                        paddingBottom: 0,
-                                                    }}
-                                                >
-                                                    <Avatar src={row.avatar}/>
-                                                </TableCell>
-                                                <TableCell>{row.username}</TableCell>
-                                                <TableCell>{row.firstname ?? "---"}</TableCell>
-                                                <TableCell>{row.surname ?? "---"}</TableCell>
-                                                <TableCell>
-                                                    <img width={20} src={row.location?.flag ?? ""}
-                                                         alt={row.location?.name}/> {row.location?.name}
-                                                </TableCell>
-                                                <TableCell align="right" sx={{
-                                                    maxWidth: "150px"
-                                                }}>
-                                                    <ActionButtons userId={row.id} friendStatus={row.friendStatus}/>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>)
-                        }
-                    </Table>
-                    {!data?.length &&  (
+        <TableContainer>
+            <TableToolbar setSearch={setSearch} onSearchSubmit={onSearchSubmit}/>
+            <>
+                <Table sx={{minWidth: 750, marginTop: 2}}
+                       aria-labelledby="tableTitle"
+                >
+                    <TableHead headCells={headCells}/>
+                    {data?.length > 0 && (
+                        <TableBody>
+                            {data.map((row: User) => {
+                                return (
+                                    <TableRow
+                                        hover
+                                        tabIndex={-1}
+                                        key={row.id}
+                                    >
+                                        <TableCell
+                                            component="th"
+                                            scope="row"
+                                            sx={{
+                                                paddingTop: 0,
+                                                paddingBottom: 0,
+                                            }}
+                                        >
+                                            <Avatar src={row.avatar}/>
+                                        </TableCell>
+                                        <TableCell>{row.username}</TableCell>
+                                        <TableCell>{row.firstname ?? "---"}</TableCell>
+                                        <TableCell>{row.surname ?? "---"}</TableCell>
+                                        <TableCell>
+                                            <img width={20} src={row.location?.flag ?? ""}
+                                                 alt={row.location?.name}/> {row.location?.name}
+                                        </TableCell>
+                                        <TableCell align="right" sx={{
+                                            maxWidth: "150px"
+                                        }}>
+                                            <ActionButtons userId={row.id} friendStatus={row.friendStatus}/>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>)
+                    }
+                </Table>
+                {!data?.length && (
+                    <Box sx={{
+                        textAlign: "center",
+                        width: "100%",
+                        marginTop: 14,
+                        marginBottom: 12,
+                        color: theme.palette.primary.main,
+                    }}>
+                        <Typography
+                            variant="h6"
+                            component="p"
+                            sx={{
+                                fontWeight: 400,
+                            }}
+                        >
+                            There are no users yet
+                        </Typography>
                         <Box sx={{
-                            textAlign: "center",
-                            margin: 10,
-                            color: theme.palette.primary.main,
+                            width: 130,
+                            height: 130,
+                            margin: "0 auto",
                         }}>
-                            <Typography variant="h6" component="p">There are no users yet</Typography>
-                            <Box sx={{
-                                width: 150,
-                                height: 150,
-                                margin: "0 auto",
-                            }}>
-                                <PeopleOutlineOutlinedIcon sx={{
-                                    width: "100%",
-                                    height: "100%",
-                                    padding: 4,
-                                    color: theme.palette.primary.main,
-                                }}/>
-                            </Box>
+                            <PeopleOutlineOutlinedIcon sx={{
+                                width: "100%",
+                                height: "100%",
+                                padding: 4,
+                                color: theme.palette.secondary.main,
+                            }}/>
                         </Box>
-                    )}
-                    <TablePagination
-                        onPreviousClick={() => setPage(page - 1)}
-                        onNextClick={() => setPage(page + 1)}
-                        hasPreviousValues={hasPreviousPage}
-                        hasNextValues={hasNextPage}
-                    />
-                </>
-            </TableContainer>
-        </Paper>
+                    </Box>
+                )}
+                <TablePagination
+                    onPreviousClick={() => setPage(page - 1)}
+                    onNextClick={() => setPage(page + 1)}
+                    hasPreviousValues={hasPreviousPage}
+                    hasNextValues={hasNextPage}
+                />
+            </>
+        </TableContainer>
     )
 }

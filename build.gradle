@@ -2,10 +2,16 @@ plugins {
     id 'java'
 }
 
-repositories {
-    mavenCentral()
-}
+allprojects {
+    apply plugin: 'java'
 
-tasks.named('test') {
-    useJUnitPlatform()
+    repositories {
+        mavenCentral()
+    }
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
 }

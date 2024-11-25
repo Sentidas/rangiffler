@@ -232,8 +232,7 @@ return user.getPhotos();
 ```
   Вот так уже сработает - тут всего один запрос, и поэтому он работает с `Pageable`.
 
-  В проекте niffler не реализовано получение друзей, входящих и исходящих приглашений одним запросом,
-поэтому я предлагаю вам свой вариант получения друзей и заявок на дружбу одним запросом:
+  Я предлагаю вам свой вариант получения друзей и заявок на дружбу одним запросом:
 
 ```java
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
@@ -418,22 +417,22 @@ message UsersResponse {
 
 #### 6. Подготовить структуру тестового "фреймворка", подумать о том какие прекондишены и как вы будете создавать
 
-Здесь однозначно понадобится возможность API-логина и работы со всеми возможными preconditions проекта - картинами,
-художниками, музеями. Например, было бы хорошо иметь тесты примерно такого вида:
+Здесь однозначно понадобится возможность API-логина и работы со всеми возможными preconditions проекта - фотками,
+пользователями и т.д. Например, было бы хорошо иметь тесты примерно такого вида:
 ```java
 @Test
 @DisplayName("...")
 @Tag("...")
-@ApiLogin(user = @TestUser(photos = @WithPhoto(country = RUSSIA)))
+@ApiLogin(user = @User(photos = @Photo(country = RUSSIA)))
 void exampleTest(UserGql createdUser) { ... }
 
 @Test
 @DisplayName("...")
 @Tag("...")
-@ApiLogin(user = @TestUser(photos = @WithPhoto(country = INDIA), partners = {
-        @WithPartner(status = FRIEND, photos = @WithPhoto(country = CANADA, imageClasspath = "cat.jpeg")),
-        @WithPartner(status = INCOME_INVITATION, photos = @WithPhoto(country = CANADA, imageClasspath = "dog.jpeg")),
-        @WithPartner(status = OUTCOME_INVITATION, photos = @WithPhoto(country = AUSTRALIA, imageClasspath = "fish.jpeg"))}))
+@ApiLogin(user = @TestUser(photos = @Photo(country = INDIA), partners = {
+        @Partner(status = FRIEND, photos = @Photo(country = CANADA, imageClasspath = "cat.jpeg")),
+        @Partner(status = INCOME_INVITATION, photos = @Photo(country = CANADA, imageClasspath = "dog.jpeg")),
+        @Partner(status = OUTCOME_INVITATION, photos = @Photo(country = AUSTRALIA, imageClasspath = "fish.jpeg"))}))
 void exampleTest2(UserGql createdUser) { ... }
 ```
 

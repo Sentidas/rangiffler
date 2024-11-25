@@ -4,7 +4,7 @@ import "./styles.css";
 import {Navigate} from "react-router-dom";
 import {initLocalStorageAndRedirectToAuth} from "../../api/authUtils";
 import {Loader} from "../../components/Loader";
-import { useGetUser } from "../../hooks/useGetUser";
+import {useGetUser} from "../../hooks/useGetUser";
 
 export const LandingPage = () => {
     const {data, loading} = useGetUser();
@@ -56,6 +56,7 @@ export const LandingPage = () => {
                                     </Typography>
                                     <Button
                                         variant="contained"
+                                        className="landing__content-button"
                                         sx={{margin: 2, marginBottom: 4}}
                                         onClick={onLoginClick}
                                     >Login
@@ -65,6 +66,7 @@ export const LandingPage = () => {
                                     </Typography>
                                     <Button
                                         variant="outlined"
+                                        className="landing__content-button"
                                         sx={{margin: 2}}
                                         component="a"
                                         href={`${import.meta.env.VITE_AUTH_URL}/register`}>
