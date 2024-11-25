@@ -2,65 +2,54 @@ import {Box, Button, Container, Typography} from "@mui/material";
 import {PhotoContainer} from "../../components/PhotoContainer";
 import {WorldMap} from "../../components/WorldMap";
 import {Toggle} from "../../components/Toggle";
-import {useMemo, useState} from "react";
-import {PhotoModal} from "../../components/PhotoModal";
-import {formInitialState, PhotoFormProps} from "../../components/PhotoModal/formValidate";
-import {Photo} from "../../types/Photo";
+import {useState} from "react";
 import {useGetFeed} from "../../hooks/useGetFeed";
+import {useDialog} from "../../context/DialogContext.tsx";
+import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
 
 export const MyTravelsPage = () => {
-    const [modalState, setModalState] = useState<{
-        isVisible: boolean,
-        formData: PhotoFormProps | null,
-        photoId: string | null,
-    }>({
-        isVisible: false,
-        formData: null,
-        photoId: null,
-    });
-
-    const [withMyFriends, setWithMyFriends] = useState(false);
+    const [withFriends, setWithFriends] = useState(false);
     const [page, setPage] = useState(0);
-    const {photos, stat, hasPreviousPage, hasNextPage} = useGetFeed({page, withFriends: withMyFriends});
-    const [photoFilter, setPhotoFilter] = useState<string | null>(null);
-    const filteredPhotos = useMemo<Photo[]>(
-        () => photoFilter ? (photos as Photo[]).filter(photo => photo.country.code.toLowerCase() === photoFilter.toLowerCase()) : photos
-        , [photoFilter, photos]);
-    const [mapTitle, setMapTitle] = useState<string>("All countries");
+    const {photos, stat, hasNextPage, hasPreviousPage, loading, fetchMore} = useGetFeed({page, withFriends});
 
-    const handleAllCountriesClick = () => {
-        setMapTitle("All countries")
-        setPhotoFilter(null);
-    };
-    const handleSelectImage = (photo: Photo) => {
-        setModalState({
-            isVisible: true,
-            formData: {
-                ...formInitialState,
-                description: {
-                    ...formInitialState.description,
-                    value: photo.description
-                },
-                src: {
-                    ...formInitialState.src,
-                    value: photo.src,
-                },
-                country: {
-                    ...formInitialState.country,
-                    value: photo.country.code,
-                },
-            },
-            photoId: photo.id
+    const dialog = useDialog();
+
+    const handleAddClick = () => {
+        dialog.showDialog({
+            title: "Add photo",
+            isEdit: false,
+            formData: {...formInitialState,},
         });
+    };
+
+    const loadNext = () => {
+        fetchMore({
+            variables: {
+                page: page + 1,
+                size: 10,
+                withFriends,
+            },
+        });
+        setPage(page + 1);
+    }
+
+    const loadPrevious = () => {
+        fetchMore({
+            variables: {
+                page: page - 1,
+                size: 10,
+                withFriends,
+            },
+        });
+        setPage(page - 1);
     }
 
     return (
         <Container sx={{
-            height: '100%',
             paddingBottom: 5,
         }}>
             <Typography
-                variant="h5"
+                variant="h4"
                 component="h2"
                 sx={{
                     marginBottom: 2,
@@ -80,64 +69,32 @@ export const MyTravelsPage = () => {
                     <Box sx={{
                         margin: 1,
                     }}>
-                        <Toggle withMyFriends={withMyFriends} setWithMyFriends={setWithMyFriends}/>
+                        <Toggle withMyFriends={withFriends} setWithMyFriends={setWithFriends}/>
                     </Box>
                 </Box>
-                <WorldMap
-                    mapTitle={mapTitle}
-                    setMapTitle={setMapTitle}
-                    photoFilter={photoFilter}
-                    setPhotoFilter={setPhotoFilter}
-                    data={stat}
-                />
-                <Box sx={{width: 180}}>
+                <WorldMap data={stat}/>
+                <Box>
                     <Button
                         variant="contained"
                         sx={{
-                            width: "100%",
                             margin: 1,
                             marginLeft: "auto",
                         }}
-                        onClick={() => {
-                            setModalState({
-                                isVisible: true,
-                                formData: null,
-                                photoId: null,
-                            })
-                        }}
-                    >Add photo
-                    </Button>
-                    <Button
-                        disabled={photoFilter === null}
-                        variant="outlined"
-                        sx={{
-                            width: "100%",
-                            margin: 1,
-                            marginLeft: "auto",
-                        }}
-                        onClick={handleAllCountriesClick}
-                    >All countries
+                        onClick={handleAddClick}
+                    >
+                        Add photo
                     </Button>
                 </Box>
             </Box>
             <PhotoContainer
-                onSelectImage={handleSelectImage}
-                data={filteredPhotos}
-                page={page}
-                setPage={setPage}
+                withFriends={withFriends}
+                loading={loading}
+                data={photos}
                 hasNextPage={hasNextPage}
                 hasPreviousPage={hasPreviousPage}
-            />
-            <PhotoModal
-                modalState={modalState}
-                isEdit={!!(modalState.formData)}
-                onClose={() => {
-                    setModalState({
-                        isVisible: false,
-                        formData: null,
-                        photoId: null,
-                    });
-                }}
+                loadNext={loadNext}
+                loadPrevious={loadPrevious}
+                page={page}
             />
         </Container>
     )

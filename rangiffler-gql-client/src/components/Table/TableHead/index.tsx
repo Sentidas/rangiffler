@@ -1,5 +1,5 @@
-import { TableHead as MuiTableHead, TableCell, TableRow, useTheme} from "@mui/material";
-import { HeadCell } from "../HeadCell";
+import {TableCell, TableHead as MuiTableHead, TableRow, useTheme} from "@mui/material";
+import {HeadCell} from "../HeadCell";
 
 
 interface TableProps {
@@ -7,14 +7,13 @@ interface TableProps {
 }
 
 
-
 export const TableHead = (props: TableProps) => {
     const theme = useTheme();
-    const {  headCells } = props;
+    const {headCells} = props;
 
     return (
         <MuiTableHead sx={{
-            backgroundColor: theme.palette.info.main,
+            backgroundColor: theme.palette.secondary.main,
         }}>
             <TableRow>
                 {headCells.map((headCell) => (
@@ -22,8 +21,12 @@ export const TableHead = (props: TableProps) => {
                         key={headCell.id}
                         align={headCell.numeric ? 'right' : 'left'}
                         padding={'normal'}
+                        sx={{
+                            color: theme.palette.secondary.light,
+                            fontWeight: 600,
+                        }}
                     >
-                            {headCell.label}
+                        {headCell.label}
                     </TableCell>
                 ))}
             </TableRow>

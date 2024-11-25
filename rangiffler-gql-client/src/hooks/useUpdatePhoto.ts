@@ -1,9 +1,10 @@
-import { gql, useMutation } from "@apollo/client";
+import {gql, useMutation} from "@apollo/client";
 
 interface PhotoInput {
     variables: {
         input: {
             id: string,
+            src: string,
             description: string,
             country: {
                 code: string,
@@ -40,7 +41,7 @@ type UpdatePhotoReturnType = {
     loading: boolean,
 }
 
-export const useUpdatePhoto = (req: UpdatePhotoRequestType) : UpdatePhotoReturnType => {
+export const useUpdatePhoto = (req: UpdatePhotoRequestType): UpdatePhotoReturnType => {
     const [updatePhoto, {loading}] = useMutation(UPDATE_PHOTO, {
         onError: req.onError,
         onCompleted: req.onCompleted,
