@@ -72,7 +72,10 @@ docker run --name rangiffler-mock -p 8080:8080 -v ./wiremock/rest:/home/wiremock
 с фронта rangiffler. Кнопка "Войти" пока что не работает, что логично, ведь у нас нет сервиса auth.
 Однако, наш Wiremock понимает некоторые запросы с oauth token, при чем ему не важно - какой именно это токен.
 Поэтому, что бы смоделировать ситуация "я залогинился", то просто зайди в dev tools браузера,
-перейди в Application, там - в LocalStorage и добавь туда токен:
+перейди в Application, там - в LocalStorage и добавь туда токен, для этого в консоли браузера выполни код:
+```javascript
+localStorage.setItem('id_token', 'faketoken')
+```
 - ключ id_token
 - значение - любая строка, например "faketoken"
 
