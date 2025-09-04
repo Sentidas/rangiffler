@@ -1,6 +1,7 @@
 HELP.md
 .gradle
-build/**
+build
+**/build
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 !**/src/main/**/build/
@@ -37,3 +38,12 @@ out/
 ### VS Code ###
 .vscode/
 
+### gRPC generated files ###
+/rangiffler-grpc-common/src/generated/**
+
+### Screenshots ###
+/rangiffler-e-2-e-tests/.screen-output
+
+# Logs
+logs/
+**/*.log

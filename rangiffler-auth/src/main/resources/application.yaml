@@ -1,9 +1,14 @@
 server:
-  port: 9000
+  port: 9001
 
+oauth2:
+  client-id: 'client'
 spring:
   application:
     name: rangiffler-auth
+  profiles:
+    active: local
+
   mvc:
     log-request-details: true
   datasource:
@@ -16,7 +21,7 @@ spring:
       max-lifetime: 1000
       auto-commit: true
     username: root
-    password: secret
+    password: root
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -47,4 +52,16 @@ logging:
 rangiffler-front:
   base-uri: 'http://127.0.0.1:3001'
 rangiffler-auth:
-  base-uri: 'http://127.0.0.1:9000'
+  base-uri: 'http://127.0.0.1:9001'
+
+---
+spring:
+  config:
+    activate:
+      on-profile: 'local'
+  autoconfigure:
+    exclude:
+      - 'org.springframework.cloud.vault.config.VaultAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultObservationAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultReactiveAutoConfiguration'
+

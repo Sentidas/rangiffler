@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "ru.sentidas.rangiffler.grpc";
+option java_outer_classname = "RangifflerUserdataProto";
+
+service RangifflerUserdataService {
+  rpc CurrentUser (UsernameRequest) returns (UserResponse) {}
+  rpc AllUsersPage (UserPageRequest) returns (UserPageResponse) {}
+  rpc UpdateUser (UserRequest) returns (UserResponse) {}
+  rpc AllFriendsPage (UserPageRequest) returns (UserPageResponse) {}
+  rpc RemoveFriend (FriendshipRequest) returns (google.protobuf.Empty) {}
+  rpc SendInvitation (FriendshipRequest) returns (UserResponse) {}
+  rpc AcceptInvitation (FriendshipRequest) returns (UserResponse) {}
+  rpc DeclineInvitation (FriendshipRequest) returns (UserResponse) {}
+}
+
+message UsersResponse {
+  repeated UserResponse users = 1;
+}
+
+message UserResponse {
+  string id = 1;
+  string username = 2;
+  string firstname = 3;
+  string surname = 4;
+  string fullname = 5;
+  string photo = 7;
+  string photoSmall = 8;
+  FriendshipStatus friendshipStatus = 9;
+}
+
+message UserPageResponse {
+  int32 totalElements = 1;
+  int32 totalPages = 2;
+  bool first = 3;
+  bool last = 4;
+  int32 page = 5;
+  int32 size = 6;
+  repeated UserResponse content = 7;
+}
+
+message UsernameRequest {
+  string username = 1;
+}
+
+message UserSearchRequest {
+  string username = 1;
+  optional string searchQuery = 2;
+}
+
+message UserRequest {
+  string id = 1;
+  string username = 2;
+  optional string firstname = 3;
+  optional string surname = 4;
+  optional string fullname = 5;
+  optional string photo = 7;
+  optional string photoSmall = 8;
+  FriendshipStatus friendshipStatus = 9;
+}
+
+message UserPageRequest {
+  string username = 1;
+  int32 page = 2;
+  int32 size = 3;
+  optional string searchQuery = 4;
+}
+
+message FriendshipRequest {
+  string username = 1;
+  string targetUsername = 2;
+}
+
+enum FriendshipStatus {
+  UNDEFINED = 0;
+  INVITE_SENT = 1;
+  INVITE_RECEIVED = 2;
+  FRIEND = 3;
+}
+
