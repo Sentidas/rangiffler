@@ -13,9 +13,7 @@ create table if not exists `statistic`
     user_id    binary(16)        not null,
     country_id binary(16)        not null,
     count      int               not null,
-    primary key (id),
-    constraint stat_country_code
-        foreign key (country_id) references `country` (id)
+    primary key (id)
 );
 
 insert into `country` (code, `name`, `flag`)

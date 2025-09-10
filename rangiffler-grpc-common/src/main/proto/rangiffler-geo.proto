@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+option java_multiple_files = true;
+option java_package = "ru.sentidas.rangiffler.grpc";
+option java_outer_classname = "RangifflerGeoProto";
+
+service RangifflerGeoService {
+  rpc getByCode (CodeRequest) returns (CountryResponse) {}
+  rpc AllCountries (google.protobuf.Empty) returns (CountriesResponse) {}
+  rpc Statistics (StatRequest) returns (StatResponse) {}
+}
+
+message CodeRequest {
+  string code = 1;
+}
+message StatRequest {
+  string user_id = 1;
+  bool with_friends = 2;
+}
+
+message StatResponse {
+  repeated Stat stat = 1;
+}
+
+message Stat {
+    int32 count = 1;
+    CountryResponse country = 2;
+}
+
+message CountryResponse {
+  string id = 1;
+  string code = 2;
+  string name = 3;
+  string flag = 4;
+}
+
+message CountriesResponse {
+  repeated CountryResponse countries = 1;
+}
+
+

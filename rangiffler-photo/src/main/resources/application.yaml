@@ -47,11 +47,11 @@ logging:
     org.springframework.kafka: INFO
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.orm.jdbc.bind: INFO
     org.springframework.jdbc.core.JdbcTemplate: DEBUG
     org.springframework.transaction: DEBUG
     org.springframework.boot.autoconfigure: INFO
-    guru.qa.rangiffler: DEBUG
+    ru.sentidas.rangiffler: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
@@ -69,6 +69,16 @@ spring:
     url: 'jdbc:mysql://127.0.0.1:3306/rangiffler-photo?serverTimezone=UTC&createDatabaseIfNotExist=true'
     username: root
     password: root
+  kafka:
+    bootstrap-servers: 'localhost:9092'
+grpc:
+  client:
+    grpcUserdataClient:
+      address: 'static://localhost:8087'
+      negotiationType: PLAINTEXT
+    grpcGeoClient:
+      address: 'static://localhost:8086'
+      negotiationType: PLAINTEXT
 rangiffler-geo:
   base-uri: 'http://127.0.0.1:8085'
 rangiffler-userdata:

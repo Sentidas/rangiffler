@@ -8,33 +8,39 @@ option java_outer_classname = "RangifflerUserdataProto";
 
 service RangifflerUserdataService {
   rpc CurrentUser (UsernameRequest) returns (UserResponse) {}
-  rpc AllUsersPage (UserPageRequest) returns (UserPageResponse) {}
-  rpc UpdateUser (UserRequest) returns (UserResponse) {}
-  rpc AllFriendsPage (UserPageRequest) returns (UserPageResponse) {}
+  rpc CurrentUserById (UserIdRequest) returns (UserResponse) {}
+  rpc AllUsersPage (UserPageRequest) returns (UsersPageResponse) {}
+  rpc UpdateUser (UpdateUserRequest) returns (UserResponse) {}
+  rpc AllFriendsPage (UserPageRequest) returns (UsersPageResponse) {}
+  rpc FriendsId (UserIdRequest) returns (UserIdsResponse) {}
   rpc RemoveFriend (FriendshipRequest) returns (google.protobuf.Empty) {}
-  rpc SendInvitation (FriendshipRequest) returns (UserResponse) {}
-  rpc AcceptInvitation (FriendshipRequest) returns (UserResponse) {}
-  rpc DeclineInvitation (FriendshipRequest) returns (UserResponse) {}
-}
-
-message UsersResponse {
-  repeated UserResponse users = 1;
+  rpc IncomeInvitations (UserPageRequest) returns (UsersPageResponse) {}
+  rpc OutcomeInvitations (UserPageRequest) returns (UsersPageResponse) {}
+  rpc CreateFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
+  rpc AcceptFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
+  rpc DeclineFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
 }
 
 message UserResponse {
   string id = 1;
   string username = 2;
-  string firstname = 3;
-  string surname = 4;
-  string fullname = 5;
-  string photo = 7;
-  string photoSmall = 8;
-  FriendshipStatus friendshipStatus = 9;
+  optional string firstname = 3;
+  optional string surname = 4;
+  optional string avatar = 5;
+  optional FriendStatus friend_status = 6;
+  repeated UserResponse friends = 7;
+  repeated UserResponse income_invitations = 8;
+  repeated UserResponse outcome_invitations = 9;
+  string country_code = 10;
 }
 
-message UserPageResponse {
-  int32 totalElements = 1;
-  int32 totalPages = 2;
+message UserIdsResponse {
+  repeated string user_ids = 1;
+}
+
+message UsersPageResponse {
+  int64 total_elements = 1;
+  int32 total_pages = 2;
   bool first = 3;
   bool last = 4;
   int32 page = 5;
@@ -46,38 +52,57 @@ message UsernameRequest {
   string username = 1;
 }
 
+message UserIdRequest {
+  string user_id = 1;
+}
+
 message UserSearchRequest {
   string username = 1;
-  optional string searchQuery = 2;
+  optional string search_query = 2;
 }
 
 message UserRequest {
   string id = 1;
   string username = 2;
-  optional string firstname = 3;
-  optional string surname = 4;
-  optional string fullname = 5;
-  optional string photo = 7;
-  optional string photoSmall = 8;
-  FriendshipStatus friendshipStatus = 9;
+  string firstname = 3;
+  string surname = 4;
+  string avatar = 5;
+  FriendStatus friend_status = 6;
+  string country_code = 7;
+}
+message UpdateUserRequest {
+  string username = 1;
+  optional string firstname = 2;
+  optional string surname = 3;
+  optional string avatar = 4;
+  optional string country_code = 5;
 }
 
 message UserPageRequest {
   string username = 1;
   int32 page = 2;
   int32 size = 3;
-  optional string searchQuery = 4;
+  optional string search_query = 4;
 }
 
 message FriendshipRequest {
   string username = 1;
-  string targetUsername = 2;
+  string user = 2;
 }
 
-enum FriendshipStatus {
+enum FriendStatus {
   UNDEFINED = 0;
-  INVITE_SENT = 1;
-  INVITE_RECEIVED = 2;
+  INVITATION_SENT = 1;
+  INVITATION_RECEIVED = 2;
   FRIEND = 3;
+
+}
+
+enum FriendshipAction {
+  UNSPECIFIED = 0;
+  ADD = 1;
+  ACCEPT = 2;
+  REJECT = 3;
+  DELETE = 4;
 }
 

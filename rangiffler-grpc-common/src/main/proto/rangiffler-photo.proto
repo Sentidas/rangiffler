@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "ru.sentidas.rangiffler.grpc";
+option java_outer_classname = "RangifflerPhotoProto";
+
+service RangifflerPhotoService {
+  rpc GetPhotos (PageRequest) returns (PhotosPageResponse) {}
+  rpc GetUserPhotos (PhotoPageRequest) returns (PhotosPageResponse) {}
+  rpc GetFeedPhotos (PhotoPageRequest) returns (PhotosPageResponse) {}
+
+  rpc CreatePhoto (CreatePhotoRequest) returns (PhotoResponse) {}
+  rpc UpdatePhoto (UpdatePhotoRequest) returns (PhotoResponse) {}
+  rpc DeletePhoto (DeletePhotoRequest) returns (google.protobuf.Empty) {}
+
+  rpc GetPhotoLikes (PhotoIdRequest) returns (Likes) {}
+  rpc ToggleLike (LikeRequest) returns (PhotoResponse) {}
+
+  rpc AddLike (LikeRequest) returns (PhotoResponse) {}
+  rpc RemoveLike (LikeRequest) returns (PhotoResponse) {}
+}
+
+// ---- Paging ----
+
+message PageRequest {
+  int32 page = 1;
+  int32 size = 2;
+}
+
+message PhotoPageRequest {
+  string user_id = 1;
+  int32 page = 2;
+  int32 size = 3;
+}
+
+message PhotosPageResponse {
+  int64 total_elements = 1;
+  int32 total_pages = 2;
+  bool first = 3;
+  bool last = 4;
+  int32 page = 5;
+  int32 size = 6;
+  repeated PhotoResponse content = 7;
+}
+
+// ---- Photo ----
+
+message PhotoIdRequest {
+  string id = 1;
+}
+
+message DeletePhotoRequest {
+  string id = 1;
+  string requester_id = 2;
+}
+
+message PhotoResponse {
+  string photo_id = 1;
+  string src = 2;
+  string country_code = 3;
+  string description = 4;
+  google.protobuf.Timestamp creationDate = 5;
+  Likes likes = 6;
+}
+
+message CreatePhotoRequest {
+  string user_id = 1;
+  string src = 2;
+  string country_code = 3;
+  string description = 4;
+}
+
+message UpdatePhotoRequest {
+  string photo_id = 1;
+  string requester_id = 2;
+  optional string src = 3;
+  optional string country_code = 4;
+  optional string description = 5;
+}
+
+// ---- Like ----
+
+message LikeRequest {
+  string photo_id = 1;
+  string user_id = 2;
+}
+
+message Likes {
+  int32 total = 1;
+  repeated Like likes = 2;
+}
+
+message Like {
+  string user_id = 1;
+  google.protobuf.Timestamp creationDate = 2;
+}
+
+
+
+
+
+
