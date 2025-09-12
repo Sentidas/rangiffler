@@ -19,6 +19,11 @@ enum DockerConfig implements Config {
     return "http://auth.rangiffler.dc:9001/";
   }
 
+  @Override
+  public String authJdbcUrl() {
+    return "";
+  }
+
 
   @Nonnull
   @Override
@@ -34,14 +39,32 @@ enum DockerConfig implements Config {
 
   @NotNull
   @Override
+  public String userdataJdbcUrl() {
+    return "";
+  }
+
+  @NotNull
+  @Override
   public String geoUrl() {
     return "http://userdata.rangiffler.dc:8085/";
   }
 
   @NotNull
   @Override
+  public String geoJdbcUrl() {
+    return "";
+  }
+
+  @NotNull
+  @Override
   public String photoUrl() {
     return "http://userdata.rangiffler.dc:8094/";
+  }
+
+  @NotNull
+  @Override
+  public String photoJdbcUrl() {
+    return "";
   }
 
 
@@ -60,7 +83,7 @@ enum DockerConfig implements Config {
   @NotNull
   @Override
   public String photoGrpcAddress() {
-    return "photo.rangiffler.dc";
+    return "avatar.rangiffler.dc";
   }
 
   @NotNull

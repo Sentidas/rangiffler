@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import ru.sentidas.rangiffler.data.entity.UserEntity;
+import ru.sentidas.rangiffler.data.projection.UserWithStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -104,6 +105,119 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
     );
 
     Page<UserEntity> findByIdNot(UUID id, Pageable pageable);
+
+    // === ALL USERS (кроме текущего) + статус от текущего пользователя к каждому ===
+    @Query("""
+select distinct new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+left join FriendshipEntity f
+  on (u = f.addressee and f.requester = :current)
+where u <> :current
+""")
+    Page<UserWithStatus> findUsersWithStatus(@Param("current") UserEntity current, Pageable pageable);
+
+    @Query("""
+select distinct new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+left join FriendshipEntity f
+  on (u = f.addressee and f.requester = :current)
+where u <> :current and (
+  lower(u.username) like lower(concat('%', :q, '%')) or
+  lower(u.firstname) like lower(concat('%', :q, '%')) or
+  lower(u.surname) like lower(concat('%', :q, '%'))
+)
+""")
+    Page<UserWithStatus> findUsersWithStatus(@Param("current") UserEntity current,
+                                             @Param("q") String q,
+                                             Pageable pageable);
+
+    // === FRIENDS (accepted) ===
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.addressee
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.ACCEPTED
+  and f.requester = :current
+""")
+    Slice<UserWithStatus> findFriendsProjection(@Param("current") UserEntity current, Pageable pageable);
+
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.addressee
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.ACCEPTED
+  and f.requester = :current
+  and (lower(u.username) like lower(concat('%', :q, '%'))
+       or lower(u.firstname) like lower(concat('%', :q, '%'))
+       or lower(u.surname) like lower(concat('%', :q, '%')))
+""")
+    Slice<UserWithStatus> findFriendsProjection(@Param("current") UserEntity current,
+                                                @Param("q") String q,
+                                                Pageable pageable);
+
+    // === INCOME (pending, где current — addressee) ===
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.requester
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING
+  and f.addressee = :current
+""")
+    Slice<UserWithStatus> findIncomeInvitationsProjection(@Param("current") UserEntity current, Pageable pageable);
+
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.requester
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING
+  and f.addressee = :current
+  and (lower(u.username) like lower(concat('%', :q, '%'))
+       or lower(u.firstname) like lower(concat('%', :q, '%'))
+       or lower(u.surname) like lower(concat('%', :q, '%')))
+""")
+    Slice<UserWithStatus> findIncomeInvitationsProjection(@Param("current") UserEntity current,
+                                                          @Param("q") String q,
+                                                          Pageable pageable);
+
+    // === OUTCOME (pending, где current — requester) ===
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.addressee
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING
+  and f.requester = :current
+""")
+    Slice<UserWithStatus> findOutcomeInvitationsProjection(@Param("current") UserEntity current, Pageable pageable);
+
+    @Query("""
+select new ru.sentidas.rangiffler.data.projection.UserWithStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall, f.status, u.countryCode
+)
+from UserEntity u
+join FriendshipEntity f on u = f.addressee
+where f.status = ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING
+  and f.requester = :current
+  and (lower(u.username) like lower(concat('%', :q, '%'))
+       or lower(u.firstname) like lower(concat('%', :q, '%'))
+       or lower(u.surname) like lower(concat('%', :q, '%')))
+""")
+    Slice<UserWithStatus> findOutcomeInvitationsProjection(@Param("current") UserEntity current,
+                                                           @Param("q") String q,
+                                                           Pageable pageable);
 }
 
 

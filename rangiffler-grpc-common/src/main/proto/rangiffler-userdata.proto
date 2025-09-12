@@ -27,11 +27,12 @@ message UserResponse {
   optional string firstname = 3;
   optional string surname = 4;
   optional string avatar = 5;
-  optional FriendStatus friend_status = 6;
-  repeated UserResponse friends = 7;
-  repeated UserResponse income_invitations = 8;
-  repeated UserResponse outcome_invitations = 9;
-  string country_code = 10;
+  optional string avatar_small = 6;
+  optional FriendStatus friend_status = 7;
+  repeated UserResponse friends = 8;
+  repeated UserResponse income_invitations = 9;
+  repeated UserResponse outcome_invitations = 10;
+  string country_code = 11;
 }
 
 message UserIdsResponse {

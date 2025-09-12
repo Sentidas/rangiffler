@@ -16,6 +16,8 @@ public interface Config {
   @Nonnull
   String authUrl();
 
+  String authJdbcUrl();
+
   @Nonnull
   String gatewayUrl();
 
@@ -23,11 +25,19 @@ public interface Config {
   String userdataUrl();
 
   @Nonnull
+  String userdataJdbcUrl();
+
+  @Nonnull
   String geoUrl();
+
+  @Nonnull
+  String geoJdbcUrl();
 
   @Nonnull
   String photoUrl();
 
+  @Nonnull
+  String photoJdbcUrl();
 
   @Nonnull
   String screenshotBaseDir();

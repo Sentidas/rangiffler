@@ -4,7 +4,7 @@ import com.codeborne.selenide.Selenide;
 import org.junit.jupiter.api.Test;
 import ru.sentidas.rangiffler.page.LoginPage;
 import ru.sentidas.rangiffler.page.RegisterPage;
-import ru.sentidas.rangiffler.utils.RandomDataUtils;
+import ru.sentidas.rangiffler.utils.generator.RandomDataUtils;
 
 public class RegisterTests {
 

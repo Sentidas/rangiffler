@@ -71,10 +71,17 @@ dependencies {
   //  testImplementation "org.springframework:spring-jdbc:${springJdbcVersion}"
 
     testImplementation "com.atomikos:transactions-jta:${atomicosVersion}:jakarta"
-    testImplementation "com.atomikos:transactions-hibernate4:${atomicosVersion}:jakarta"
-    testImplementation "com.atomikos:transactions-jdbc:${atomicosVersion}"
+    // bd
+    testImplementation "com.mysql:mysql-connector-j:8.4.0"
+    testImplementation "org.hibernate:hibernate-core:6.6.0.Final"
+    testImplementation "com.atomikos:transactions-jta:6.0.0:jakarta"
+    testImplementation "com.atomikos:transactions-jdbc:6.0.0"
+    testImplementation "com.atomikos:transactions-hibernate4:6.0.0:jakarta"
+
+
+
     testImplementation "p6spy:p6spy:${p6spyVersion}"
-    testImplementation "org.hibernate:hibernate-core:${hibernateVersion}"
+
     testImplementation "org.springframework.security:spring-security-crypto:${springCryptoVersion}"
     // Allure
     testImplementation "io.qameta.allure:allure-attachments:${allureVersion}"
@@ -106,7 +113,8 @@ dependencies {
     testImplementation "com.google.protobuf:protobuf-java:${project.ext.protobufVersion}"
     testImplementation "com.google.protobuf:protobuf-java-util:${project.ext.protobufVersion}"
     compileOnly 'jakarta.annotation:jakarta.annotation-api:1.3.5' // Java 9+ compatibility - Do NOT update to 2.0.0
-
+    testImplementation "com.mysql:mysql-connector-j:8.4.0"
+    testImplementation "net.coobird:thumbnailator:0.4.20"
     testImplementation project(':rangiffler-grpc-common')
     // Kafka
     testImplementation "org.apache.kafka:kafka-clients:${kafkaClientsVersion}"
@@ -116,6 +124,7 @@ dependencies {
     // Lombok
     testAnnotationProcessor "org.projectlombok:lombok:${project.ext.lombokVersion}"
     testCompileOnly "org.projectlombok:lombok:${project.ext.lombokVersion}"
+
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -132,6 +141,14 @@ test {
     options {
         systemProperties(System.getProperties())
     }
+    // ⬇️ вот эти 3 строки
+    systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
+    systemProperty "com.atomikos.icatch.max_timeout", "300000"
+    systemProperty "com.atomikos.icatch.enable_logging", "true"
+    systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
+    // по желанию:
+    // systemProperty "com.atomikos.icatch.threaded_two_phase_commit", "true"
+
     testLogging.showStandardStreams = true
     testLogging.exceptionFormat = 'full'
     useJUnitPlatform()

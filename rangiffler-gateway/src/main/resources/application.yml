@@ -71,6 +71,7 @@ grpc:
     grpcUserdataClient:
       address: 'static://localhost:8087'
       negotiationType: PLAINTEXT
+      max-inbound-message-size: 10485760   # 10 MB
     grpcGeoClient:
       address: 'static://localhost:8086'
       negotiationType: PLAINTEXT

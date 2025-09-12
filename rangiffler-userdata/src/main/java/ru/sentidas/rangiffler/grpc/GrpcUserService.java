@@ -50,7 +50,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Override
     public void updateUser(UpdateUserRequest request, StreamObserver<UserResponse> responseObserver) {
         User dto = User.fromProto(request);
-        User saved = userService.updateUser(dto);
+        User saved = userService.update(dto);
         responseObserver.onNext(toProto(saved));
         responseObserver.onCompleted();
     }

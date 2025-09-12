@@ -19,6 +19,12 @@ enum LocalConfig implements Config {
     return "http://127.0.0.1:9001/";
   }
 
+  @Override
+  public String authJdbcUrl() {
+    return "jdbc:mysql://localhost:3306/rangiffler-auth";
+  }
+
+
   @Nonnull
   @Override
   public String gatewayUrl() {
@@ -33,14 +39,32 @@ enum LocalConfig implements Config {
 
   @NotNull
   @Override
+  public String userdataJdbcUrl() {
+    return "jdbc:mysql://localhost:3306/rangiffler-userdata";
+  }
+
+  @NotNull
+  @Override
   public String geoUrl() {
     return "http://127.0.0.1:8085/";
   }
 
   @NotNull
   @Override
+  public String geoJdbcUrl() {
+    return "jdbc:mysql://localhost:3306/rangiffler-geo";
+  }
+
+  @NotNull
+  @Override
   public String photoUrl() {
     return "http://127.0.0.1:8094/";
+  }
+
+  @NotNull
+  @Override
+  public String photoJdbcUrl() {
+    return "jdbc:mysql://localhost:3306/rangiffler-photo";
   }
 
   @Nonnull

@@ -35,7 +35,7 @@ spring:
           lob:
             non_contextual_creation: true
         format_sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
+    database-platform: org.hibernate.dialect.MySQLDialect
     show-sql: true
     generate-ddl: true
     open-in-view: false

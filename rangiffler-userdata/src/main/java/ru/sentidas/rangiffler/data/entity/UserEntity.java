@@ -32,17 +32,15 @@ public class UserEntity implements Serializable {
   @Column(columnDefinition = "LONGBLOB")
   private byte[] avatar;
 
+  @Lob
+  @Column(name = "avatar_small", columnDefinition = "LONGBLOB")
+  private byte[] avatarSmall;
+
   @OneToMany(mappedBy = "requester", fetch = FetchType.LAZY)
   private List<FriendshipEntity> friendshipRequests = new ArrayList<>();
 
   @OneToMany(mappedBy = "addressee", fetch = FetchType.LAZY)
   private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
-
-//  @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-//  private List<PhotoEntity> photos = new ArrayList<>();
-//
-//  @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-//  private List<StatisticEntity> statistics = new ArrayList<>();
 
   @Column(name = "country_code", length = 2, nullable = false)
   private String countryCode;

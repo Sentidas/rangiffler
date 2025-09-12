@@ -10,7 +10,7 @@ import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
-import ru.sentidas.rangiffler.model.UserJson;
+import ru.sentidas.rangiffler.model.UserEvent;
 
 
 @Configuration
@@ -24,8 +24,8 @@ public class RangifflerUserdataConsumerConfiguration {
     }
 
     @Bean
-    public ConsumerFactory<String, UserJson> consumerFactory(SslBundles sslBundles) {
-        final JsonDeserializer<UserJson> jsonDeserializer = new JsonDeserializer<>();
+    public ConsumerFactory<String, UserEvent> consumerFactory(SslBundles sslBundles) {
+        final JsonDeserializer<UserEvent> jsonDeserializer = new JsonDeserializer<>();
         jsonDeserializer.addTrustedPackages("*");
         return new DefaultKafkaConsumerFactory<>(
                 kafkaProperties.buildConsumerProperties(sslBundles),
@@ -36,8 +36,8 @@ public class RangifflerUserdataConsumerConfiguration {
 
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, UserJson> kafkaListenerContainerFactory(SslBundles sslBundles) {
-        ConcurrentKafkaListenerContainerFactory<String, UserJson> concurrentKafkaListenerContainerFactory
+    public ConcurrentKafkaListenerContainerFactory<String, UserEvent> kafkaListenerContainerFactory(SslBundles sslBundles) {
+        ConcurrentKafkaListenerContainerFactory<String, UserEvent> concurrentKafkaListenerContainerFactory
                 = new ConcurrentKafkaListenerContainerFactory<>();
         concurrentKafkaListenerContainerFactory.setConsumerFactory(consumerFactory(sslBundles));
         return concurrentKafkaListenerContainerFactory;

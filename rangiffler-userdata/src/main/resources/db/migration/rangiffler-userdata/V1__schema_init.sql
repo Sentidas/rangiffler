@@ -5,6 +5,7 @@ create table if not exists `user`
     firstname    varchar(255),
     surname      varchar(255),
     avatar       longblob,
+    avatar_small longblob,
     country_code char(2)            not null,
     primary key (id)
 );

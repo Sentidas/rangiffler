@@ -8,25 +8,24 @@ import ru.sentidas.rangiffler.grpc.UserResponse;
 import java.util.Base64;
 import java.util.UUID;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public record User(
         UUID id,
         String username,
         String firstname,
         String surname,
         String avatar,
-        FriendStatus friendStatus,
+        FriendshipStatus friendStatus,
         String countryCode
 ) {
 
-    public static User fromUserEntity(UserEntity userEntity, FriendStatus friendStatus) {
+    public static User fromEntity(UserEntity userEntity, FriendshipStatus friendStatus) {
 
         String avatarDataUrl = null;
-        if (userEntity.getAvatar() != null) {
-            // Конвертируем byte[] в Data URL
-            String base64Avatar = Base64.getEncoder().encodeToString(userEntity.getAvatar());
-            avatarDataUrl = "data:image/png;base64," + base64Avatar;
+        if (userEntity.getAvatar() != null && userEntity.getAvatar().length > 0) {
+            avatarDataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(userEntity.getAvatar());
         }
-
         return new User(
                 userEntity.getId(),
                 userEntity.getUsername(),
@@ -38,24 +37,8 @@ public record User(
         );
     }
 
-    public static User fromUserEntity(UserEntity userEntity) {
-
-        String avatarDataUrl = null;
-        if (userEntity.getAvatar() != null) {
-            // Конвертируем byte[] в Data URL
-            String base64Avatar = Base64.getEncoder().encodeToString(userEntity.getAvatar());
-            avatarDataUrl = "data:image/png;base64," + base64Avatar;
-        }
-
-        return new User(
-                userEntity.getId(),
-                userEntity.getUsername(),
-                userEntity.getFirstname(),
-                userEntity.getSurname(),
-                avatarDataUrl,
-                null,
-                userEntity.getCountryCode()
-        );
+    public static User fromEntity(UserEntity userEntity) {
+        return fromEntity(userEntity, null);
     }
 
     public static @Nonnull User fromProto(@Nonnull UpdateUserRequest request) {
@@ -80,12 +63,9 @@ public record User(
         if (username != null) b.setUsername(username);
         if (firstname != null) b.setFirstname(firstname);
         if (surname != null) b.setSurname(surname);
-
         if (avatar != null) b.setAvatar(avatar);
-
         if (countryCode != null) b.setCountryCode(countryCode);
-
-        if (friendStatus != null) b.setFriendStatus(ru.sentidas.rangiffler.grpc.FriendStatus.valueOf(friendStatus.name()));
-
+        if (friendStatus != null)
+            b.setFriendStatus(ru.sentidas.rangiffler.grpc.FriendStatus.valueOf(friendStatus.name()));
     }
 }

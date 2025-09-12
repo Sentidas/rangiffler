@@ -8,30 +8,55 @@ import io.qameta.allure.attachment.AttachmentData;
 import io.qameta.allure.attachment.AttachmentProcessor;
 import io.qameta.allure.attachment.DefaultAttachmentProcessor;
 import io.qameta.allure.attachment.FreemarkerAttachmentRenderer;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static org.apache.commons.lang3.StringUtils.isNoneEmpty;
-import static org.apache.commons.lang3.StringUtils.substringBetween;
+import static org.apache.commons.lang3.StringUtils.*;
 
 @ParametersAreNonnullByDefault
 public class AllureAppender extends StdoutLogger {
 
-  private final String templateName = "sql-attachment.ftl";
-  private final AttachmentProcessor<AttachmentData> attachmentProcessor = new DefaultAttachmentProcessor();
-
+  private static final String TEMPLATE = "sql-attachment.ftl";
+  private final AttachmentProcessor<AttachmentData> processor = new DefaultAttachmentProcessor();
 
   @Override
-  public void logSQL(int connectionId, String now, long elapsed, Category category, String prepared, String sql, String url) {
-    if (isNoneEmpty(sql)) {
-      final SqlAttachmentData attachmentData = new SqlAttachmentData(
-          sql.split("\\s+")[0].toUpperCase() + " query to: " + substringBetween(url, "5432/", "?"),
-          SqlFormatter.of(Dialect.PostgreSql).format(sql)
+  public void logSQL(int connectionId,
+                     String now,
+                     long elapsed,
+                     Category category,
+                     String prepared,
+                     String sql,
+                     String url) {
+    if (StringUtils.isBlank(sql)) return;
+
+    // Безопасно выясняем "имя БД" только для подписи
+    String db = "db";
+    try {
+      // сначала пытаемся "3306/<db>?..."
+      String candidate = substringBetween(url, "3306/", "?");
+      if (StringUtils.isBlank(candidate)) {
+        // если у URL нет '?', возьмём хвост после последнего '/'
+        candidate = substringAfterLast(url, "/");
+      }
+      if (StringUtils.isNotBlank(candidate)) {
+        db = candidate;
+      }
+    } catch (Throwable ignored) {
+      // подпись не критична
+    }
+
+    String title = (sql.split("\\s+")[0].toUpperCase()) + " query to: " + db;
+
+    try {
+      SqlAttachmentData data = new SqlAttachmentData(
+              title,
+              SqlFormatter.of(Dialect.MySql).format(sql)
       );
-      attachmentProcessor.addAttachment(
-          attachmentData,
-          new FreemarkerAttachmentRenderer(templateName)
-      );
+      processor.addAttachment(data, new FreemarkerAttachmentRenderer(TEMPLATE));
+    } catch (Throwable t) {
+      // Никогда не валим тест из-за отчётности — логнём в консоль по-старому
+      super.logSQL(connectionId, now, elapsed, category, prepared, sql, url);
     }
   }
 }
