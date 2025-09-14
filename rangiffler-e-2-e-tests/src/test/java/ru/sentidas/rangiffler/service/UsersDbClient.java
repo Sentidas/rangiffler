@@ -41,7 +41,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 
 
     @Override
-    @Step("Create user with username '{0}' using SQL INSERT")
+    @Step("Create userId with username '{0}' using SQL INSERT")
     @Nonnull
     public User createUser(String username, String password) {
         return requireNonNull(
@@ -56,7 +56,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 
 
     @Override
-    @Step("Create user with username '{0}' using SQL INSERT")
+    @Step("Create userId with username '{0}' using SQL INSERT")
     @Nonnull
     public User createFullUser(User user) {
         return requireNonNull(
@@ -69,7 +69,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
         );
     }
 
-    @Step("Delete user '{0}' using SQL")
+    @Step("Delete userId '{0}' using SQL")
     public void removeUser(String username) {
         xaTxTemplate.execute(() -> {
             AuthUserEntity authUser = authUserRepository.findByUsername(username)
@@ -85,7 +85,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
         });
     }
 
-    @Step("Update user '{0}' using SQL")
+    @Step("Update userId '{0}' using SQL")
     public User updateUser(String username, User updatedUser) {
         return xaTxTemplate.execute(() -> {
 
@@ -143,7 +143,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     }
 
 
-    @Step("Get user '{0}' using SQL")
+    @Step("Get userId '{0}' using SQL")
     public Optional<User> findUserByUsername(String username) {
         return xaTxTemplate.execute(() ->
                 userdataUserRepository.findByUsername(username)
@@ -255,7 +255,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
         return outcomeInvitations;
     }
 
-//    @Step("Add {1} friends for user using SQL INSERT")
+//    @Step("Add {1} friends for userId using SQL INSERT")
 //    public List<User> addFriends(User targetUser, int count) {
 //        List<User> friends = new ArrayList<>();
 //
@@ -270,17 +270,17 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 //                User friend = xaTxTemplate.execute(() -> {
 //                    AuthUserEntity authUser = authUserEntity(username, "12345");
 //                    authUserRepository.create(authUser);
-//                    UserEntity user = userdataUserRepository.create(userEntity(username));
+//                    UserEntity userId = userdataUserRepository.create(userEntity(username));
 //
-//                    userdataUserRepository.addFriend(targetEntity, user);
-//                    return User.fromEntity(user, null);
+//                    userdataUserRepository.addFriend(targetEntity, userId);
+//                    return User.fromEntity(userId, null);
 //                });
 //                friends.add(friend);
 //            }
 //        }
 //        return friends;
 //    }
-    @Step("Add {1} friends for user using SQL INSERT")
+    @Step("Add {1} friends for userId using SQL INSERT")
     public List<User> addFriends(User targetUser, int count) {
         List<User> friends = new ArrayList<>();
 
@@ -314,13 +314,13 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     }
 
 //    @Nonnull
-//    private UserEntity userEntity(User user) {
+//    private UserEntity userEntity(User userId) {
 //        UserEntity ue = new UserEntity();
-//        ue.setUsername(user.username());
-//        ue.setFirstname(user.firstname());
-//        ue.setSurname(user.surname());
-//        ue.setAvatar(user.avatar());
-//        ue.setCountryCode(user.countryCode());
+//        ue.setUsername(userId.username());
+//        ue.setFirstname(userId.firstname());
+//        ue.setSurname(userId.surname());
+//        ue.setAvatar(userId.avatar());
+//        ue.setCountryCode(userId.countryCode());
 //        return ue;
 //    }
 

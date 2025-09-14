@@ -2,6 +2,8 @@ package ru.sentidas.rangiffler.utils.generator;
 import java.util.*;
 
 public final class PhotoDescriptions {
+    private static final Random RND = new Random();
+
 
     // ---------- Наборы фраз (по 30 на язык) ----------
     // RU — Русский
@@ -345,18 +347,59 @@ public final class PhotoDescriptions {
     );
 
     // Регистрация наборов
-    private static final Map<String, List<String>> DESCRIPTIONS = Map.of(
-            "ru", RU, // Россия
-            "en", EN, // США, Великобритания, Австралия, Новая Зеландия, Канада, Ирландия
-            "es", ES, // Испания, Мексика, Аргентина, Колумбия
-            "zh", ZH, // Китай (упрощённый китайский)
-            "hi", HI, // Индия (хинди)
-            "ar", AR, // Саудовская Аравия, ОАЭ, Египет, Марокко
-            "pt", PT, // Бразилия, Португалия
-            "fr", FR, // Франция
-            "bn", BN, // Бангладеш (бенгальский)
-            "de", DE  // Германия
+// --- фрагмент PhotoDescriptions.java ---
+
+    // Регистрация наборов фраз по языкам.
+// Добавлены также faker-локали (zh-CN, pt-BR, pt-PT) к тем же спискам,
+// чтобы можно было передавать тег "как есть" из languageTagByCountry(..).
+    private static final Map<String, List<String>> DESCRIPTIONS = Map.ofEntries(
+            Map.entry("ru", RU),  // Россия
+
+            // Английский — США, Великобритания, Австралия, Новая Зеландия, Канада, Ирландия
+            Map.entry("en", EN),  // США, Великобритания, Австралия, Новая Зеландия, Канада, Ирландия
+
+            // Испанский — Испания, Мексика, Аргентина, Колумбия
+            Map.entry("es", ES),  // Испания, Мексика, Аргентина, Колумбия
+
+            // Китайский (упрощённый) — Китай + faker-локаль zh-CN
+            Map.entry("zh", ZH),     // Китай (упрощённый китайский)
+            Map.entry("zh-CN", ZH),  // faker-локаль: zh-CN → используем те же фразы
+
+            // Хинди — Индия
+            Map.entry("hi", HI),  // Индия (хинди)
+
+            // Арабский — Саудовская Аравия, ОАЭ, Египет, Марокко
+            Map.entry("ar", AR),  // Саудовская Аравия, ОАЭ, Египет, Марокко
+
+            // Португальский — Португалия, Бразилия + faker-локали pt-BR, pt-PT
+            Map.entry("pt", PT),     // Португалия, Бразилия
+            Map.entry("pt-BR", PT),  // faker-локаль: pt-BR → те же фразы
+            Map.entry("pt-PT", PT),  // faker-локаль: pt-PT → те же фразы
+
+            Map.entry("fr", FR),  // Франция
+            Map.entry("bn", BN),  // Бангладеш (бенгальский)
+            Map.entry("de", DE)   // Германия
     );
 
+    /**
+     * Берёт фразу по тегу, как его вернул ваш UserDataGenerator.languageTagByCountry
+     * (например: "ru", "en", "zh-CN", "pt-BR"...).
+     */
+    public static String randomByTag(String localeTag) {
+        // 1) Сразу пробуем точное совпадение ключа (учитывая региональные теги, типа "pt-BR").
+        List<String> bag = DESCRIPTIONS.get(localeTag);
 
+        // 2) Если не нашли (или пришёл в другом регистре, например "ZH-CN"),
+        //    пробуем ещё раз — с привидением к нижнему регистру.
+        if (bag == null) {
+            bag = DESCRIPTIONS.get(localeTag == null ? null : localeTag.toLowerCase(Locale.ROOT));
+        }
+
+        // 3) Если ключ по-прежнему не найден (null/неподдержанный тег),
+        //    используем английский набор как безопасный fallback.
+        if (bag == null) bag = DESCRIPTIONS.get("en");
+
+        // 4) Возвращаем случайную фразу из выбранного набора.
+        return bag.get(RND.nextInt(bag.size()));
+    }
 }

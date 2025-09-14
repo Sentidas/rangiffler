@@ -70,16 +70,6 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
                              outcomeInvitations = usersClient.createOutcomeInvitations(user, anno.outcomeInvitation());
                         }
 
-//                        user = user.withTestData(
-//                                new TestData(
-//                                        defaultPassword,
-//                                        user.testData().photos(),
-//                                        friends,
-//                                        incomeInvitations,
-//                                        outcomeInvitations
-//                                )
-//                        );
-
                         user.testData().friends().addAll(friends);
                         user.testData().incomeInvitations().addAll(incomeInvitations);
                         user.testData().outcomeInvitations().addAll(outcomeInvitations);

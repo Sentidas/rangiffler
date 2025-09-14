@@ -59,11 +59,12 @@ message DeletePhotoRequest {
 
 message PhotoResponse {
   string photo_id = 1;
-  string src = 2;
-  string country_code = 3;
-  string description = 4;
-  google.protobuf.Timestamp creationDate = 5;
-  Likes likes = 6;
+  string user_id = 2;
+  string src = 3;
+  string country_code = 4;
+  string description = 5;
+  google.protobuf.Timestamp creationDate = 6;
+  Likes likes = 7;
 }
 
 message CreatePhotoRequest {

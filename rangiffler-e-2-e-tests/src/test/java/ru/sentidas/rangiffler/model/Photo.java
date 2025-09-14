@@ -13,7 +13,7 @@ import java.util.UUID;
 
 public record Photo(
         UUID id,
-        UUID requesterId,
+        UUID userId,
         String src,
         String countryCode,
         String description,
@@ -32,7 +32,7 @@ public record Photo(
 
         return new Photo(
                 photoEntity.getId(),
-                null,
+                photoEntity.getUser(),
                 srcDataUrl,
                 photoEntity.getCountryCode(),
                 photoEntity.getDescription(),
@@ -43,6 +43,7 @@ public record Photo(
 
     public void toProto(PhotoResponse.Builder b) {
         if (id != null) b.setPhotoId(id.toString());
+        if (userId != null) b.setUserId(userId.toString());
         if (src != null) b.setSrc(src);
         if (description != null) b.setDescription(description);
         if (countryCode != null) b.setCountryCode(countryCode);
@@ -67,13 +68,12 @@ public record Photo(
 
         return new Photo(
                 UUID.fromString(photoId),
-                UUID.fromString(request.getRequesterId()),
+                null,
                 (request.hasSrc() && !request.getSrc().isBlank()) ? request.getSrc() : null,
                 (request.hasCountryCode() && !request.getCountryCode().isBlank()) ? request.getCountryCode() : null,
                 (request.hasDescription() && !request.getDescription().isBlank()) ? request.getDescription() : null,
      null,
         0);
-
     }
 }
 

@@ -3,8 +3,11 @@ package ru.sentidas.rangiffler.data.repository.impl;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import ru.sentidas.rangiffler.config.Config;
+import ru.sentidas.rangiffler.data.entity.photo.LikeEntity;
 import ru.sentidas.rangiffler.data.entity.photo.PhotoEntity;
+import ru.sentidas.rangiffler.data.entity.photo.PhotoLikeId;
 
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -53,8 +56,34 @@ public class PhotoRepository {
         entityManager.joinTransaction();
 
         PhotoEntity removablePhoto = entityManager.find(PhotoEntity.class, photo.getId());
-        if(removablePhoto !=null) {
+        if (removablePhoto != null) {
             entityManager.remove(removablePhoto);
         }
+    }
+
+    public LikeEntity like(UUID photoId, UUID userId) {
+        entityManager.joinTransaction();
+
+        PhotoLikeId photoLikeId = new PhotoLikeId();
+        photoLikeId.setPhotoId(photoId);
+        photoLikeId.setUserId(userId);
+
+        LikeEntity existing = entityManager.find(LikeEntity.class, photoLikeId);
+        if (existing != null) {
+            return existing;
+        }
+
+        LikeEntity like = new LikeEntity();
+        like.setId(photoLikeId);
+        like.setCreationDate(new Date());
+
+        entityManager.persist(like);
+        entityManager.flush(); // ← принудительно «сбрасываем» INSERT
+        return like;
+
+    }
+
+    public void removeLike(LikeEntity like) {
+
     }
 }

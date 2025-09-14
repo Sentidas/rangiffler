@@ -1,5 +1,6 @@
 package ru.sentidas.rangiffler.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public record TestData(String password,
@@ -8,6 +9,10 @@ public record TestData(String password,
                        List<User> incomeInvitations,
                        List<User> outcomeInvitations
 ) {
+
+    public TestData(String password) {
+        this(password, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    }
 
     public List<String> friendsUsernames() {
         return extractUsernames(friends);

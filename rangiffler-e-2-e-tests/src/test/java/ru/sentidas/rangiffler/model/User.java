@@ -24,6 +24,10 @@ public record User(
         TestData testData
 ) {
 
+    public User(String username, TestData testData) {
+        this(null, username, null, null, null, null, null, null, testData);
+    }
+
     public static User fromEntity(UserEntity entity, FriendshipStatus friendshipStatus) {
         String avatarDataUrl = (entity.getAvatar() != null && entity.getAvatar().length > 0)
                 ? "data:image/png;base64," + Base64.getEncoder().encodeToString(entity.getAvatar())

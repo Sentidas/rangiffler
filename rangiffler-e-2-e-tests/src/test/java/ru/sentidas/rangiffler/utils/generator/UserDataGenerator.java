@@ -1,10 +1,9 @@
 package ru.sentidas.rangiffler.utils.generator;
 
 import com.github.javafaker.Faker;
+import ru.sentidas.rangiffler.model.Photo;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
 public final class UserDataGenerator {
 
@@ -13,8 +12,17 @@ public final class UserDataGenerator {
 
     private static final Random random = new Random();
 
-    private static final List<String> COUNTRY_POOL = List.of(
-            "RU","US","ES","CN","IN","AE","BR","FR","BD","DE"
+    private static final List<String> COUNTRY_USER_LOCATION = List.of(
+            "RU",                  // ru
+            "US","GB","AU","NZ","CA","IE",   // en
+            "ES","MX","AR","CO",             // es
+            "CN",                             // zh-CN
+            "IN",                             // hi
+            "SA","AE","EG","MA",              // ar
+            "PT","BR",                        // pt-PT / pt-BR
+            "FR",                             // fr
+            "BD",                             // bn
+            "DE"                              // de
     );
 
     private static final List<String> FAKER_LOCALES = List.of(
@@ -33,16 +41,15 @@ public final class UserDataGenerator {
                 faker.name().firstName(),
                 faker.name().lastName()
         );
-
     }
 
     private static String pickCountryCode() {
-        return COUNTRY_POOL.get(random.nextInt(COUNTRY_POOL.size()));
+        return COUNTRY_USER_LOCATION.get(random.nextInt(COUNTRY_USER_LOCATION.size()));
     }
 
     // Маппинг страна -> язык/языковой тег.
     // Возвращай короткий язык ("ru") или язык-страну ("pt-BR") — оба корректно обработает forLanguageTag.
-    private static String languageTagByCountry(String cc) {
+    public static String languageTagByCountry(String cc) {
         if (cc == null) return "en";
         switch (cc.trim().toUpperCase(Locale.ROOT)) {
             case "RU":
@@ -88,5 +95,19 @@ public final class UserDataGenerator {
             tag = "en";
         }
         return Locale.forLanguageTag(tag);
+    }
+
+    public static Photo randomPhoto(UUID userId, String userCountryCode, String travelCountryCode) {
+        final String fakerTag = languageTagByCountry(userCountryCode);
+
+        return new Photo(
+                null,
+                userId,
+                RandomDataUtils.randomPhoto(),
+                travelCountryCode,
+                PhotoDescriptions.randomByTag(fakerTag),
+                new Date(),
+                0
+        );
     }
 }

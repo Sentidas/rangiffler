@@ -70,7 +70,7 @@ public class UserEntity implements Serializable {
 
   public static UserEntity from(User user) {
     UserEntity ue = new UserEntity();
-    //ue.setId(user.id());
+    //ue.setId(userId.id());
     ue.setUsername(user.username());
     ue.setFirstname(user.firstname());
     ue.setSurname(user.surname());

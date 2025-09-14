@@ -7,15 +7,15 @@ import java.util.List;
 import java.util.UUID;
 
 public record Like(
-        UUID user,
-        String username,
+        UUID photoId,
+        UUID userId,
         Date creationDate
 
 ) {
     public static Like fromEntity(LikeEntity likeEntity) {
         return new Like(
+                likeEntity.getId().getPhotoId(),
                 likeEntity.getId().getUserId(),
-                null,
                 likeEntity.getCreationDate()
         );
     }
@@ -23,7 +23,7 @@ public record Like(
     // один лайк -> grpc.Like
     public ru.sentidas.rangiffler.grpc.Like toProto() {
         var b = ru.sentidas.rangiffler.grpc.Like.newBuilder()
-                .setUserId(user.toString());
+                .setUserId(userId.toString());
         if (creationDate != null) {
             b.setCreationDate(
                     com.google.protobuf.util.Timestamps.fromMillis(creationDate.getTime())

@@ -48,7 +48,7 @@ public class PhotoEntity {
     public static PhotoEntity fromJson(Photo photo) {
         PhotoEntity fe = new PhotoEntity();
         fe.setId(photo.id());
-        fe.setUser(photo.requesterId());
+        fe.setUser(photo.userId());
         fe.setCountryCode(photo.countryCode());
         fe.setCreatedDate(new Date(photo.creationDate().getTime()));
         fe.setDescription(photo.description());

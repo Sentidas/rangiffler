@@ -78,7 +78,7 @@ grpc:
     grpcPhotoClient:
       address: 'static://localhost:8095'
       negotiationType: PLAINTEXT
-      max-inbound-message-size: 10485760   # 10 MB
+      max-inbound-message-size: 26214400   # 25 MB
 rangiffler-front:
   base-uri: 'http://127.0.0.1:3001'
 rangiffler-gateway:

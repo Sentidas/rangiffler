@@ -135,8 +135,20 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         out.onCompleted();
     }
 
+    private PhotoResponse toProtoWithLikes(Photo photo) {
+        var b = PhotoResponse.newBuilder();
+        photo.toProto(b); // id/src/country/description/creationDate
 
-    private static PhotosPageResponse toProto(Slice<Photo> page) {
+        // добираем лайки из сервиса
+        var likes = java.util.Optional.ofNullable(photoService.photoLikes(photo.id()))
+                .orElseGet(java.util.List::of);
+
+        b.setLikes(ru.sentidas.rangiffler.model.Like.toProtoList(likes)); // total + список
+        return b.build();
+    }
+
+
+    private PhotosPageResponse toProto(Slice<Photo> page) {
         PhotosPageResponse.Builder b = PhotosPageResponse.newBuilder();
         b.setTotalElements(page.getNumberOfElements());
         b.setTotalPages(page.getPageable().getPageSize()); // вместо page.getPageable().getPageSize()
@@ -145,7 +157,7 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         b.setPage(page.getNumber());
         b.setSize(page.getSize());
         for (Photo p : page.getContent()) {
-            b.addContent(toProto(p));
+            b.addContent(toProtoWithLikes(p));
         }
         return b.build();
     }
