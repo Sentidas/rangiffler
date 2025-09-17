@@ -38,7 +38,7 @@ logging:
     org.springframework.transaction: DEBUG
     ru.sentidas.rangiffler: DEBUG
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} trace=%X{trace_id} span=%X{span_id} - %msg%n"
 
 
 rangiffler-userdata:

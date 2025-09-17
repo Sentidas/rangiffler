@@ -19,6 +19,7 @@ dependencies {
     }
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    implementation 'io.opentelemetry:opentelemetry-api:1.28.0'
     implementation "com.google.protobuf:protobuf-java-util:${project.ext.protobufVersion}"
     implementation 'org.springframework.data:spring-data-commons'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
