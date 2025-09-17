@@ -5,9 +5,9 @@ import java.util.List;
 
 public record TestData(String password,
                        List<Photo> photos,
-                       List<User> friends,
-                       List<User> incomeInvitations,
-                       List<User> outcomeInvitations
+                       List<AppUser> friends,
+                       List<AppUser> incomeInvitations,
+                       List<AppUser> outcomeInvitations
 ) {
 
     public TestData(String password) {
@@ -26,8 +26,8 @@ public record TestData(String password,
         return extractUsernames(outcomeInvitations);
     }
 
-    private List<String> extractUsernames(List<User> users) {
-        return users.stream().map(User::username).toList();
+    private List<String> extractUsernames(List<AppUser> users) {
+        return users.stream().map(AppUser::username).toList();
     }
 
     public TestData withUpdatedPhotos(List<Photo> updatedPhotos) {

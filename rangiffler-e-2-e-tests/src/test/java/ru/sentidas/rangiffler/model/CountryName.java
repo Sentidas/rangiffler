@@ -4,7 +4,6 @@ import java.text.Normalizer;
 import java.util.Locale;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Optional;
 
 public enum CountryName {
     TOGO("Togo"),
@@ -261,47 +260,302 @@ public enum CountryName {
         return label;
     }
 
-    // ---------- Поиск по любому написанию ----------
-    private static final Map<String, CountryName> BY_LABEL = new HashMap<>();
-
-    static {
-        for (CountryName c : values()) {
-            // по "оригинальной" строке
-            BY_LABEL.put(normalize(c.label), c);
-            // и по имени константы (с подчёркиваниями/без)
-            BY_LABEL.put(normalize(c.name().replace('_', ' ')), c);
-        }
-    }
-
-    /**
-     * Нормализация строки: lower-case, убрать диакритику, кавычки/скобки/знаки,
-     * свести повторные пробелы.
-     */
+    // ---------- ВНУТРЕННЯЯ УТИЛИТА (нормализация строк) ----------
     private static String normalize(String s) {
         if (s == null) return "";
-        String n = Normalizer.normalize(s, Normalizer.Form.NFD)
-                .replaceAll("\\p{M}+", ""); // убрать диакритику
-        n = n.replace('`', '\'');          // backtick -> апостроф
-        n = n.replace('’', '\'');          // типографский апостроф
-        n = n.replaceAll("[\"()]", " ");   // кавычки/скобки -> пробел
+        String n = Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
+        n = n.replace('`', '\'');            // backtick -> апостроф
+        n = n.replace('’', '\'');            // типографский апостроф
+        n = n.replaceAll("[\"()]", " ");     // кавычки/скобки -> пробел
         n = n.toLowerCase(Locale.ROOT).trim();
-        n = n.replaceAll("[^\\p{L}\\p{Nd}]+", " "); // всё, кроме букв/цифр -> пробел
+        n = n.replaceAll("[^\\p{L}\\p{Nd}]+", " ");
         n = n.replaceAll("\\s+", " ");
         return n;
     }
 
-    /** Жёсткий разбор: бросит IAE, если не найдено. */
-    public static CountryName fromLabel(String anySpelling) {
-        CountryName c = BY_LABEL.get(normalize(anySpelling));
+    // ---------- Индексы ----------
+    /** label/имя → enum (нужно, чтобы найти enum по вашей строке из справочника) */
+    private static final Map<String, CountryName> BY_LABEL = new HashMap<>();
+
+    static {
+        for (CountryName c : values()) {
+            BY_LABEL.put(normalize(c.label), c);
+            BY_LABEL.put(normalize(c.name().replace('_', ' ')), c);
+        }
+    }
+
+    /** Пары [UI-имя из вашего справочника, iso2-код] */
+    private static final String[][] LABEL_CODE_PAIRS = new String[][]{
+            {"Togo","tg"},
+            {"Lao People`s Democratic Republic","la"},
+            {"Mauritania","mr"},
+            {"Nicaragua","ni"},
+            {"Latvia","lv"},
+            {"Oman","om"},
+            {"Afghanistan","af"},
+            {"Cyprus","cy"},
+            {"Benin","bj"},
+            {"Antarctica","aq"},
+            {"China","cn"},
+            {"Colombia","co"},
+            {"Christmas Island","cx"},
+            {"Antigua and Barbuda","ag"},
+            {"Montserrat","ms"},
+            {"Moldova, Republic of","md"},
+            {"Zambia","zm"},
+            {"Viet Nam","vn"},
+            {"French Southern Territories","tf"},
+            {"Chad","td"},
+            {"Mayotte","yt"},
+            {"Lebanon","lb"},
+            {"Luxembourg","lu"},
+            {"Martinique","mq"},
+            {"Czech Republic","cz"},
+            {"United Arab Emirates","ae"},
+            {"Cameroon","cm"},
+            {"Burundi","bi"},
+            {"Argentina","ar"},
+            {"American Samoa","as"},
+            {"Bahrain","bh"},
+            {"Chile","cl"},
+            {"Andorra","ad"},
+            {"Northern Mariana Islands","mp"},
+            {"Lithuania","lt"},
+            {"Madagascar","mg"},
+            {"Saint Lucia","lc"},
+            {"Turkey","tr"},
+            {"Ukraine","ua"},
+            {"Tuvalu","tv"},
+            {"Virgin Islands, U.S.","vi"},
+            {"Malta","mt"},
+            {"Norway","no"},
+            {"Monaco","mc"},
+            {"Switzerland","ch"},
+            {"Aruba","aw"},
+            {"Belize","bz"},
+            {"Bermuda","bm"},
+            {"Cote D`Ivoire","ci"},
+            {"Mauritius","mu"},
+            {"United States","us"},
+            {"Taiwan, Province of China","tw"},
+            {"Yemen","ye"},
+            {"Malawi","mw"},
+            {"Netherlands","nl"},
+            {"Lesotho","ls"},
+            {"Bolivia","bo"},
+            {"Austria","at"},
+            {"Cook Islands","ck"},
+            {"Belarus","by"},
+            {"Australia","au"},
+            {"Brunei Darussalam","bn"},
+            {"Morocco","ma"},
+            {"New Zealand","nz"},
+            {"Liberia","lr"},
+            {"Maldives","mv"},
+            {"Turks and Caicos Islands","tc"},
+            {"Uganda","ug"},
+            {"Trinidad and Tobago","tt"},
+            {"Poland","pl"},
+            {"India","in"},
+            {"Georgia","ge"},
+            {"Greece","gr"},
+            {"South Georgia and the South Sandwich Islands","gs"},
+            {"Grenada","gd"},
+            {"British Indian Ocean Territory","io"},
+            {"Hong Kong","hk"},
+            {"Korea, Democratic People`s Republic of","kp"},
+            {"Kyrgyzstan","kg"},
+            {"Saint Pierre and Miquelon","pm"},
+            {"El Salvador","sv"},
+            {"Reunion","re"},
+            {"Saudi Arabia","sa"},
+            {"Seychelles","sc"},
+            {"Sao Tome and Principe","st"},
+            {"Kenya","ke"},
+            {"Korea, Republic of","kr"},
+            {"French Guiana","gf"},
+            {"Djibouti","dj"},
+            {"Equatorial Guinea","gq"},
+            {"Guadeloupe","gp"},
+            {"Denmark","dk"},
+            {"Israel","il"},
+            {"Pitcairn","pn"},
+            {"Solomon Islands","sb"},
+            {"Paraguay","py"},
+            {"Russian Federation","ru"},
+            {"Kuwait","kw"},
+            {"Dominican Republic","do"},
+            {"Guatemala","gt"},
+            {"United Kingdom","gb"},
+            {"Guam","gu"},
+            {"Heard Island and Mcdonald Islands","hm"},
+            {"Singapore","sg"},
+            {"Pakistan","pk"},
+            {"Suriname","sr"},
+            {"Sweden","se"},
+            {"Japan","jp"},
+            {"Guinea-Bissau","gw"},
+            {"Western Sahara","eh"},
+            {"Algeria","dz"},
+            {"Gabon","ga"},
+            {"France","fr"},
+            {"Dominica","dm"},
+            {"Honduras","hn"},
+            {"Sudan","sd"},
+            {"Rwanda","rw"},
+            {"Philippines","ph"},
+            {"Qatar","qa"},
+            {"Peru","pe"},
+            {"Puerto Rico","pr"},
+            {"Slovenia","si"},
+            {"Haiti","ht"},
+            {"Spain","es"},
+            {"Greenland","gl"},
+            {"Gambia","gm"},
+            {"Eritrea","er"},
+            {"Finland","fi"},
+            {"Estonia","ee"},
+            {"Saint Kitts and Nevis","kn"},
+            {"Hungary","hu"},
+            {"Iraq","iq"},
+            {"Cayman Islands","ky"},
+            {"Saint Helena","sh"},
+            {"Palestinian Territory, Occupied","ps"},
+            {"French Polynesia","pf"},
+            {"Svalbard and Jan Mayen","sj"},
+            {"Indonesia","id"},
+            {"Iceland","is"},
+            {"Egypt","eg"},
+            {"Falkland Islands (Malvinas)","fk"},
+            {"Fiji","fj"},
+            {"Guinea","gn"},
+            {"Guyana","gy"},
+            {"Iran, Islamic Republic of","ir"},
+            {"Comoros","km"},
+            {"Ireland","ie"},
+            {"Kazakhstan","kz"},
+            {"Romania","ro"},
+            {"Slovakia","sk"},
+            {"Papua New Guinea","pg"},
+            {"Portugal","pt"},
+            {"Somalia","so"},
+            {"Croatia","hr"},
+            {"Kiribati","ki"},
+            {"Jamaica","jm"},
+            {"Ecuador","ec"},
+            {"Ethiopia","et"},
+            {"Faroe Islands","fo"},
+            {"Cambodia","kh"},
+            {"Syrian Arab Republic","sy"},
+            {"Senegal","sn"},
+            {"Palau","pw"},
+            {"Sierra Leone","sl"},
+            {"Micronesia, Federated States of","fm"},
+            {"Gibraltar","gi"},
+            {"Germany","de"},
+            {"Ghana","gh"},
+            {"Jordan","jo"},
+            {"Italy","it"},
+            {"Panama","pa"},
+            {"Swaziland","sz"},
+            {"San Marino","sm"},
+            {"Tunisia","tn"},
+            {"Mali","ml"},
+            {"Congo","cg"},
+            {"Angola","ao"},
+            {"Bhutan","bt"},
+            {"Netherlands Antilles","an"},
+            {"Barbados","bb"},
+            {"Central African Republic","cf"},
+            {"Myanmar","mm"},
+            {"Liechtenstein","li"},
+            {"Namibia","na"},
+            {"Mozambique","mz"},
+            {"Tonga","to"},
+            {"Virgin Islands, British","vg"},
+            {"Venezuela","ve"},
+            {"Tanzania, United Republic of","tz"},
+            {"Turkmenistan","tm"},
+            {"Mexico","mx"},
+            {"New Caledonia","nc"},
+            {"Macao","mo"},
+            {"Sri Lanka","lk"},
+            {"Congo, the Democratic Republic of the","cd"},
+            {"Albania","al"},
+            {"Botswana","bw"},
+            {"Costa Rica","cr"},
+            {"Bouvet Island","bv"},
+            {"Armenia","am"},
+            {"Azerbaijan","az"},
+            {"Bosnia and Herzegovina","ba"},
+            {"Mongolia","mn"},
+            {"Niue","nu"},
+            {"Malaysia","my"},
+            {"Timor-Leste","tl"},
+            {"Samoa","ws"},
+            {"Thailand","th"},
+            {"Norfolk Island","nf"},
+            {"Libyan Arab Jamahiriya","ly"},
+            {"Anguilla","ai"},
+            {"Brazil","br"},
+            {"Cape Verde","cv"},
+            {"Belgium","be"},
+            {"Canada","ca"},
+            {"Bangladesh","bd"},
+            {"Bahamas","bs"},
+            {"Nigeria","ng"},
+            {"Macedonia, the Former Yugoslav Republic of","mk"},
+            {"Nepal","np"},
+            {"Holy See (Vatican City State)","va"},
+            {"Uzbekistan","uz"},
+            {"United States Minor Outlying Islands","um"},
+            {"Tokelau","tk"},
+            {"Saint Vincent and the Grenadines","vc"},
+            {"Zimbabwe","zw"},
+            {"Nauru","nr"},
+            {"Niger","ne"},
+            {"Cuba","cu"},
+            {"Burkina Faso","bf"},
+            {"Bulgaria","bg"},
+            {"Cocos (Keeling) Islands","cc"},
+            {"Marshall Islands","mh"},
+            {"South Africa","za"},
+            {"Uruguay","uy"},
+            {"Wallis and Futuna","wf"},
+            {"Vanuatu","vu"},
+            {"Tajikistan","tj"}
+    };
+
+    /** code → enum */
+    private static final Map<String, CountryName> BY_CODE = new HashMap<>();
+
+    static {
+        // 1) уже построен BY_LABEL — используем его, чтобы найти enum по вашему label
+        for (String[] pair : LABEL_CODE_PAIRS) {
+            String label = pair[0];
+            String code  = pair[1];
+            CountryName found = BY_LABEL.get(normalize(label));
+            if (found != null) {
+                BY_CODE.put(code.toUpperCase(Locale.ROOT), found);
+            }
+        }
+    }
+
+    // ---------- ПУБЛИЧНЫЕ МЕТОДЫ ДЛЯ ТЕСТОВ ----------
+    /** Получить enum по ISO-коду (alpha-2). Бросит IAE, если код не найден. */
+    public static CountryName fromCode(String alpha2) {
+        if (alpha2 == null || alpha2.isBlank()) {
+            throw new IllegalArgumentException("Country code must not be null/blank");
+        }
+        CountryName c = BY_CODE.get(alpha2.toUpperCase(Locale.ROOT));
         if (c == null) {
-            throw new IllegalArgumentException("Unknown country: " + anySpelling);
+            throw new IllegalArgumentException("Unknown country code: " + alpha2);
         }
         return c;
     }
 
-    /** Мягкий разбор: Optional.empty(), если не найдено. */
-    public static Optional<CountryName> tryParse(String anySpelling) {
-        return Optional.ofNullable(BY_LABEL.get(normalize(anySpelling)));
+    /** Удобный шорткат: вернуть отображаемое имя по ISO-коду. */
+    public static String labelByCode(String alpha2) {
+        return fromCode(alpha2).label();
     }
 }
-

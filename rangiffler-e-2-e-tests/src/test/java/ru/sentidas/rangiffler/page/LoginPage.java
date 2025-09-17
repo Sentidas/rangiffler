@@ -85,4 +85,9 @@ public class LoginPage extends BasePage<LoginPage> {
         errorAlert.shouldHave(text(alertMessage));
         return this;
     }
+
+    @Override
+    public LoginPage checkThatPageLoaded() {
+        return null;
+    }
 }

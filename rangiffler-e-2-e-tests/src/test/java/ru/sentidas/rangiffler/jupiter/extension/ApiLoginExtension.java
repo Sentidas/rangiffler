@@ -10,7 +10,7 @@ import ru.sentidas.rangiffler.config.Config;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Token;
 import ru.sentidas.rangiffler.model.TestData;
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.page.FeedPage;
 import ru.sentidas.rangiffler.service.AuthApiClient;
 
@@ -44,15 +44,15 @@ public class ApiLoginExtension implements BeforeEachCallback, ParameterResolver 
         AnnotationSupport.findAnnotation(context.getRequiredTestMethod(), ApiLogin.class)
                 .ifPresent(apiLogin -> {
 
-                    final User userToLogin;
-                    final User userFromUserExtension = UserExtension.createdUser();
+                    final AppUser userToLogin;
+                    final AppUser userFromUserExtension = UserExtension.createdUser();
                     if ("".equals(apiLogin.username()) || "".equals(apiLogin.password())) {
                         if (userFromUserExtension == null) {
                             throw new IllegalStateException("@User must be present in case that @ApiLogin is empty!");
                         }
                         userToLogin = userFromUserExtension;
                     } else {
-                        User fakeUser = new User(
+                        AppUser fakeUser = new AppUser(
                                 apiLogin.username(),
                                 new TestData(
                                         apiLogin.password()

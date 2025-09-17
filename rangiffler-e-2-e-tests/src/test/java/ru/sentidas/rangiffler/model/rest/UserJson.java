@@ -7,7 +7,7 @@ import ru.sentidas.rangiffler.data.entity.userdata.FriendshipStatus;
 import ru.sentidas.rangiffler.data.entity.userdata.UserEntity;
 import ru.sentidas.rangiffler.model.Photo;
 import ru.sentidas.rangiffler.model.TestData;
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -76,9 +76,9 @@ public record UserJson(
   }
 
   public UserJson withUsers(List<Photo> photos,
-                            List<User> friends,
-                            List<User> outcomeInvitations,
-                            List<User> incomeInvitations) {
+                            List<AppUser> friends,
+                            List<AppUser> outcomeInvitations,
+                            List<AppUser> incomeInvitations) {
     return withTestData(
         new TestData(
             testData.password(),

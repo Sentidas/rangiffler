@@ -6,7 +6,7 @@ import ru.sentidas.rangiffler.page.LoginPage;
 import ru.sentidas.rangiffler.page.RegisterPage;
 import ru.sentidas.rangiffler.utils.generator.RandomDataUtils;
 
-public class RegisterTests {
+public class RegisterTest {
 
     @Test
     void successRegistration() {

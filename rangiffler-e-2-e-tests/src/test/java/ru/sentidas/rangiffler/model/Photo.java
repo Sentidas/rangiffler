@@ -21,6 +21,10 @@ public record Photo(
         int likesTotal
 ) {
 
+    public Photo withLikesTotal(int newTotal) {
+        return new Photo(id, userId, src, countryCode, description, creationDate, newTotal);
+    }
+
     public static Photo fromEntity(PhotoEntity photoEntity) {
 
         String srcDataUrl = null;

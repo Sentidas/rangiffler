@@ -71,4 +71,9 @@ public class RegisterPage extends BasePage<RegisterPage> {
         errorAlert.shouldHave(text(alertMessage));
         return this;
     }
+
+    @Override
+    public RegisterPage checkThatPageLoaded() {
+        return null;
+    }
 }

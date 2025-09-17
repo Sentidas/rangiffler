@@ -1,27 +1,27 @@
 package ru.sentidas.rangiffler.service;
 
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 
 import java.util.List;
 import java.util.Optional;
 
 public interface UsersClient {
 
-    User createUser(String username, String password);
+    AppUser createUser(String username, String password);
 
-    User createFullUser(User user);
+    AppUser createFullUser(AppUser user);
 
-    User updateUser(String username, User user);
+    AppUser updateUser(String username, AppUser user);
 
     void removeUser(String username);
 
-    List<User>  createIncomeInvitations(User targetUser, int count);
+    List<AppUser>  createIncomeInvitations(AppUser targetUser, int count);
 
-    List<User> createOutcomeInvitations(User targetUser, int count);
+    List<AppUser> createOutcomeInvitations(AppUser targetUser, int count);
 
-    List<User>  addFriends(User targetUser, int count);
+    List<AppUser>  addFriends(AppUser targetUser, int count);
 
-    Optional<User> findUserByUsername(String username);
+    Optional<AppUser> findUserByUsername(String username);
 
 
 }

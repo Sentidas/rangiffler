@@ -2,7 +2,7 @@ buildscript {
     ext {
         junitVersion = '5.11.4'
         allureVersion = '2.29.0'
-        selenideVersion = '7.7.1'
+        selenideVersion = '7.9.4'
         okhttp3Version = '3.14.9'
         retrofitVersion = '2.11.0'
         apollographqlVersion = '0.0.2'
@@ -20,9 +20,6 @@ buildscript {
         wiremockVersion = '3.0.1'
         fakerVersion = '1.0.2'
         ashotVersion = '1.5.4'
-     //   userdataWsdlUrl = System.getProperty("test.env") == "docker"
-                ? "http://userdata.niffler.dc:8089/ws/userdata.wsdl"
-                : "http://127.0.0.1:8089/ws/userdata.wsdl"
     }
 }
 
@@ -98,7 +95,7 @@ dependencies {
     // Assert
     testImplementation 'org.assertj:assertj-core:3.27.3'
     // Utils
-   // testImplementation "ru.yandex.qatools.ashot:ashot:${ashotVersion}"
+    testImplementation "ru.yandex.qatools.ashot:ashot:${ashotVersion}"
     testImplementation("com.github.javafaker:javafaker:${fakerVersion}") {
         exclude group: 'org.yaml'
     }

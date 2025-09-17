@@ -3,7 +3,7 @@ package ru.sentidas.rangiffler.test.fake;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import ru.sentidas.rangiffler.jupiter.extension.UsersClientExtension;
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.service.UsersClient;
 
 @ExtendWith(UsersClientExtension.class)
@@ -26,8 +26,8 @@ public class UserTest {
 
     @Test
     void updateUser() {
-        User updatedUser =
-                new User(
+        AppUser updatedUser =
+                new AppUser(
                         null,
                         "duck",
                         "murk",
@@ -44,8 +44,8 @@ public class UserTest {
 
     @Test
     void createOutcomeInvitations() {
-        User targetUser =
-                new User(
+        AppUser targetUser =
+                new AppUser(
                         null,
                         "duck",
                         null,
@@ -61,8 +61,8 @@ public class UserTest {
 
     @Test
     void createIncomeInvitations() {
-        User targetUser =
-                new User(
+        AppUser targetUser =
+                new AppUser(
                         null,
                         "fox",
                         null,
@@ -78,8 +78,8 @@ public class UserTest {
 
     @Test
     void addFriends() {
-        User targetUser =
-                new User(
+        AppUser targetUser =
+                new AppUser(
                         null,
                         "mink41",
                         null,

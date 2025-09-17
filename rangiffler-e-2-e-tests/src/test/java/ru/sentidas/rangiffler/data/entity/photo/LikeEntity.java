@@ -9,7 +9,7 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
-@Table(name = "`like`")
+@Table(name = "photo_like")
 public class LikeEntity {
 
     @EmbeddedId

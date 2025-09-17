@@ -2,17 +2,13 @@ package ru.sentidas.rangiffler.model;
 
 import ru.sentidas.rangiffler.data.entity.userdata.FriendshipStatus;
 import ru.sentidas.rangiffler.data.entity.userdata.UserEntity;
-import ru.sentidas.rangiffler.grpc.UpdateUserRequest;
 import ru.sentidas.rangiffler.grpc.UserResponse;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.UUID;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-public record User(
+public record AppUser(
         UUID id,
         String username,
         String firstname,
@@ -24,11 +20,11 @@ public record User(
         TestData testData
 ) {
 
-    public User(String username, TestData testData) {
+    public AppUser(String username, TestData testData) {
         this(null, username, null, null, null, null, null, null, testData);
     }
 
-    public static User fromEntity(UserEntity entity, FriendshipStatus friendshipStatus) {
+    public static AppUser fromEntity(UserEntity entity, FriendshipStatus friendshipStatus) {
         String avatarDataUrl = (entity.getAvatar() != null && entity.getAvatar().length > 0)
                 ? "data:image/png;base64," + Base64.getEncoder().encodeToString(entity.getAvatar())
                 : null;
@@ -37,7 +33,7 @@ public record User(
                 ? "data:image/png;base64," + Base64.getEncoder().encodeToString(entity.getAvatarSmall())
                 : null;
 
-        return new User(
+        return new AppUser(
                 entity.getId(),
                 entity.getUsername(),
                 entity.getFirstname(),
@@ -56,7 +52,7 @@ public record User(
         );
     }
 
-    public User withPassword(String password) {
+    public AppUser withPassword(String password) {
         return withTestData(
                 new TestData(
                         password,
@@ -68,8 +64,8 @@ public record User(
         );
     }
 
-    public User withTestData(TestData testData) {
-        return new User(
+    public AppUser withTestData(TestData testData) {
+        return new AppUser(
                 id,
                 username,
                 firstname,
@@ -82,7 +78,8 @@ public record User(
         );
     }
 
-    public static User fromEntity(UserEntity userEntity) {
+
+    public static AppUser fromEntity(UserEntity userEntity) {
         return fromEntity(userEntity, null);
     }
 

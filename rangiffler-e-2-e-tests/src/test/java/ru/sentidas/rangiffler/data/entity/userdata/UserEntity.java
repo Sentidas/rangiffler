@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 
 import java.io.Serializable;
 import java.util.*;
@@ -68,7 +68,7 @@ public class UserEntity implements Serializable {
 //  }
 
 
-  public static UserEntity from(User user) {
+  public static UserEntity from(AppUser user) {
     UserEntity ue = new UserEntity();
     //ue.setId(userId.id());
     ue.setUsername(user.username());

@@ -13,7 +13,7 @@ import ru.sentidas.rangiffler.data.repository.impl.AuthUserRepository;
 import ru.sentidas.rangiffler.data.repository.impl.UserDataUserRepository;
 import ru.sentidas.rangiffler.data.tpl.XaTransactionTemplate;
 import ru.sentidas.rangiffler.model.TestData;
-import ru.sentidas.rangiffler.model.User;
+import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.utils.generator.RandomDataUtils;
 import ru.sentidas.rangiffler.utils.generator.UserData;
 import ru.sentidas.rangiffler.utils.generator.UserDataGenerator;
@@ -43,10 +43,10 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     @Override
     @Step("Create userId with username '{0}' using SQL INSERT")
     @Nonnull
-    public User createUser(String username, String password) {
+    public AppUser createUser(String username, String password) {
         return requireNonNull(
                 xaTxTemplate.execute(
-                        () -> User.fromEntity(
+                        () -> AppUser.fromEntity(
                                 createNewUser(username, password),
                                 null
                         ).withPassword(password)
@@ -58,10 +58,10 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     @Override
     @Step("Create userId with username '{0}' using SQL INSERT")
     @Nonnull
-    public User createFullUser(User user) {
+    public AppUser createFullUser(AppUser user) {
         return requireNonNull(
                 xaTxTemplate.execute(
-                        () -> User.fromEntity(
+                        () -> AppUser.fromEntity(
                                 createNewUser(user),
                                 null
                         ).withPassword(defaultPassword)
@@ -86,7 +86,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     }
 
     @Step("Update userId '{0}' using SQL")
-    public User updateUser(String username, User updatedUser) {
+    public AppUser updateUser(String username, AppUser updatedUser) {
         return xaTxTemplate.execute(() -> {
 
             //  String username  = Optional.of(authUserRepository.findByUsername(updatedUser.username()));
@@ -138,16 +138,16 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 
             userdataUserRepository.update(user);
 
-            return User.fromEntity(user, null);
+            return AppUser.fromEntity(user, null);
         });
     }
 
 
     @Step("Get userId '{0}' using SQL")
-    public Optional<User> findUserByUsername(String username) {
+    public Optional<AppUser> findUserByUsername(String username) {
         return xaTxTemplate.execute(() ->
                 userdataUserRepository.findByUsername(username)
-                        .map(entity -> User.fromEntity(entity, null))
+                        .map(entity -> AppUser.fromEntity(entity, null))
         );
     }
 
@@ -180,8 +180,8 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 //    }
 
     @Step("Create {1} income invitation using SQL")
-    public List<User> createIncomeInvitations(User targetUser, int count) {
-        List<User> incomeInvitations = new ArrayList<>();
+    public List<AppUser> createIncomeInvitations(AppUser targetUser, int count) {
+        List<AppUser> incomeInvitations = new ArrayList<>();
 
         if (count > 0) {
             UserEntity targetEntity = userdataUserRepository.findByUsername(
@@ -189,14 +189,14 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
             ).orElseThrow();
 
             for (int i = 0; i < count; i++) {
-                User inviter = xaTxTemplate.execute(() -> {
+                AppUser inviter = xaTxTemplate.execute(() -> {
 
                     String username = RandomDataUtils.randomUsername();
-                    User full = randomFullUserModel();
+                    AppUser full = randomFullUserModel();
                     UserEntity fromUser = createNewUser(full);
 
                     userdataUserRepository.sendInvitation(fromUser, targetEntity);
-                    return User.fromEntity(fromUser, null).withPassword(defaultPassword);
+                    return AppUser.fromEntity(fromUser, null).withPassword(defaultPassword);
                 });
                 incomeInvitations.add(inviter);
             }
@@ -231,8 +231,8 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 //    }
 //
    @Step("Create {1} outcome invitation using SQL")
-    public List<User> createOutcomeInvitations(User targetUser, int count) {
-        List<User> outcomeInvitations = new ArrayList<>();
+    public List<AppUser> createOutcomeInvitations(AppUser targetUser, int count) {
+        List<AppUser> outcomeInvitations = new ArrayList<>();
 
         if (count > 0) {
             UserEntity targetEntity = userdataUserRepository.findByUsername(
@@ -242,12 +242,12 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
             for (int i = 0; i < count; i++) {
                 String username = RandomDataUtils.randomUsername();
 
-                User invitee = xaTxTemplate.execute(() -> {
-                    User full = randomFullUserModel();                 // кого приглашаем
+                AppUser invitee = xaTxTemplate.execute(() -> {
+                    AppUser full = randomFullUserModel();                 // кого приглашаем
                     UserEntity toUser = createNewUser(full);
 
                     userdataUserRepository.sendInvitation(targetEntity, toUser);
-                    return User.fromEntity(toUser, null).withPassword(defaultPassword);
+                    return AppUser.fromEntity(toUser, null).withPassword(defaultPassword);
                 });
                 outcomeInvitations.add(invitee);
             }
@@ -281,8 +281,8 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
 //        return friends;
 //    }
     @Step("Add {1} friends for userId using SQL INSERT")
-    public List<User> addFriends(User targetUser, int count) {
-        List<User> friends = new ArrayList<>();
+    public List<AppUser> addFriends(AppUser targetUser, int count) {
+        List<AppUser> friends = new ArrayList<>();
 
         if (count > 0) {
             UserEntity targetEntity = userdataUserRepository.findByUsername(
@@ -292,12 +292,12 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
             for (int i = 0; i < count; i++) {
                 String username = RandomDataUtils.randomUsername();
 
-                User friend = xaTxTemplate.execute(() -> {
-                    User full = randomFullUserModel();                 // << генерация полной модели
+                AppUser friend = xaTxTemplate.execute(() -> {
+                    AppUser full = randomFullUserModel();                 // << генерация полной модели
                     UserEntity created = createNewUser(full);
 
                     userdataUserRepository.addFriend(targetEntity, created);
-                    return User.fromEntity(created, null).withPassword(defaultPassword);
+                    return AppUser.fromEntity(created, null).withPassword(defaultPassword);
                 });
                 friends.add(friend);
             }
@@ -332,7 +332,7 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     }
 
     @Nonnull
-    private UserEntity createNewUser(User user) {
+    private UserEntity createNewUser(AppUser user) {
         AuthUserEntity authUser = authUserEntity(user.username(), user.testData().password());
         authUserRepository.create(authUser);
         UserEntity userEntity = UserEntity.from(user);
@@ -370,14 +370,14 @@ public class UsersDbClient implements ru.sentidas.rangiffler.service.UsersClient
     }
 
     // общий помощник: сгенерить ПОЛНУЮ модель юзера (имя/фамилия/страна/аватар/пароль)
-    private User randomFullUserModel() {
+    private AppUser randomFullUserModel() {
         UserData userData = UserDataGenerator.randomUser();  // country, first, last
         String avatar = RandomDataUtils.randomAvatar();  // data:image/png;base64,...
 
-        return new User(
+        return new AppUser(
                 null,
                 RandomDataUtils.randomUsername(),
-                userData.firstName(),
+                userData.firstname(),
                 userData.surname(),
                 avatar,
                 null,

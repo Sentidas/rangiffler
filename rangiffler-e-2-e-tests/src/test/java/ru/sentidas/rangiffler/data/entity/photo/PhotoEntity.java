@@ -3,6 +3,7 @@ package ru.sentidas.rangiffler.data.entity.photo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import ru.sentidas.rangiffler.model.Like;
 import ru.sentidas.rangiffler.model.Photo;
 
 import java.util.Base64;
@@ -52,7 +53,7 @@ public class PhotoEntity {
         fe.setCountryCode(photo.countryCode());
         fe.setCreatedDate(new Date(photo.creationDate().getTime()));
         fe.setDescription(photo.description());
-        // 🔽 Конвертируем base64 → byte[]
+        // Конвертируем base64 → byte[]
         if (photo.src() != null && photo.src().startsWith("data:image")) {
             String base64 = photo.src().substring(photo.src().indexOf(",") + 1);
             fe.setPhoto(Base64.getDecoder().decode(base64));
