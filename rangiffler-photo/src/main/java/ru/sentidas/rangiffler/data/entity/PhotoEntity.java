@@ -37,8 +37,4 @@ public class PhotoEntity {
     @Column(name = "created_date", nullable = false)
     private Date createdDate;
 
-//    // Односторонняя связь на лайки: FK в таблице photo_like (колонка photo_id)
-//    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "photo_id", referencedColumnName = "id")
-//    private Set<LikeEntity> likes = new HashSet<>();
 }

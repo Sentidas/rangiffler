@@ -32,7 +32,7 @@ public record Photo(
 
         return new Photo(
                 photoEntity.getId(),
-                null,
+                photoEntity.getUser(),
                 srcDataUrl,
                 photoEntity.getCountryCode(),
                 photoEntity.getDescription(),

@@ -9,6 +9,7 @@ version = '1.0'
 
 dependencies {
     implementation project(':rangiffler-grpc-common')
+    implementation project(':rangiffler-events-common')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation('org.springframework.boot:spring-boot-starter-web-services') {

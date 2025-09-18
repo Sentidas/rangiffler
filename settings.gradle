@@ -6,5 +6,7 @@ include 'rangiffler-geo'
 include 'rangiffler-photo'
 include 'rangiffler-e-2-e-tests'
 include 'rangiffler-grpc-common'
+include 'rangiffler-events-common'
+include 'rangiffler-event-log'
 
 

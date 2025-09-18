@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.service;
 
 import jakarta.annotation.Nonnull;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,24 +12,29 @@ import org.springframework.data.domain.Slice;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.sentidas.rangiffler.config.ActivityPublisher;
 import ru.sentidas.rangiffler.data.entity.FriendshipEntity;
 import ru.sentidas.rangiffler.data.entity.FriendshipStatus;
 import ru.sentidas.rangiffler.data.entity.UserEntity;
 import ru.sentidas.rangiffler.data.projection.UserWithStatus;
 import ru.sentidas.rangiffler.data.repository.FriendshipRepository;
 import ru.sentidas.rangiffler.data.repository.UserRepository;
+import ru.sentidas.rangiffler.events.ActivityEvent;
+import ru.sentidas.rangiffler.events.EventType;
 import ru.sentidas.rangiffler.ex.NotFoundException;
 import ru.sentidas.rangiffler.ex.SameUsernameException;
 import ru.sentidas.rangiffler.model.User;
 import ru.sentidas.rangiffler.model.UserBulk;
 import ru.sentidas.rangiffler.model.UserEvent;
 
+import java.time.Instant;
 import java.util.*;
 
 
-@Component
-@Transactional
+@Service
+@RequiredArgsConstructor
 public class UserService {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
@@ -36,13 +42,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final FriendshipRepository friendshipRepository;
+    private final ActivityPublisher activityPublisher;
 
-
-    @Autowired
-    public UserService(UserRepository userRepository, FriendshipRepository friendshipRepository) {
-        this.userRepository = userRepository;
-        this.friendshipRepository = friendshipRepository;
-    }
 
     @Transactional
     @KafkaListener(topics = "rangiffler_user", groupId = "userdata")
@@ -319,9 +320,28 @@ public class UserService {
         invite.setStatus(FriendshipStatus.PENDING);
         invite.setCreatedDate(new Date());
 
-        friendshipRepository.save(invite);   // <-- сохраняем сам инвайт
-        return User.fromEntity(targetUser, ru.sentidas.rangiffler.model.FriendshipStatus.INVITATION_SENT);
+        friendshipRepository.save(invite);// <-- сохраняем сам инвайт
 
+        User currentUserJson = User.fromEntity(currentUser);
+        User targetUserJson = User.fromEntity(targetUser);
+
+        User user = User.fromEntity(targetUser, ru.sentidas.rangiffler.model.FriendshipStatus.INVITATION_SENT);
+
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.FRIEND_INVITE_SENT,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                currentUserJson.id(),                 // инициатор
+                null,                       // фото
+                targetUserJson.id(),                        // targetUserId: кому отправляем
+                "userdata",                       // sourceService
+                payload                        // свободные поля
+        ));
+        return user;
     }
 
     public User acceptInvitation(String username, String targetId) {
@@ -357,7 +377,26 @@ public class UserService {
             reverse.setStatus(FriendshipStatus.ACCEPTED);
             friendshipRepository.save(reverse);
         }
-        return User.fromEntity(inviteUser, ru.sentidas.rangiffler.model.FriendshipStatus.FRIEND);
+
+        User currentUserJson = User.fromEntity(currentUser);
+        User targetUserJson = User.fromEntity(inviteUser);
+        User user = User.fromEntity(inviteUser, ru.sentidas.rangiffler.model.FriendshipStatus.FRIEND);
+
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.FRIEND_INVITE_ACCEPTED,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                currentUserJson.id(),                 // инициатор
+                null,                       // фото
+                targetUserJson.id(),                         // targetUserId: кто акцептнул
+                "userdata",                       // sourceService
+                payload                        // свободные поля
+        ));
+        return user;
     }
 
     public User declineInvitation(String username, String targetId) {
@@ -374,7 +413,27 @@ public class UserService {
 
         friendshipRepository.delete(invite);
 
-        return User.fromEntity(inviteUser, null);
+
+        User currentUserJson = User.fromEntity(currentUser);
+        User targetUserJson = User.fromEntity(inviteUser);
+        User user = User.fromEntity(inviteUser, null);
+
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.FRIEND_INVITE_DECLINED,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                currentUserJson.id(),                 // инициатор
+                null,                       // фото
+                targetUserJson.id(),                        // targetUserId: кто отказалася
+                "userdata",                       // sourceService
+                payload                        // свободные поля
+        ));
+
+        return user;
     }
 
     public void deleteFriend(String username, String targetId) {
@@ -391,6 +450,22 @@ public class UserService {
         if (changeAddresseeEntity != null) {
             friendshipRepository.delete(changeAddresseeEntity);
         }
-        User.fromEntity(deletedUser, null);
+        User user = User.fromEntity(deletedUser, null);
+        User currentUserJson = User.fromEntity(currentUser);
+        User targetUserJson = User.fromEntity(deletedUser);
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.FRIEND_REMOVED,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                currentUserJson.id(),                 // инициатор
+                null,                       // фото
+                targetUserJson.id(),                        // targetUserId: кого удалили
+                "userdata",                       // sourceService
+                payload                        // свободные поля
+        ));
     }
 }

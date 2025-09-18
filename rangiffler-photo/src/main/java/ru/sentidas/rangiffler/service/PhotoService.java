@@ -9,11 +9,14 @@ import org.springframework.data.domain.Slice;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.sentidas.rangiffler.config.ActivityPublisher;
 import ru.sentidas.rangiffler.data.entity.LikeEntity;
 import ru.sentidas.rangiffler.data.entity.PhotoEntity;
 import ru.sentidas.rangiffler.data.entity.PhotoLikeId;
 import ru.sentidas.rangiffler.data.repository.LikeRepository;
 import ru.sentidas.rangiffler.data.repository.PhotoRepository;
+import ru.sentidas.rangiffler.events.ActivityEvent;
+import ru.sentidas.rangiffler.events.EventType;
 import ru.sentidas.rangiffler.grpc.client.GrpcUserdataClient;
 import ru.sentidas.rangiffler.model.CreatePhoto;
 import ru.sentidas.rangiffler.model.Like;
@@ -22,6 +25,7 @@ import ru.sentidas.rangiffler.model.PhotoStatEvent;
 import ru.sentidas.rangiffler.utils.NotFoundException;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -34,6 +38,7 @@ public class PhotoService {
     private final GrpcUserdataClient grpcUserdataClient;
     private final KafkaTemplate<String, PhotoStatEvent> kafkaTemplate;
     private final LikeRepository likeRepository;
+    private final ActivityPublisher activityPublisher;
 
     @Transactional
     public Photo addPhoto(@Nonnull CreatePhoto createPhoto) {
@@ -46,6 +51,23 @@ public class PhotoService {
         photo.setUser(createPhoto.userId());
         PhotoEntity saved = photoRepository.save(photo);
 
+        Photo newPhoto = Photo.fromEntity(saved);
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (newPhoto.countryCode() != null) payload.put("countryCode", newPhoto.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.PHOTO_ADDED,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                newPhoto.requesterId(),                 // actor: кто удалил
+                newPhoto.id(),                       // фото
+                newPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
+                "photo",                       // sourceService
+                payload                        // свободные поля
+        ));
+
+
         PhotoStatEvent photoStatEvent = new PhotoStatEvent(
                 saved.getUser(),
                 saved.getCountryCode(),
@@ -55,7 +77,8 @@ public class PhotoService {
         kafkaTemplate.send("rangiffler_photo", photoStatEvent);
         LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
 
-        return Photo.fromEntity(saved);
+
+        return newPhoto;
     }
 
     @Transactional
@@ -73,8 +96,25 @@ public class PhotoService {
             photoEntity.setDescription(photo.description());
         }
         setPhoto(photoEntity, photo.src());
-
         PhotoEntity updated = photoRepository.save(photoEntity);
+
+        Photo updatedPhoto = Photo.fromEntity(
+                photoRepository.save(updated));
+
+        //  добавляем: бизнес-событие для лога
+        Map<String, Object> payload = new HashMap<>();
+        if (photo.countryCode() != null) payload.put("countryCode", photo.countryCode());
+
+        activityPublisher.publish(new ActivityEvent(
+                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                EventType.PHOTO_UPDATED,       // тип события
+                Instant.now(),                 // occurredAt (UTC)
+                updatedPhoto.requesterId(),                 // actor: кто удалил
+                updatedPhoto.id(),                       // фото
+                updatedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
+                "photo",                       // sourceService
+                payload                        // свободные поля
+        ));
 
         PhotoStatEvent photoStatEvent = new PhotoStatEvent(
                 updated.getUser(),
@@ -85,9 +125,7 @@ public class PhotoService {
         kafkaTemplate.send("rangiffler_photo", photoStatEvent);
         LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
 
-        return Photo.fromEntity(
-                photoRepository.save(updated)
-        );
+        return updatedPhoto;
     }
 
     private void setPhoto(PhotoEntity photoEntity, String src) {
@@ -162,6 +200,20 @@ public class PhotoService {
             kafkaTemplate.send("rangiffler_photo", photoStatEvent);
             LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
 
+            // добавляем: бизнес-событие для лога
+            Map<String, Object> payload = new HashMap<>();
+            if (countryCode != null) payload.put("countryCode", countryCode);
+
+            activityPublisher.publish(new ActivityEvent(
+                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                    EventType.PHOTO_DELETED,       // тип события
+                    Instant.now(),                 // occurredAt (UTC)
+                    requesterId,                   // actor: кто удалил
+                    photoId,                       // фото
+                    userId,                        // targetUserId: владелец фото (можно null, если не нужно)
+                    "photo",                       // sourceService
+                    payload                        // свободные поля
+            ));
 
         } else
             throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Can`t access to photo");
@@ -198,17 +250,48 @@ public class PhotoService {
         id.setUserId(requesterId);
         id.setPhotoId(photoId);
 
+        PhotoEntity requiredPhoto = getRequiredPhoto(photoId);
+        Photo likedPhoto = Photo.fromEntity(requiredPhoto);
+        Map<String, Object> payload = new HashMap<>();
+
         if (likeRepository.existsById(id)) {
             likeRepository.deleteById(id);
+
+            if (likedPhoto.countryCode() != null) payload.put("countryCode", likedPhoto.countryCode());
+
+            activityPublisher.publish(new ActivityEvent(
+                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                    EventType.LIKE_REMOVED,       // тип события
+                    Instant.now(),                 // occurredAt (UTC)
+                    requesterId,                   // actor: кто удалил
+                    likedPhoto.id(),                       // фото
+                    likedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
+                    "photo",                       // sourceService
+                    payload                        // свободные поля
+            ));
+
         }
         else {
             LikeEntity like = new LikeEntity();
             like.setId(id);
             like.setCreationDate(new Date());
             likeRepository.save(like);
+
+            if (likedPhoto.countryCode() != null) payload.put("countryCode", likedPhoto.countryCode());
+            activityPublisher.publish(new ActivityEvent(
+                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
+                    EventType.LIKE_ADDED,       // тип события
+                    Instant.now(),                 // occurredAt (UTC)
+                    requesterId,                   // actor: кто удалил
+                    likedPhoto.id(),                       // фото
+                    likedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
+                    "photo",                       // sourceService
+                    payload                        // свободные поля
+            ));
+
         }
 
-        return Photo.fromEntity(photoEntity);
+        return likedPhoto;
     }
 
     private boolean userHasFullAccessToPhoto(@Nonnull UUID userId, @Nonnull PhotoEntity photo) {

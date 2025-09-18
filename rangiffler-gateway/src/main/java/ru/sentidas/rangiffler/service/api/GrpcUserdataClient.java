@@ -31,6 +31,16 @@ public class GrpcUserdataClient {
         return UserProtoMapper.fromProto(userResponse);
     }
 
+    public UserGql currentUserById(String id) {
+
+        UserIdRequest request = UserIdRequest.newBuilder()
+                .setUserId(id)
+                .build();
+
+        UserResponse userResponse = GrpcCall.run(() -> stub.currentUserById(request), SERVICE);
+        return UserProtoMapper.fromProto(userResponse);
+    }
+
     public Slice<UserGql> friends(String username, PageRequest pageRequest, String searchQuery) {
         UserPageRequest request = buildPageRequest(username, pageRequest, searchQuery);
         UsersPageResponse response = GrpcCall.run(() -> stub.allFriendsPage(request), SERVICE);
@@ -104,12 +114,18 @@ public class GrpcUserdataClient {
         if (friendshipInput.user() == null) {
             throw new IllegalArgumentException("ID targetUsername is required");
         }
+
         FriendshipRequest request = FriendshipRequest.newBuilder()
                 .setUsername(username)
                 .setUser(friendshipInput.user().toString())
                 .build();
         GrpcCall.runVoid(() -> stub.removeFriend(request), SERVICE);
-        return currentUser(username);
+
+        UserGql userGql = new UserGql(
+                friendshipInput.user(),
+                username, null, null, null, null, null, null);
+
+        return userGql;
     }
 
     public UserGql sendInvitation(String username, FriendshipInput friendshipInput) {
