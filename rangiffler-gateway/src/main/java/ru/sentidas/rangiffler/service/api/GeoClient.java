@@ -9,6 +9,8 @@ public interface GeoClient {
 
     Country getByCode(String code);
 
+    List<Country> getByCodes(List<String> codes);
+
     List<Country> countries();
 
     List<Stat> stat(String username, boolean withFriends);

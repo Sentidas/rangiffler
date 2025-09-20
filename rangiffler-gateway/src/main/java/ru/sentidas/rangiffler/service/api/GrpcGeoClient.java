@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.service.api;
 
 import com.google.protobuf.Empty;
+import io.opentelemetry.api.trace.Span;
 import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.model.Stat;
 import ru.sentidas.rangiffler.model.ggl.input.Country;
@@ -9,7 +10,6 @@ import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
 
 
 @Component
@@ -28,13 +28,23 @@ public class GrpcGeoClient implements GeoClient {
 
 
     @Override
-    // @Cacheable(cacheNames =  "countries", key = "#code")  // надо включить кэш если использовать
     public Country getByCode(String code) {
         CodeRequest request = CodeRequest.newBuilder()
                 .setCode(code)
                 .build();
 
         CountryResponse response = GrpcCall.run(() -> stub.getByCode(request), SERVICE);
+        return fromProto(response);
+    }
+
+    @Override
+    public List<Country> getByCodes(List<String> codes) {
+     //   Span.current().setAttribute("geo.codes.count", codes.size());
+        CodesRequest request = CodesRequest.newBuilder()
+                .addAllCodes(codes)
+                .build();
+
+        CountriesResponse response = GrpcCall.run(() -> stub.getByCodes(request), SERVICE);
         return fromProto(response);
     }
 

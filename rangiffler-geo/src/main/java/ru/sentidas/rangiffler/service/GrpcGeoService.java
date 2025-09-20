@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.service;
 
 import io.grpc.stub.StreamObserver;
+
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,16 @@ public class GrpcGeoService extends RangifflerGeoServiceGrpc.RangifflerGeoServic
     public void getByCode(CodeRequest request, StreamObserver<CountryResponse> responseObserver) {
         Country country = geoService.getByCode(request.getCode());
         responseObserver.onNext(toProto(country));
+        responseObserver.onCompleted();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public void getByCodes(CodesRequest request, StreamObserver<CountriesResponse> responseObserver) {
+      //  Span.current()
+        //        .setAttribute("geo.codes.count", request.getCodesCount());
+        List<Country> countries = geoService.getByCodes(request.getCodesList());
+        responseObserver.onNext(toProto(countries));
         responseObserver.onCompleted();
     }
 

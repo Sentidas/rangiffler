@@ -14,7 +14,7 @@ spring:
       enabled: true
       props:
         resources:
-          version: "2.4.7"  # Явно указываем версию
+          version: "2.4.7"
           query: default-query.graphql
         variables:
           editorTheme: "light"
@@ -23,11 +23,8 @@ spring:
     schema:
       introspection:
         enabled: true
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: 'http://127.0.0.1:9001'
+    observation:               # <-- ДОБАВЛЕНО: включаем GraphQL Observation
+      enabled: true
 
 logging:
   level:
@@ -40,13 +37,17 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} trace=%X{trace_id} span=%X{span_id} - %msg%n"
 
-
 rangiffler-userdata:
   client: grpc
 
 rangiffler-geo:
   client: grpc
 
+management:                   # <-- ДОБАВЛЕНО: включаем Micrometer Tracing
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0        # 100% семплинг для локальной отладки
 
 ---
 spring:
@@ -66,19 +67,21 @@ spring:
   graphql:
     graphiql:
       enabled: true
+
 grpc:
   client:
     grpcUserdataClient:
       address: 'static://localhost:8087'
       negotiationType: PLAINTEXT
-      max-inbound-message-size: 10485760   # 10 MB
+      max-inbound-message-size: 10485760
     grpcGeoClient:
       address: 'static://localhost:8086'
       negotiationType: PLAINTEXT
     grpcPhotoClient:
       address: 'static://localhost:8095'
       negotiationType: PLAINTEXT
-      max-inbound-message-size: 26214400   # 25 MB
+      max-inbound-message-size: 26214400
+
 rangiffler-front:
   base-uri: 'http://127.0.0.1:3001'
 rangiffler-gateway:

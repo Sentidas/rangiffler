@@ -39,6 +39,7 @@ spring:
     generate-ddl: true
     open-in-view: false
 
+
 logging:
   file:
     path: ./logs/rangiffler-geo
@@ -89,4 +90,18 @@ rangiffler-userdata:
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
 ---
-
+spring:
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  cache:
+    type: redis   # говорим Spring: кэш хранить в Redis, а не в памяти
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics  # открываем нужные эндпоинты Actuator
+  endpoint:
+    health:
+      show-details: always  # чтобы /actuator/health показывал детали (в т.ч. redis)

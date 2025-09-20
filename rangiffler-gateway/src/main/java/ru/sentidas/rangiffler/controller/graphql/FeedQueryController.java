@@ -58,23 +58,23 @@ public class FeedQueryController {
         );
     }
 
-    @SchemaMapping(typeName = "Photo", field = "country")
-    public Country country(Photo photo) {
-        String code = photo.countryCode();
-
-        if (code == null || code.isBlank()) {
-            log.warn("Photo {} has empty countryCode, returning Unknown", photo.id());
-            return unknownCountry();
-        }
-
-        Country c = grpcGeoClient.getByCode(code);
-        if (c == null) {
-            log.warn("Country not found for code={}, photo={}, returning Unknown", code, photo.id());
-            return unknownCountry();
-        }
-        log.info("Resolving Photo.country for photo {}", photo.id());
-        return c;
-    }
+//    @SchemaMapping(typeName = "Photo", field = "country")
+//    public Country country(Photo photo) {
+//        String code = photo.countryCode();
+//
+//        if (code == null || code.isBlank()) {
+//            log.warn("Photo {} has empty countryCode, returning Unknown", photo.id());
+//            return unknownCountry();
+//        }
+//
+//        Country c = grpcGeoClient.getByCode(code);
+//        if (c == null) {
+//            log.warn("Country not found for code={}, photo={}, returning Unknown", code, photo.id());
+//            return unknownCountry();
+//        }
+//        log.info("Resolving Photo.country for photo {}", photo.id());
+//        return c;
+//    }
 
     private Country unknownCountry() {
         // Подгони под свой конструктор/record Country(flag, code, name)
