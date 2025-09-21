@@ -86,3 +86,22 @@ rangiffler-userdata:
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
 ---
+minio:
+  endpoint: http://localhost:9002     # ваши проброшенные порты
+  access-key: root
+  secret-key: rootroot
+
+app:
+  media:
+    bucket: rangiffler-media
+    public-base-url: http://localhost:9002/rangiffler-media
+    storage:
+      default: OBJECT               # OBJECT или BLOB
+      auto-migrate-on-update: true  # если режим в yaml сменили — запись мигрнёт при update
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+

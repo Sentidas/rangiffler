@@ -92,3 +92,14 @@ rangiffler-geo:
   base-uri: 'http://127.0.0.1:8085'
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
+
+minio:
+  endpoint: http://127.0.0.1:9002   # gateway стартует локально, MinIO проброшен на 9002
+  access-key: root
+  secret-key: rootroot
+
+app:
+  public-base-url: http://127.0.0.1:${server.port}   # ВАЖНО: абсолютный адрес gateway
+  media:
+    bucket: rangiffler-media
+    cache-max-age-seconds: 31536000

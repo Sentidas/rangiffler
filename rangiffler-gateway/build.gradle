@@ -11,6 +11,8 @@ version = '2.1.2'
 dependencies {
     implementation project(':rangiffler-grpc-common')
 
+    implementation 'io.minio:minio:8.5.9'
+
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-web'
