@@ -2,12 +2,14 @@ package ru.sentidas.rangiffler.page.component;
 
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
+import ru.sentidas.rangiffler.page.FeedPage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-import static com.codeborne.selenide.Condition.text;
-import static com.codeborne.selenide.Condition.visible;
+import java.time.Duration;
+
+import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.$$;
 
@@ -66,9 +68,11 @@ public class CreatePhoto extends BaseComponent<CreatePhoto> {
 
   @Step("Click submit button to create new spending")
   @Nonnull
-  public CreatePhoto savePhoto() {
-    saveBtn.click();
-    return this;
+  public FeedPage savePhoto() {
+    saveBtn.shouldBe(visible, enabled).click();
+    getSelf().should(disappear, Duration.ofSeconds(10));
+    $("div.MuiSnackbar-root").shouldBe(visible, Duration.ofSeconds(10));
+    return new FeedPage();
   }
 
   @Step("Click submit button to create new spending")

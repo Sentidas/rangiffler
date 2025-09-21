@@ -109,14 +109,15 @@ public class ProfileTest {
     @User
     @ApiLogin
     @ScreenShotTest(value = "screenshots/expected-avatar.png")
-    void updateAvatarUserProfile(BufferedImage expectedAvatar) {
-
+    void updateAvatarUserProfile(BufferedImage expectedAvatar, AppUser user) {
+        final String username = user.username();
+        System.out.println(username);
         ProfilePage profile = Selenide.open(ProfilePage.URL, ProfilePage.class)
                 .uploadPhotoFromClasspath("avatar/4.png")
                 .save();
 
         profile.checkAvatarExist()
                 .checkAvatar(expectedAvatar)
-                .checkAlert("Your profile is successfully updated");
+                .checkAlert("Your profile is successfully updated4");
     }
 }

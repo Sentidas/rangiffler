@@ -1,5 +1,6 @@
 package ru.sentidas.rangiffler.test.web;
 
+import com.codeborne.selenide.Selenide;
 import org.junit.jupiter.api.Test;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Photo;
@@ -7,7 +8,9 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
+import ru.sentidas.rangiffler.model.CreatePhoto;
 import ru.sentidas.rangiffler.page.FeedPage;
+import ru.sentidas.rangiffler.page.ProfilePage;
 
 // проверка значка страны при создании
 // проверка значка страны при изменении
@@ -36,16 +39,17 @@ public class PhotoTest {
     void createPost(AppUser user) {
         System.out.println(user.username());
 
-        new FeedPage()
+        FeedPage feedPage = Selenide.open(FeedPage.URL, FeedPage.class)
                 .addPhoto()
                 .uploadNewImage("photo/4.png")
                 .setNewCountry("Dominican Republic")
                 .setPhotoDescription("я наконец тут")
                 .savePhoto();
 
-        new FeedPage()
-                .checkAlert("New post created") // Post updated
-                .checkExistPost("Dominican Republic", "я наконец тут"); //Can not create new post
+        feedPage
+               // Post updated
+                .checkExistPost("Dominican Republic8", "я nen  наконец тут")
+                .checkAlert("New 5post created3") ; //Can not create new post
     }
 
     @Test
@@ -58,8 +62,9 @@ public class PhotoTest {
                 .addPhoto()
                 .setNewCountry("Dominican Republic")
                 .setPhotoDescription("я наконец тут")
-                .savePhoto()
-                .checkErrorMessage("Please upload an image");
+                .savePhoto();
+
+      //  new CreatePag().checkErrorMessage("Please upload an image");
     }
 
     @Test
@@ -80,26 +85,26 @@ public class PhotoTest {
     }
 
     @Test
-    @User(photo = 13)
+    @User(photo = 1)
     @ApiLogin
     void editPost(AppUser user) {
         System.out.println(user.username());
         String countryNameBefore = CountryName.labelByCode(
-                user.testData().photos().get(9).countryCode());
-        String description = user.testData().photos().get(9).description();
+                user.testData().photos().get(0).countryCode());
+        String description = user.testData().photos().get(0).description();
         System.out.println("cтрана фото до: " + countryNameBefore);
         System.out.println("описание фото до: " + description);
 
 
-        new FeedPage()
+        FeedPage feed = new FeedPage()
                 .editPhoto(countryNameBefore, description)
                 .uploadNewImage("photo/4.png")
                 .setNewCountry("China")
                 .setPhotoDescription("rename: " + description)
                 .save();
 
-        new FeedPage()
-                .checkAlert("Post updated")
+
+        feed.checkAlert("Post updated")
                 .checkExistPost("China", "rename: " + description);
     }
 

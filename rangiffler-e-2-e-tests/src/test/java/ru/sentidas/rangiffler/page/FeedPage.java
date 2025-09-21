@@ -38,7 +38,7 @@ public class FeedPage extends BasePage<FeedPage> {
     private final SelenideElement withFriendsBtn = $("button[value=friends]");
     private final SelenideElement onlyMysBtn = $("button[value=my]");
     private final SelenideElement likeBtn = $("button[label=like]");
-    private final SelenideElement likeIcon = $("data-testid=FavoriteOutlinedIcon");
+    private final SelenideElement likeIcon = $("[data-testid=FavoriteOutlinedIcon]");
     // div.MuiPaper-elevation3
     @Step("Add new photo")
     @Nonnull

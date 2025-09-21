@@ -1,8 +1,10 @@
 package ru.sentidas.rangiffler.page.component;
 
+import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
 import org.openqa.selenium.Keys;
+import ru.sentidas.rangiffler.page.FeedPage;
 
 import javax.annotation.Nonnull;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -82,9 +84,16 @@ public class EditPhoto extends BaseComponent<EditPhoto> {
 
   @Step("Click submit button to edit photo")
   @Nonnull
-  public EditPhoto save() {
-    saveBtn.click();
-    return this;
+  public FeedPage save() {
+    saveBtn.shouldBe(visible, enabled).click();
+
+    // 1) Диалог закрылся
+    getSelf().should(disappear, Duration.ofSeconds(10));
+
+    // 2) Пришёл snackbar (текст проверишь уже через BasePage.checkAlert)
+    $("div.MuiSnackbar-root").shouldBe(visible, Duration.ofSeconds(10));
+
+    return new FeedPage();
   }
 
   @Step("Click submit button to edit photo")

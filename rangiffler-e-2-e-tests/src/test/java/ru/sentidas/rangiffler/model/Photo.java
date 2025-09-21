@@ -25,19 +25,32 @@ public record Photo(
         return new Photo(id, userId, src, countryCode, description, creationDate, newTotal);
     }
 
-    public static Photo fromEntity(PhotoEntity photoEntity) {
+//        if (photoEntity.getPhoto() != null) {
+//            // Конвертируем byte[] в Data URL
+//            String base64src = Base64.getEncoder().encodeToString(photoEntity.getPhoto());
+//            srcDataUrl = "data:image/png;base64," + base64src;
+//        }
 
-        String srcDataUrl = null;
-        if (photoEntity.getPhoto() != null) {
-            // Конвертируем byte[] в Data URL
-            String base64src = Base64.getEncoder().encodeToString(photoEntity.getPhoto());
-            srcDataUrl = "data:image/png;base64," + base64src;
-        }
+        //  ЧТЕНИЕ из Entity: если есть ключ (photo_url) — отдаём его; иначе собираем data URL из BLOB
+        public static Photo fromEntity(PhotoEntity photoEntity) {
+            String srcValue;
+
+            if (photoEntity.getPhotoUrl() != null && !photoEntity.getPhotoUrl().isBlank()) {
+                // новый режим: ключ (relative path), например "photos/.../file.png"
+                srcValue = photoEntity.getPhotoUrl();
+            } else if (photoEntity.getPhoto() != null) {
+                // старый режим: data URL из BLOB
+                String base64src = Base64.getEncoder().encodeToString(photoEntity.getPhoto());
+                // по умолчанию пусть будет png (в тестах формат не критичен)
+                srcValue = "data:image/png;base64," + base64src;
+            } else {
+                srcValue = null;
+            }
 
         return new Photo(
                 photoEntity.getId(),
                 photoEntity.getUser(),
-                srcDataUrl,
+                srcValue,
                 photoEntity.getCountryCode(),
                 photoEntity.getDescription(),
                 photoEntity.getCreatedDate(),

@@ -7,6 +7,7 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.Photo;
 import ru.sentidas.rangiffler.service.GeoDbClient;
+import ru.sentidas.rangiffler.service.PhotoApiClient;
 import ru.sentidas.rangiffler.service.PhotoDbClient;
 import ru.sentidas.rangiffler.utils.generator.PhotoDescriptions;
 import ru.sentidas.rangiffler.utils.generator.RandomDataUtils;
@@ -18,7 +19,7 @@ import static ru.sentidas.rangiffler.utils.generator.UserDataGenerator.languageT
 public class PhotoExtension implements BeforeEachCallback, ParameterResolver {
 
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(PhotoExtension.class);
-    private final PhotoDbClient photoClient = new PhotoDbClient();
+    private final PhotoApiClient photoClient = new PhotoApiClient();
     private final GeoDbClient geoClient = new GeoDbClient();
 
 

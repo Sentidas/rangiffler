@@ -32,9 +32,16 @@ public class PhotoEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storage", nullable = false)
+    private StorageType storage = StorageType.OBJECT;
+
     @Lob
     @Column(columnDefinition = "LONGBLOB")
-    private byte[] photo;
+    private byte[] photo; // для режима BLOB
+
+    @Column(name = "photo_url", length = 512)
+    private String photoUrl; // для режима OBJECT (ключ MinIO или http)
 
 
     @Temporal(TemporalType.TIMESTAMP)

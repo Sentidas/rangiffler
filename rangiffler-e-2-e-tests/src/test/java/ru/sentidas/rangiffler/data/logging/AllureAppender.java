@@ -55,8 +55,12 @@ public class AllureAppender extends StdoutLogger {
       );
       processor.addAttachment(data, new FreemarkerAttachmentRenderer(TEMPLATE));
     } catch (Throwable t) {
-      // Никогда не валим тест из-за отчётности — логнём в консоль по-старому
-      super.logSQL(connectionId, now, elapsed, category, prepared, sql, url);
+//      // Никогда не валим тест из-за отчётности — логнём в консоль по-старому
+//      super.logSQL(connectionId, now, elapsed, category, prepared, sql, url);
+      // раньше было: super.logSQL(...); — это и сыпало SQL в консоль
+      // делаем тихо, максимум логируем саму ошибку без SQL:
+      org.slf4j.LoggerFactory.getLogger(getClass())
+              .warn("Allure SQL attachment failed: {}", t.toString());
     }
   }
 }

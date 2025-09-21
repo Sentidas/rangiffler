@@ -11,7 +11,7 @@
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="true" />
+            <property name="hibernate.show_sql"   value="false" />
             <property name="hibernate.format_sql" value="true" />
         </properties>
     </persistence-unit>
@@ -25,7 +25,7 @@
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="true" />
+            <property name="hibernate.show_sql"   value="false" />
             <property name="hibernate.format_sql" value="true" />
         </properties>
     </persistence-unit>
@@ -39,7 +39,7 @@
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="true" />
+            <property name="hibernate.show_sql"   value="false" />
             <property name="hibernate.format_sql" value="true" />
         </properties>
 
@@ -53,7 +53,7 @@
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
-            <property name="hibernate.show_sql"   value="true" />
+            <property name="hibernate.show_sql"   value="false" />
             <property name="hibernate.format_sql" value="true" />
         </properties>
     </persistence-unit>
