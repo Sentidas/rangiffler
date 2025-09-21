@@ -41,6 +41,7 @@ public class SecurityConfigLocal {
                                 "/actuator/health",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
+                                "/media/**",
                                 "/graphiql/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/graphql").permitAll() // если хотите оставить /graphql публичным

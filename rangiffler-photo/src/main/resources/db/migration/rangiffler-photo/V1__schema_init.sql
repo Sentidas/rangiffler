@@ -1,19 +1,22 @@
-create table if not exists `photo`
+CREATE TABLE IF NOT EXISTS `photo`
 (
-    id                      binary(16) unique not null,
-    user_id                 binary(16)        not null,
-    country_code            char(2)        not null,
-    `description`           text,
-    photo                   longblob,
-    created_date            datetime not null,
-    primary key (id)
-);
+    `id`           BINARY(16)             NOT NULL,
+    `user_id`      BINARY(16)             NOT NULL,
+    `country_code` CHAR(2)                NOT NULL,
+    `description`  TEXT                   NULL,
+    `storage`      ENUM ('OBJECT','BLOB') NOT NULL DEFAULT 'OBJECT',
+    `photo`        LONGBLOB               NULL, -- для режима BLOB
+    `photo_url`    VARCHAR(512)           NULL, -- для режима OBJECT (ключ MinIO)
+    `created_date` DATETIME               NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_photo_user_created` (`user_id`, `created_date`),
+    KEY `idx_photo_created` (`created_date`)
+) ENGINE = InnoDB;
 
-
-create table if not exists `photo_like`
+CREATE TABLE IF NOT EXISTS `photo_like`
 (
-    photo_id                 binary(16)        not null,
-    user_id                  binary(16)        not null,
-    created_date            datetime not null,
-    primary key (photo_id, user_id)
-);
+    `photo_id`     BINARY(16) NOT NULL,
+    `user_id`      BINARY(16) NOT NULL,
+    `created_date` DATETIME   NOT NULL,
+    PRIMARY KEY (`photo_id`, `user_id`)
+) ENGINE = InnoDB;

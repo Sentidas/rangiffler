@@ -3,6 +3,7 @@ package ru.sentidas.rangiffler.service.api;
 import com.google.protobuf.util.Timestamps;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -26,15 +27,21 @@ public class GrpcPhotoClient {
 
     private final GrpcUserdataClient grpcUserdataClient;
 
+    // Базовый публичный адрес gateway для сборки абсолютных URL, например: http://127.0.0.1:8081
+    private static String BASE_URL = "";
+
+    @Autowired
+    public GrpcPhotoClient(
+            GrpcUserdataClient grpcUserdataClient,
+            @Value("${app.public-base-url:}") String baseUrl
+    ) {
+        this.grpcUserdataClient = grpcUserdataClient;
+        // убрать хвостовые слэши и сохранить в статике для использования в статических мапперах
+        BASE_URL = baseUrl == null ? "" : baseUrl.replaceAll("/+$", "");
+    }
 
     @GrpcClient("grpcPhotoClient")
     private RangifflerPhotoServiceGrpc.RangifflerPhotoServiceBlockingStub stub;
-
-    @Autowired
-    public GrpcPhotoClient(GrpcUserdataClient grpcUserdataClient) {
-        this.grpcUserdataClient = grpcUserdataClient;
-    }
-
 
     public Photo createPhoto(String username, PhotoInput photoInput) {
         final String userId = grpcUserdataClient.currentUser(username).id().toString();
@@ -166,11 +173,24 @@ public class GrpcPhotoClient {
                 ? response.getLikes().getTotal()
                 : 0;
 
+        // В gRPC src = относительный ключ (object key) из БД, например "photos/.../file.png"
+        String key = response.getSrc();
+        String src = key;
+
+        if (key != null && !key.isBlank() && !key.startsWith("http")) {
+            // Абсолютный URL на gateway, чтобы фронт на :3001 не пытался обслужить /media сам
+            if (BASE_URL != null && !BASE_URL.isBlank()) {
+                src = BASE_URL + "/media/" + key;
+            } else {
+                // Фолбэк: относительный URL, если BASE_URL не задан
+                src = "/media/" + key;
+            }
+        }
         ru.sentidas.rangiffler.model.Likes likesWrapper = new ru.sentidas.rangiffler.model.Likes(total, likeList);
 
         return new Photo(
                 UUID.fromString(response.getPhotoId()),
-                response.getSrc(),
+                src,
                 response.getCountryCode(),
                 response.getDescription(),
                 createdDate,

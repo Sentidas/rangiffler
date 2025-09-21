@@ -11,6 +11,8 @@ dependencies {
     implementation project(':rangiffler-grpc-common')
     implementation project(':rangiffler-events-common')
 
+    implementation 'io.minio:minio:8.5.9'
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation('org.springframework.boot:spring-boot-starter-web-services') {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
