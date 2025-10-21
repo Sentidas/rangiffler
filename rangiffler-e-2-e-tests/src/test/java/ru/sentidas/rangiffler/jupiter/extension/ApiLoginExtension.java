@@ -18,7 +18,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 import static ru.sentidas.rangiffler.jupiter.extension.TestMethodContextExtension.context;
 
-
 @ParametersAreNonnullByDefault
 public class ApiLoginExtension implements BeforeEachCallback, ParameterResolver {
 
