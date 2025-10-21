@@ -1,0 +1,7 @@
+mutation FriendshipAction($input: FriendshipInput!) {
+    friendship(input: $input) {
+        id
+        username
+        friendStatus
+    }
+}

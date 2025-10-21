@@ -1,0 +1,15 @@
+mutation UpdatePhoto($input: PhotoInput!) {
+    photo(input: $input) {
+        id
+        src
+        country {
+            code
+            name
+            flag
+        }
+        description
+        likes {
+            total
+        }
+    }
+}
