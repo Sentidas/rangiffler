@@ -26,18 +26,6 @@ public record AppUser(
         this(null, username, null, null, null, null, null, countryCode, testData);
     }
 
-    public AppUser(UUID id, String username, String firstname, String surname, String avatar, String avatarSmall, FriendshipStatus friendshipStatus, String countryCode, TestData testData) {
-        this.id = id;
-        this.username = username;
-        this.firstname = firstname;
-        this.surname = surname;
-        this.avatar = avatar;
-        this.avatarSmall = avatarSmall;
-        this.friendshipStatus = friendshipStatus;
-        this.countryCode = countryCode;
-        this.testData = testData;
-    }
-
     public static AppUser fromEntity(UserEntity entity, FriendshipStatus friendshipStatus) {
 
         return new AppUser(
