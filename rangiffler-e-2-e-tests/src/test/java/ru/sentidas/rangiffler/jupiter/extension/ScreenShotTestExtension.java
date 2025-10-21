@@ -41,7 +41,28 @@ public class ScreenShotTestExtension implements ParameterResolver, TestExecution
     @Override
     public BufferedImage resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         ScreenShotTest screenShotTest = extensionContext.getRequiredTestMethod().getAnnotation(ScreenShotTest.class);
-        return ImageIO.read(new ClassPathResource(screenShotTest.value()).getInputStream());
+
+        String[] files = screenShotTest.files();
+        if (files.length > 0) {
+            int pos = 0;
+
+            for (int i = 0; i < parameterContext.getIndex(); i++) {
+                if (parameterContext.getDeclaringExecutable()
+                        .getParameters()[i].getType().isAssignableFrom(BufferedImage.class)) {
+                    pos++;
+                }
+            }
+            if (pos >=files.length) {
+              throw new ParameterResolutionException("Not enough files in @ScreenShotTest.files()"); // [ADDED]
+
+            }
+            return ImageIO.read(new ClassPathResource(files[pos]).getInputStream());
+        }
+        if (!screenShotTest.value().isEmpty()) {
+            return ImageIO.read(new ClassPathResource(screenShotTest.value()).getInputStream());
+
+        }
+        throw new ParameterResolutionException("@ScreenShotTest must define value or files");
     }
 
 
@@ -91,9 +112,8 @@ public class ScreenShotTestExtension implements ParameterResolver, TestExecution
                     ImageIO.write(actual, "png", new File("src/test/resources/" + screenShotTest.value()));
                 }
             }
-
-            throw throwable;
         }
+        throw throwable;
     }
 
     public static void setExpected(BufferedImage expected) {

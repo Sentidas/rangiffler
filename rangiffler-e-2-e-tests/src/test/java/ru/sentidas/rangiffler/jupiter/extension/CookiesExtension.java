@@ -3,7 +3,7 @@ package ru.sentidas.rangiffler.jupiter.extension;
 
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import ru.sentidas.rangiffler.api.core.ThreadSafeCookieStore;
+import ru.sentidas.rangiffler.rest.core.ThreadSafeCookieStore;
 
 public class CookiesExtension implements AfterTestExecutionCallback {
 

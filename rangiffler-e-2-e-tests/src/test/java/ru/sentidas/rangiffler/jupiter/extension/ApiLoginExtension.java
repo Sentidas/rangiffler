@@ -5,7 +5,7 @@ import com.codeborne.selenide.WebDriverRunner;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
 import org.openqa.selenium.Cookie;
-import ru.sentidas.rangiffler.api.core.ThreadSafeCookieStore;
+import ru.sentidas.rangiffler.rest.core.ThreadSafeCookieStore;
 import ru.sentidas.rangiffler.config.Config;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Token;

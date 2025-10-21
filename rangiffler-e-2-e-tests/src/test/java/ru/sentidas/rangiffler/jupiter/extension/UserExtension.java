@@ -2,150 +2,85 @@ package ru.sentidas.rangiffler.jupiter.extension;
 
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
-import ru.sentidas.rangiffler.model.TestData;
+import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
+import ru.sentidas.rangiffler.model.TestData;
 import ru.sentidas.rangiffler.service.UsersClient;
 import ru.sentidas.rangiffler.service.UsersDbClient;
-import ru.sentidas.rangiffler.utils.generator.RandomDataUtils;
-import ru.sentidas.rangiffler.utils.generator.UserData;
-import ru.sentidas.rangiffler.utils.generator.UserDataGenerator;
+import ru.sentidas.rangiffler.utils.generation.GenerationDataUser;
+import ru.sentidas.rangiffler.utils.generation.UserData;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UserExtension implements BeforeEachCallback, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(UserExtension.class);
 
     private static final String defaultPassword = "12345";
-    private final UsersClient usersClient = new UsersDbClient();
+    private final UsersClient usersDbClient = new UsersDbClient();
 
     @Override
     public void beforeEach(ExtensionContext context) {
+        System.out.println("[INFO] Userdata storage mode: " + usersDbClient.getStorageMode());
 
-        AnnotationSupport.findAnnotation(context.getRequiredTestMethod(), ru.sentidas.rangiffler.jupiter.annotaion.User.class)
+        AnnotationSupport.findAnnotation(context.getRequiredTestMethod(), User.class)
                 .ifPresent(anno -> {
                     AppUser user;
 
-                    if (anno.empty() == false) {
-
-                        if ("".equals(anno.username())) {
-                            // Случай 1: username не задан — создаём нового
-                            final String username = RandomDataUtils.randomUsername();
-                            final UserData userData = UserDataGenerator.randomUser();
-                            final String firstName = userData.firstname();
-                            final String surname = userData.surname();
-                            final String countryCode = userData.countryCode();
-                            final String avatar = RandomDataUtils.randomAvatar();
-
-                            AppUser createdUser = new AppUser(
-                                    null,
-                                    username,
-                                    firstName,
-                                    surname,
-                                    avatar,
-                                    null,
-                                    null,
-                                    countryCode,
-                                    new TestData(
-                                            defaultPassword,
-                                            new ArrayList<>(), // photos
-                                            new ArrayList<>(), // friends
-                                            new ArrayList<>(), // incomeInvitations
-                                            new ArrayList<>()  // outcomeInvitations
-                                    )
-                            );
-
-                            user = usersClient.createFullUser(createdUser);
-
-                            List<AppUser> friends = new ArrayList<>();
-                            List<AppUser> incomeInvitations = new ArrayList<>();
-                            List<AppUser> outcomeInvitations = new ArrayList<>();
-
-                            if (anno.friends() > 0) {
-                                friends = usersClient.addFriends(user, anno.friends());
-                            }
-                            if (anno.incomeInvitation() > 0) {
-                                incomeInvitations = usersClient.createIncomeInvitations(user, anno.incomeInvitation());
-                            }
-                            if (anno.outcomeInvitation() > 0) {
-                                outcomeInvitations = usersClient.createOutcomeInvitations(user, anno.outcomeInvitation());
-                            }
-
-                            user.testData().friends().addAll(friends);
-                            user.testData().incomeInvitations().addAll(incomeInvitations);
-                            user.testData().outcomeInvitations().addAll(outcomeInvitations);
-
-                        } else {
-                            // Случай 2: username задан — ищем, если не найден в БД - пока ошибка
-                            user = usersClient.findUserByUsername(anno.username())
-                                    .orElseThrow(() -> new IllegalStateException("User " + anno.username() + " not found"))
-                                    .withPassword(defaultPassword);
-                        }
-
-                        // cоздаем пустого user
+                    // 1) Если username задан — берем из БД
+                    if (!anno.username().isBlank()) {
+                        user = usersDbClient.findUserByUsername(anno.username()).withPassword(defaultPassword);
                     } else {
-                        if ("".equals(anno.username())) {
-                            // Случай 1: username не задан — создаём нового
-                            final String username = RandomDataUtils.randomUsername();
-                            final String countryCode = "RU";
-
-                            AppUser createdUser = new AppUser(
-                                    null,
-                                    username,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    countryCode,
-                                    new TestData(
-                                            defaultPassword,
-                                            new ArrayList<>(), // photos
-                                            new ArrayList<>(), // friends
-                                            new ArrayList<>(), // incomeInvitations
-                                            new ArrayList<>()  // outcomeInvitations
-                                    )
-                            );
-
-                            user = usersClient.createFullUser(createdUser);
-
-                            List<AppUser> friends = new ArrayList<>();
-                            List<AppUser> incomeInvitations = new ArrayList<>();
-                            List<AppUser> outcomeInvitations = new ArrayList<>();
-
-                            if (anno.friends() > 0) {
-                                friends = usersClient.addFriends(user, anno.friends());
-                            }
-                            if (anno.incomeInvitation() > 0) {
-                                incomeInvitations = usersClient.createIncomeInvitations(user, anno.incomeInvitation());
-                            }
-                            if (anno.outcomeInvitation() > 0) {
-                                outcomeInvitations = usersClient.createOutcomeInvitations(user, anno.outcomeInvitation());
-                            }
-
-                            user.testData().friends().addAll(friends);
-                            user.testData().incomeInvitations().addAll(incomeInvitations);
-                            user.testData().outcomeInvitations().addAll(outcomeInvitations);
-
+                        // 2) Иначе создаём по флагу full
+                        if (anno.full()) {
+                            user = usersDbClient.createFullUser(randomFullUser());
                         } else {
-                            // Случай 2: username задан — ищем, если не найден в БД - пока ошибка
-                            user = usersClient.findUserByUsername(anno.username())
-                                    .orElseThrow(() -> new IllegalStateException("User " + anno.username() + " not found"))
-                                    .withPassword(defaultPassword);
+                            user = usersDbClient.createUser(GenerationDataUser.randomUsername(), defaultPassword);
                         }
                     }
+
+                    // 3) Друзья (минимальные/полные)
+                    if (anno.friends() > 0) {
+                        usersDbClient.addFriends(user, anno.friends())
+                                .forEach(f -> user.testData().friends().add(f));
+                    }
+                    if (anno.fullFriends() > 0) {
+                        usersDbClient.addFullFriends(user, anno.fullFriends())
+                                .forEach(f -> user.testData().friends().add(f));
+                    }
+
+                    // 4) Входящие инвайты (друг -> user): минимальные + полные
+                    if (anno.incomeInvitation() > 0) {
+                        usersDbClient.createIncomeInvitations(user, anno.incomeInvitation(), false)
+                                .forEach(inv -> user.testData().incomeInvitations().add(inv));
+                    }
+                    if (anno.fullIncomeInvitation() > 0) {
+                        usersDbClient.createIncomeInvitations(user, anno.fullIncomeInvitation(), true)
+                                .forEach(inv -> user.testData().incomeInvitations().add(inv));
+                    }
+
+                    // 5) Исходящие инвайты (user -> друг): минимальные + полные
+                    if (anno.outcomeInvitation() > 0) {
+                        usersDbClient.createOutcomeInvitations(user, anno.outcomeInvitation(), false)
+                                .forEach(out -> user.testData().outcomeInvitations().add(out));
+                    }
+                    if (anno.fullOutcomeInvitation() > 0) {
+                        usersDbClient.createOutcomeInvitations(user, anno.fullOutcomeInvitation(), true)
+                                .forEach(out -> user.testData().outcomeInvitations().add(out));
+                    }
+
                     setUser(user);
                 });
     }
 
     @Override
-    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+    public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws
+            ParameterResolutionException {
         return parameterContext.getParameter().getType().isAssignableFrom(AppUser.class);
     }
 
     @Override
-    public AppUser resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+    public AppUser resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws
+            ParameterResolutionException {
         return createdUser();
     }
 
@@ -160,5 +95,22 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
     public static @Nullable AppUser createdUser() {
         final ExtensionContext context = TestMethodContextExtension.context();
         return context.getStore(NAMESPACE).get(context.getUniqueId(), AppUser.class);
+    }
+
+    private AppUser randomFullUser() {
+        final String username = GenerationDataUser.randomUsername();
+        final UserData userdata = GenerationDataUser.randomUser();
+        final String avatar = GenerationDataUser.randomAvatarDataUrl();
+        return new AppUser(
+                null,
+                username,
+                userdata.firstname(),
+                userdata.surname(),
+                avatar,
+                null,
+                null,
+                userdata.countryCode(),
+                new TestData(defaultPassword)
+        );
     }
 }

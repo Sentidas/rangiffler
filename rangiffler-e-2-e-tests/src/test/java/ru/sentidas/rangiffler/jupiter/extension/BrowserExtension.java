@@ -27,7 +27,7 @@ public class BrowserExtension implements
 
   @Override
   public void beforeEach(ExtensionContext context) throws Exception {
-    Configuration.browserSize = "1920x1080";
+    // Configuration.browserSize = "1920x1080";
     SelenideLogger.addListener("Allure-selenide", new AllureSelenide()
         .savePageSource(false)
         .screenshots(false)
