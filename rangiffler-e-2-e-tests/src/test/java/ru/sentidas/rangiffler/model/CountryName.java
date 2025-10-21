@@ -1,9 +1,7 @@
 package ru.sentidas.rangiffler.model;
 
 import java.text.Normalizer;
-import java.util.Locale;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.*;
 
 public enum CountryName {
     TOGO("Togo"),
@@ -21,7 +19,7 @@ public enum CountryName {
     CHRISTMAS_ISLAND("Christmas Island"),
     ANTIGUA_AND_BARBUDA("Antigua and Barbuda"),
     MONTSERRAT("Montserrat"),
-    MOLDOVA_REPUBLIC_OF("\"Moldova, Republic of\""),
+    MOLDOVA_REPUBLIC_OF("Moldova, Republic of"),
     ZAMBIA("Zambia"),
     VIET_NAM("Viet Nam"),
     FRENCH_SOUTHERN_TERRITORIES("French Southern Territories"),
@@ -46,7 +44,7 @@ public enum CountryName {
     TURKEY("Turkey"),
     UKRAINE("Ukraine"),
     TUVALU("Tuvalu"),
-    VIRGIN_ISLANDS_US("\"Virgin Islands, U.S.\""),
+    VIRGIN_ISLANDS_US("Virgin Islands, U.S."),
     MALTA("Malta"),
     NORWAY("Norway"),
     MONACO("Monaco"),
@@ -57,7 +55,7 @@ public enum CountryName {
     COTE_D_IVOIRE("Cote D`Ivoire"),
     MAURITIUS("Mauritius"),
     UNITED_STATES("United States"),
-    TAIWAN_PROVINCE_OF_CHINA("\"Taiwan, Province of China\""),
+    TAIWAN_PROVINCE_OF_CHINA("Taiwan, Province of China"),
     YEMEN("Yemen"),
     MALAWI("Malawi"),
     NETHERLANDS("Netherlands"),
@@ -83,7 +81,7 @@ public enum CountryName {
     GRENADA("Grenada"),
     BRITISH_INDIAN_OCEAN_TERRITORY("British Indian Ocean Territory"),
     HONG_KONG("Hong Kong"),
-    KOREA_DEMOCRATIC_PEOPLES_REPUBLIC_OF("\"Korea, Democratic People`s Republic of\""),
+    KOREA_DEMOCRATIC_PEOPLES_REPUBLIC_OF("Korea, Democratic People`s Republic of"),
     KYRGYZSTAN("Kyrgyzstan"),
     SAINT_PIERRE_AND_MIQUELON("Saint Pierre and Miquelon"),
     EL_SALVADOR("El Salvador"),
@@ -92,7 +90,7 @@ public enum CountryName {
     SEYCHELLES("Seychelles"),
     SAO_TOME_AND_PRINCIPE("Sao Tome and Principe"),
     KENYA("Kenya"),
-    KOREA_REPUBLIC_OF("\"Korea, Republic of\""),
+    KOREA_REPUBLIC_OF("Korea, Republic of"),
     FRENCH_GUIANA("French Guiana"),
     DJIBOUTI("Djibouti"),
     EQUATORIAL_GUINEA("Equatorial Guinea"),
@@ -108,7 +106,7 @@ public enum CountryName {
     GUATEMALA("Guatemala"),
     UNITED_KINGDOM("United Kingdom"),
     GUAM("Guam"),
-    HEARD_ISLAND_AND_MCDONALD_ISLANDS("Heard Island and Mcdonald Islands"),
+    HEARD_ISLAND_AND_MCDONALD_ISLANDS("Heard Island and McDonald Islands"),
     SINGAPORE("Singapore"),
     PAKISTAN("Pakistan"),
     SURINAME("Suriname"),
@@ -140,7 +138,7 @@ public enum CountryName {
     IRAQ("Iraq"),
     CAYMAN_ISLANDS("Cayman Islands"),
     SAINT_HELENA("Saint Helena"),
-    PALESTINIAN_TERRITORY_OCCUPIED("\"Palestinian Territory, Occupied\""),
+    PALESTINIAN_TERRITORY_OCCUPIED("Palestinian Territory, Occupied"),
     FRENCH_POLYNESIA("French Polynesia"),
     SVALBARD_AND_JAN_MAYEN("Svalbard and Jan Mayen"),
     INDONESIA("Indonesia"),
@@ -150,7 +148,7 @@ public enum CountryName {
     FIJI("Fiji"),
     GUINEA("Guinea"),
     GUYANA("Guyana"),
-    IRAN_ISLAMIC_REPUBLIC_OF("\"Iran, Islamic Republic of\""),
+    IRAN_ISLAMIC_REPUBLIC_OF("Iran, Islamic Republic of"),
     COMOROS("Comoros"),
     IRELAND("Ireland"),
     KAZAKHSTAN("Kazakhstan"),
@@ -170,7 +168,7 @@ public enum CountryName {
     SENEGAL("Senegal"),
     PALAU("Palau"),
     SIERRA_LEONE("Sierra Leone"),
-    MICRONESIA_FEDERATED_STATES_OF("\"Micronesia, Federated States of\""),
+    MICRONESIA_FEDERATED_STATES_OF("Micronesia, Federated States of"),
     GIBRALTAR("Gibraltar"),
     GERMANY("Germany"),
     GHANA("Ghana"),
@@ -192,15 +190,15 @@ public enum CountryName {
     NAMIBIA("Namibia"),
     MOZAMBIQUE("Mozambique"),
     TONGA("Tonga"),
-    VIRGIN_ISLANDS_BRITISH("\"Virgin Islands, British\""),
+    VIRGIN_ISLANDS_BRITISH("Virgin Islands, British"),
     VENEZUELA("Venezuela"),
-    TANZANIA_UNITED_REPUBLIC_OF("\"Tanzania, United Republic of\""),
+    TANZANIA_UNITED_REPUBLIC_OF("Tanzania, United Republic of"),
     TURKMENISTAN("Turkmenistan"),
     MEXICO("Mexico"),
     NEW_CALEDONIA("New Caledonia"),
     MACAO("Macao"),
     SRI_LANKA("Sri Lanka"),
-    CONGO_THE_DEMOCRATIC_REPUBLIC_OF_THE("\"Congo, the Democratic Republic of the\""),
+    CONGO_THE_DEMOCRATIC_REPUBLIC_OF_THE("Congo, the Democratic Republic of the"),
     ALBANIA("Albania"),
     BOTSWANA("Botswana"),
     COSTA_RICA("Costa Rica"),
@@ -224,7 +222,7 @@ public enum CountryName {
     BANGLADESH("Bangladesh"),
     BAHAMAS("Bahamas"),
     NIGERIA("Nigeria"),
-    MACEDONIA_THE_FORMER_YUGOSLAV_REPUBLIC_OF("\"Macedonia, the Former Yugoslav Republic of\""),
+    MACEDONIA_THE_FORMER_YUGOSLAV_REPUBLIC_OF("Macedonia, the Former Yugoslav Republic of"),
     NEPAL("Nepal"),
     HOLY_SEE_VATICAN_CITY_STATE("Holy See (Vatican City State)"),
     UZBEKISTAN("Uzbekistan"),
@@ -388,7 +386,7 @@ public enum CountryName {
             {"Guatemala","gt"},
             {"United Kingdom","gb"},
             {"Guam","gu"},
-            {"Heard Island and Mcdonald Islands","hm"},
+            {"Heard Island and McDonald Islands","hm"},
             {"Singapore","sg"},
             {"Pakistan","pk"},
             {"Suriname","sr"},
@@ -557,5 +555,16 @@ public enum CountryName {
     /** Удобный шорткат: вернуть отображаемое имя по ISO-коду. */
     public static String labelByCode(String alpha2) {
         return fromCode(alpha2).label();
+    }
+
+    // вернёт все доступные ISO2-коды (alpha-2)
+    public static List<String> allCodes() {
+        return new ArrayList<>(BY_CODE.keySet());
+    }
+
+    // вернёт случайный ISO2-код (alpha-2)
+    public static String randomCode() {
+        Random random = new Random();
+        return allCodes().get(random.nextInt(allCodes().size()));
     }
 }
