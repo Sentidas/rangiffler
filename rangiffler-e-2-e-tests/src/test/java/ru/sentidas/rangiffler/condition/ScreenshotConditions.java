@@ -20,7 +20,7 @@ import static com.codeborne.selenide.impl.Plugins.inject;
 import static java.util.Objects.requireNonNull;
 
 @ParametersAreNonnullByDefault
-public class ScreenshotConditions {
+public final class ScreenshotConditions {
 
   @Nonnull
   public static WebElementCondition image(BufferedImage expectedImage) {
