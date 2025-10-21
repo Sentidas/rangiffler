@@ -1,6 +1,4 @@
 package ru.sentidas.rangiffler.jupiter.annotaion;
-import org.junit.jupiter.api.extension.ExtendWith;
-import ru.sentidas.rangiffler.jupiter.extension.PhotoExtension;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,11 +9,15 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface Photo {
 
-    String countryCode() default "";
+    String countryCode() default "";  // страна поездки
+    String description() default "";  // описание (если пусто — сгенерим по локали владельца)
+    String src() default "";          // src (если пусто — classpath через Gen.randomPhotoDataUrl)
 
-    String description() default "";
-
-    String src() default "";
-
+    // лайки: user <= friends; friends == 1 (от основного пользователя); outcome/income - запрет
     int likes() default 0;
+    int count() default 1;            // сколько фото создать
+    Owner owner() default Owner.USER; // владелец фото
+    int partyIndex() default -1;      // индекс друга/инвайта при owner != USER
+
+    enum Owner {USER, FRIEND, INCOME, OUTCOME}
 }

@@ -12,7 +12,9 @@ import java.lang.annotation.Target;
 @Test
 public @interface ScreenShotTest {
 
-    String value();
+    String value() default "";
+
+    String[] files() default  {};
 
     boolean rewriteExpected() default false;
 }
