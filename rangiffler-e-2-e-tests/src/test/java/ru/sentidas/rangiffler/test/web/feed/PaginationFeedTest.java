@@ -21,6 +21,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.firstFriendId;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.firstPhotoId;
 
 @WebTest
+@DisplayName("Web_Пагинация ленты")
 public class PaginationFeedTest {
 
     private final PhotoDbClient photo = new PhotoDbClient();

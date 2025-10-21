@@ -22,6 +22,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 import static ru.sentidas.type.FriendStatus.FRIEND;
 import static ru.sentidas.type.FriendStatus.INVITATION_RECEIVED;
 
+@DisplayName("GQL_Пользователи: Все, Друзья, Входящие, Исходящие")
 public class UsersTest extends BaseGraphQlTest {
 
     private final UsersApi usersApi = new UsersApi(apolloClient);

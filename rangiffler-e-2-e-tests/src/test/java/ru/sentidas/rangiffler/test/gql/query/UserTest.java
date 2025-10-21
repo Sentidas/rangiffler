@@ -16,6 +16,7 @@ import ru.sentidas.rangiffler.test.gql.api.UserApi;
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.test.gql.support.ErrorGql.*;
 
+@DisplayName("GQL_Данные пользователя")
 public class UserTest extends BaseGraphQlTest {
 
     private final UserApi userApi = new UserApi(apolloClient);
@@ -33,7 +34,7 @@ public class UserTest extends BaseGraphQlTest {
                 () -> assertEquals(user.surname(), response.user.surname),
                 () -> assertEquals(user.firstname(), response.user.firstname),
                 () -> assertEquals(user.countryCode(), response.user.location.code),
-                () -> assertNotNull(response.user.avatar, "avatar must be non-null")
+                () -> assertNull(response.user.avatar, "avatar must be null")
         );
     }
 

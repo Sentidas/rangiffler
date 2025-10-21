@@ -23,7 +23,7 @@ import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL2;
 
 @GrpcTest
-@DisplayName("Geo: statistics")
+@DisplayName("Grpc_Geo: statistics")
 public class StatisticsTest extends BaseTest {
 
     private static final String ISO_CODE = "^[a-z]{2}$";

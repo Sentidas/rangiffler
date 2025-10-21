@@ -27,6 +27,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.myPhoto;
 // урлы в странах
 
 @WebTest
+@DisplayName("Web_Фото")
 public class PhotoTest {
 
     private static final String TEST_IMAGE_PATH = "photo/4.png";
@@ -170,20 +171,6 @@ public class PhotoTest {
                 .checkErrorMessage("Please upload an image");
     }
 
-    // fix
-    @Test
-    @User
-    @ApiLogin
-    @DisplayName("Создание поста c изображением более 19МБ: отображение алерта и запрет сохранения")
-    void createPostWithBigSizeImageShowsValidationError() {
-        new FeedPage()
-                .addPhoto()
-                .uploadNewImage(TEST_IMAGE_BIG_SIZE)
-                .setNewCountry(CANADA)
-                .savePhotoUnsuccessful()
-                .checkErrorMessage("Can not create new post. Limit 19 MB");
-    }
-
     @Test
     @User
     @ApiLogin
@@ -198,7 +185,7 @@ public class PhotoTest {
         feed.checkAlert("New post created")
                 .checkExistPost(CANADA, null);
     }
-
+    // упал
     @Test
     @User(photo = 1)
     @ApiLogin

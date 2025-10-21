@@ -12,7 +12,7 @@ import ru.sentidas.rangiffler.test.grpc.BaseTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Userdata: allFriendsPage")
+@DisplayName("Grpc_Userdata: allFriendsPage")
 public class AllFriendsTest extends BaseTest {
 
     @Test

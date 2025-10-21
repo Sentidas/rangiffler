@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.*;
 
 @GrpcTest
-@DisplayName("Photo: createPhoto")
+@DisplayName("Grpc_Photo: createPhoto")
 public class CreatePhotoTest extends BaseTest {
 
     @Test

@@ -13,6 +13,7 @@ import ru.sentidas.rangiffler.utils.AnnotationHelper;
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.getUniqueTestUsername;
 
+@DisplayName("Rest_Регистрация")
 class RegistrationTest extends BaseAuthTest {
 
     private final UsersDbClient usersDbClient = new UsersDbClient();

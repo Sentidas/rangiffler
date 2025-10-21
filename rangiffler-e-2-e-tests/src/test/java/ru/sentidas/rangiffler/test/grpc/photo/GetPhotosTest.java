@@ -18,7 +18,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.friendId;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL_PNG;
 
 @GrpcTest
-@DisplayName("Photo: getUser/FeedPhoto")
+@DisplayName("Grpc_Photo: getUser/FeedPhoto")
 public class GetPhotosTest extends BaseTest {
 
     // ===== GetUserPhotos (мои фото) ======

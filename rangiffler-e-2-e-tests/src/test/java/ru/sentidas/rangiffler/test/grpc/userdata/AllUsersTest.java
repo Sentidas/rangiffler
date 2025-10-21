@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @GrpcTest
-@DisplayName("Userdata: allUsersPage")
+@DisplayName("Grpc_Userdata: allUsersPage")
 public class AllUsersTest extends BaseTest {
 
     @Test

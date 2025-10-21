@@ -24,6 +24,7 @@ import static ru.sentidas.rangiffler.test.gql.support.PhotoUtil.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.firstFriendId;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.firstPhotoId;
 
+@DisplayName("GQL_Лайки на фото")
 public class LikePhotoTest extends BaseGraphQlTest {
 
     private final PhotoApi photoApi = new PhotoApi(apolloClient);

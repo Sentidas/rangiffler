@@ -14,7 +14,7 @@ import ru.sentidas.rangiffler.test.grpc.BaseTest;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Userdata: updateUser")
+@DisplayName("Grpc_Userdata: updateUser")
 public class UpdateUserTest extends BaseTest {
 
     @Test

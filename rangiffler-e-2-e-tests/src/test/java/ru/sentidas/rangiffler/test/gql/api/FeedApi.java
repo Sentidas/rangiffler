@@ -8,6 +8,7 @@ import ru.sentidas.GetFeedQuery;
 
 import javax.annotation.Nonnull;
 
+
 public class FeedApi {
 
     private final ApolloClient apollo;

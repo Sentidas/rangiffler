@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.friendId;
 
 @GrpcTest
-@DisplayName("Photo: toggleLike")
+@DisplayName("Grpc_Photo: toggleLike")
 public class LikePhotoTest extends BaseTest {
 
     @Test

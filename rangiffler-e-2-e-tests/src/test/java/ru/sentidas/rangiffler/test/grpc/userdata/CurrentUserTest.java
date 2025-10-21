@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 
 @GrpcTest
-@DisplayName("Userdata: currentUser, currentUserById")
+@DisplayName("Grpc_Userdata: currentUser, currentUserById")
 public class CurrentUserTest extends BaseTest {
 
     private static final String ISO_CODE = "^[a-z]{2}$";

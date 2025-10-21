@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @WebTest
+@DisplayName("Web_Лайки на фото")
 public class LikesTest {
 
     private final PhotoApiClient photoApiClient = new PhotoApiClient();

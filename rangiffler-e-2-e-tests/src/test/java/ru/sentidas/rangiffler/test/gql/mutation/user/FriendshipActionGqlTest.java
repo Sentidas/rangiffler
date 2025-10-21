@@ -27,6 +27,7 @@ import static ru.sentidas.rangiffler.test.gql.support.UserUtil.findNodeById;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 import static ru.sentidas.type.FriendshipAction.*;
 
+@DisplayName("GQL_Смена статусов дружбы")
 public class FriendshipActionGqlTest extends BaseGraphQlTest {
 
     private final FriendshipApi friendshipApi = new FriendshipApi(apolloClient);

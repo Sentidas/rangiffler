@@ -14,6 +14,7 @@ import static ru.sentidas.rangiffler.utils.generation.GenerationDataUser.getUniq
 import static ru.sentidas.rangiffler.utils.generation.GenerationDataUser.randomSentenceByLength;
 
 @WebTest
+@DisplayName("Web_Регистрация")
 public class RegisterTest {
 
     private static final String PASSWORD_VALID = "12345";

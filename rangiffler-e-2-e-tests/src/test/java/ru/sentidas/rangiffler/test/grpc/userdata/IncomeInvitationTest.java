@@ -13,7 +13,7 @@ import ru.sentidas.rangiffler.utils.AnnotationHelper;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Userdata: incomeInvitations")
+@DisplayName("Grpc_Userdata: incomeInvitations")
 public class IncomeInvitationTest extends BaseTest {
 
     @Test

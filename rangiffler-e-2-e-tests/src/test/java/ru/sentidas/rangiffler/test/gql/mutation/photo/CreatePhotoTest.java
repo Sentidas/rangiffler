@@ -15,6 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.test.gql.support.PhotoUtil.findPhotoById;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 
+@DisplayName("GQL_Создание фото")
 public class CreatePhotoTest extends BaseGraphQlTest {
 
     private final PhotoApi photoApi = new PhotoApi(apolloClient);

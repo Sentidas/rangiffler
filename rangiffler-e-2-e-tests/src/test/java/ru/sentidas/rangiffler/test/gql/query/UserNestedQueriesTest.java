@@ -16,6 +16,7 @@ import ru.sentidas.rangiffler.test.gql.api.UsersApi;
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.test.gql.support.ErrorGql.*;
 
+@DisplayName("GQL_Запрет запроса друзей -> друзей")
 public class UserNestedQueriesTest extends BaseGraphQlTest {
 
     private final UsersDbClient apiClient = new UsersDbClient();

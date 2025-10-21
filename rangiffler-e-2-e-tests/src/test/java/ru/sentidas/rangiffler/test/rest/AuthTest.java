@@ -17,7 +17,7 @@ import java.time.Instant;
 import java.util.Base64;
 
 import static org.junit.jupiter.api.Assertions.*;
-
+@DisplayName("Rest_Авторизация")
 public class AuthTest extends BaseAuthTest {
 
     private final String authUrl = CFG.authUrl();

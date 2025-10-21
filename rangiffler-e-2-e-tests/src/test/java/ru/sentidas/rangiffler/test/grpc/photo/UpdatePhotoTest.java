@@ -19,7 +19,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 
 @GrpcTest
-@DisplayName("Photo: updatePhoto")
+@DisplayName("Grpc_Photo: updatePhoto")
 public class UpdatePhotoTest extends BaseTest {
 
     @Test

@@ -12,6 +12,7 @@ import ru.sentidas.rangiffler.test.gql.api.UserApi;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("GQL_Исходящие приглашения")
 public class OutcomeInvitationsTest extends BaseGraphQlTest {
 
     private final UserApi userApi = new UserApi(apolloClient);

@@ -6,12 +6,12 @@ import ru.sentidas.GetIncomeInvitationsQuery;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Token;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
-import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.test.gql.BaseGraphQlTest;
 import ru.sentidas.rangiffler.test.gql.api.UserApi;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("GQL_Входящие приглашения")
 public class IncomeInvitationsTest extends BaseGraphQlTest {
 
     private final UserApi userApi = new UserApi(apolloClient);

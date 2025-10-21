@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @WebTest
+@DisplayName("Web_Лента фото")
 public class FeedTest {
     private final PhotoApiClient clientPhoto = new PhotoApiClient();
     private static final String CANADA = CountryName.labelByCode("ca");

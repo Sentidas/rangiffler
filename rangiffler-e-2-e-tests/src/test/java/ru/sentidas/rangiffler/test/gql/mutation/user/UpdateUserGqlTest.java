@@ -16,6 +16,7 @@ import ru.sentidas.rangiffler.test.gql.support.ErrorGql;
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 
+@DisplayName("GQL_Изменение профиля пользователя")
 public class UpdateUserGqlTest extends BaseGraphQlTest {
 
     private final UserApi userApi = new UserApi(apolloClient);

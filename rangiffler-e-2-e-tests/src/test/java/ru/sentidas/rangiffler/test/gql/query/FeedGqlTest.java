@@ -21,6 +21,7 @@ import static ru.sentidas.rangiffler.test.gql.support.ErrorGql.*;
 import static ru.sentidas.rangiffler.test.gql.support.FeedUtil.countyCountFromStat;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
+@DisplayName("GQL_Лента фото")
 public class FeedGqlTest extends BaseGraphQlTest {
 
     FeedApi feedApi = new FeedApi(apolloClient);

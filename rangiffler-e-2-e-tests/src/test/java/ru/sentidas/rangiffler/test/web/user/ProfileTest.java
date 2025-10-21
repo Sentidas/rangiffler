@@ -10,7 +10,6 @@ import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
 import ru.sentidas.rangiffler.page.ProfilePage;
-import ru.sentidas.rangiffler.utils.AnnotationHelper;
 import ru.sentidas.rangiffler.utils.generation.GenerationDataUser;
 import ru.sentidas.rangiffler.utils.generation.UserData;
 
@@ -19,6 +18,7 @@ import java.awt.image.BufferedImage;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.countryName;
 
 @WebTest
+@DisplayName("Web_Профиль пользователя")
 public class ProfileTest {
 
     private static final String RUSSIAN_FEDERATION = CountryName.labelByCode("ru");

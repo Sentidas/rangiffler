@@ -8,13 +8,13 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.page.PeoplePage;
-import ru.sentidas.rangiffler.service.UsersApiClient;
 import ru.sentidas.rangiffler.service.UsersDbClient;
 
 import static ru.sentidas.rangiffler.page.PeopleTab.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @WebTest
+@DisplayName("Web_Пользователи: Все, Друзья, Приглашенные, Приглашающие")
 public class PeopleTest {
 
     private final UsersDbClient usersDbClient = new UsersDbClient();

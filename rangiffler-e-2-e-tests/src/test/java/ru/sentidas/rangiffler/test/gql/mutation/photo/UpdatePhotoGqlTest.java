@@ -26,6 +26,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.*;
 
+@DisplayName("GQL_Изменение фото")
 public class UpdatePhotoGqlTest extends BaseGraphQlTest {
 
     private final PhotoApi photoApi = new PhotoApi(apolloClient);

@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Geo: getByCodes")
+@DisplayName("Grpc_Geo: getByCodes")
 public class GetByCodesTest extends BaseTest {
 
     private static final String INVALID_ARGUMENT_MESSAGE =

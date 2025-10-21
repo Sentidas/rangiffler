@@ -14,7 +14,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Geo: allCountries")
+@DisplayName("Grpc_Geo: allCountries")
 public class AllCountriesTest extends BaseTest {
 
     private static final int EXPECTED_COUNTRY_COUNT = 238;

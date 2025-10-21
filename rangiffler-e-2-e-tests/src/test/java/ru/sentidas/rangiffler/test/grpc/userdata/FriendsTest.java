@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.*;
 
 @GrpcTest
-@DisplayName("Userdata: allFriendsPage")
+@DisplayName("Grpc_Userdata: allFriendsPage")
 public class FriendsTest extends BaseTest {
 
     @Test

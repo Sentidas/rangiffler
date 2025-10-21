@@ -20,6 +20,7 @@ import java.util.UUID;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @WebTest
+@DisplayName("Web_Карта стран")
 public class MapTest {
 
     private final PhotoApiClient apiClient = new PhotoApiClient();

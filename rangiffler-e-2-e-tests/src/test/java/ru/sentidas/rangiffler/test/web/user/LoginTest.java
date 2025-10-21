@@ -9,7 +9,8 @@ import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.page.LoginPage;
 
-@WebTest()
+@WebTest
+@DisplayName("Web_Авторизация")
 public class LoginTest {
 
     private static final String PASSWORD_VALID = "12345";

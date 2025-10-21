@@ -18,7 +18,7 @@ import static ru.sentidas.rangiffler.utils.AnnotationHelper.friendId;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL_PNG;
 
 @GrpcTest
-@DisplayName("Photo: deletePhoto")
+@DisplayName("Grpc_Photo: deletePhoto")
 public class DeletePhotoTest extends BaseTest {
 
     @Test
