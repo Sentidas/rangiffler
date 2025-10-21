@@ -26,7 +26,7 @@ public class UpdateUserTest extends BaseTest {
                 .setCountryCode("Fr ")
                 .build());
 
-        final UserResponse userResponse = userdataBlockingStub.currentUser(
+        UserResponse userResponse = userdataBlockingStub.currentUser(
                 ru.sentidas.rangiffler.grpc.UsernameRequest.newBuilder().setUsername(user.username()).build()
         );
 
@@ -40,11 +40,11 @@ public class UpdateUserTest extends BaseTest {
     @Test
     @DisplayName("Изменение данных пользователя_пустой username: INVALID_ARGUMENT")
     void updateUserRejectsInvalidArgumentWhenUsernameIsBlank() {
-        final UpdateUserRequest request = UpdateUserRequest.newBuilder()
+        UpdateUserRequest request = UpdateUserRequest.newBuilder()
                 .setUsername("")
                 .build();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> userdataBlockingStub.updateUser(request));
 
         assertEquals(Status.INVALID_ARGUMENT.getCode(), ex.getStatus().getCode(), "status should be INVALID_ARGUMENT");
@@ -57,12 +57,12 @@ public class UpdateUserTest extends BaseTest {
         final String[] badCodes = {"FRA", "1", "F", " ru3 "};
 
         for (final String code : badCodes) {
-            final UpdateUserRequest request = UpdateUserRequest.newBuilder()
+            UpdateUserRequest request = UpdateUserRequest.newBuilder()
                     .setUsername(user.username())
                     .setCountryCode(code)
                     .build();
 
-            final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+            StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                     () -> userdataBlockingStub.updateUser(request));
 
             assertEquals(Status.INVALID_ARGUMENT.getCode(), ex.getStatus().getCode(),

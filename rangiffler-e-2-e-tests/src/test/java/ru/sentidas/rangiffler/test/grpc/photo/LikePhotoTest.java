@@ -29,7 +29,7 @@ public class LikePhotoTest extends BaseTest {
         final String targetPhotoId = firstPhotoId(userPhotosPage(user, 0, 20, true));
         final String friendUserId = friendId(user, 0).toString();
 
-        final PhotoResponse toggled = photoBlockingStub.toggleLike(
+        PhotoResponse toggled = photoBlockingStub.toggleLike(
                 LikeRequest.newBuilder()
                         .setUserId(friendUserId)
                         .setPhotoId(targetPhotoId)
@@ -41,8 +41,8 @@ public class LikePhotoTest extends BaseTest {
                 () -> assertTrue(likesContainUser(toggled, friendUserId), "friend should be in likes list")
         );
 
-        final PhotosPageResponse pageAfter = userPhotosPage(user, 0, 20, true);
-        final PhotoResponse firstPhotoAfter = pageAfter.getContent(0);
+        PhotosPageResponse pageAfter = userPhotosPage(user, 0, 20, true);
+        PhotoResponse firstPhotoAfter = pageAfter.getContent(0);
 
         assertEquals(targetPhotoId, firstPhotoAfter.getPhotoId(), "first item should be the target photo");
         assertAll("in feed response photo liked",
@@ -91,8 +91,8 @@ public class LikePhotoTest extends BaseTest {
         final String friendA = friendId(user, 0).toString();
         final String friendB = friendId(user, 1).toString();
 
-        // 1) Первый пользователь ставит лайк
-        final PhotoResponse afterFirst = photoBlockingStub.toggleLike(
+        // Первый пользователь ставит лайк
+        PhotoResponse afterFirst = photoBlockingStub.toggleLike(
                 LikeRequest.newBuilder()
                         .setUserId(friendA)
                         .setPhotoId(targetPhotoId)
@@ -104,8 +104,8 @@ public class LikePhotoTest extends BaseTest {
                 () -> assertTrue(likesContainUser(afterFirst, friendA), "friend A should be present after first like")
         );
 
-        // 2) Второй пользователь ставит лайк
-        final PhotoResponse afterSecond = photoBlockingStub.toggleLike(
+        // Второй пользователь ставит лайк
+        PhotoResponse afterSecond = photoBlockingStub.toggleLike(
                 LikeRequest.newBuilder()
                         .setUserId(friendB)
                         .setPhotoId(targetPhotoId)
@@ -134,7 +134,7 @@ public class LikePhotoTest extends BaseTest {
         final PhotosPageResponse before = userPhotosPage(user, 0, 20, true);
         final String targetPhotoId = firstPhotoId(before);
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.toggleLike(
                         LikeRequest.newBuilder()
                                 .setUserId(user.id().toString())
@@ -152,7 +152,7 @@ public class LikePhotoTest extends BaseTest {
         final String friendUserId = friendId(user, 0).toString();
         final String randomPhotoId = UUID.randomUUID().toString();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.toggleLike(
                         LikeRequest.newBuilder()
                                 .setUserId(friendUserId)
@@ -169,7 +169,7 @@ public class LikePhotoTest extends BaseTest {
     public void toggleLikeReturnsInvalidArgumentWhenPhotoIdInvalid(AppUser user) {
         final String friendUserId = friendId(user, 0).toString();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.toggleLike(
                         LikeRequest.newBuilder()
                                 .setUserId(friendUserId)
@@ -187,7 +187,7 @@ public class LikePhotoTest extends BaseTest {
         final PhotosPageResponse before = userPhotosPage(user, 0, 20, true);
         final String targetPhotoId = firstPhotoId(before);
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.toggleLike(
                         LikeRequest.newBuilder()
                                 .setUserId("not-a-uuid")

@@ -63,8 +63,8 @@ public class GetPhotosTest extends BaseTest {
             @Photo(countryCode = "fr", src = DATA_URL_PNG, description = "p3")
     })
     public void getUserPhotosSetsFirstLastFlagsAndOmitsTotalWhenIncludeTotalFalse(AppUser user) {
-        final PhotosPageResponse page0 = userPhotosPage(user, 0, 2, false);
-        final PhotosPageResponse page1 = userPhotosPage(user, 1, 2, false);
+        PhotosPageResponse page0 = userPhotosPage(user, 0, 2, false);
+        PhotosPageResponse page1 = userPhotosPage(user, 1, 2, false);
 
         assertAll("page 0",
                 () -> assertFalse(page0.hasTotal(), "total should be absent when include_total=false"),
@@ -85,7 +85,7 @@ public class GetPhotosTest extends BaseTest {
     @DisplayName("GetUserPhotos: пустая лента (content пуст, first=true,last=true, total=0)")
     @User
     public void getUserPhotosReturnsEmptyPageWhenNoPhotos(AppUser user) {
-        final PhotosPageResponse page0 = userPhotosPage(user, 0, 10, true);
+        PhotosPageResponse page0 = userPhotosPage(user, 0, 10, true);
 
         assertAll("empty page",
                 () -> assertTrue(page0.hasTotal(), "total should be present"),
@@ -100,7 +100,7 @@ public class GetPhotosTest extends BaseTest {
     @Test
     @DisplayName("GetUserPhotos: невалидный user_id → INVALID_ARGUMENT")
     public void getUserPhotosReturnsInvalidArgumentWhenUserIdInvalid() {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.getUserPhotos(
                         PhotoPageRequest.newBuilder()
                                 .setUserId("not-a-uuid")
@@ -126,7 +126,7 @@ public class GetPhotosTest extends BaseTest {
             friendsWithPhotosEach = 2
     )
     public void getFeedPhotosContainsMineAndFriendWhenMixedAndSortedByCreationDesc(AppUser user) {
-        final PhotosPageResponse feed = feedPhotosPage(user, 0, 20, true);
+        PhotosPageResponse feed = feedPhotosPage(user, 0, 20, true);
 
         final String myUserId = user.id().toString();
         final String friendUserId = friendId(user, 0).toString();
@@ -164,8 +164,8 @@ public class GetPhotosTest extends BaseTest {
             }, friends = 1, friendsWithPhotosEach = 2
     )
     public void getFeedPhotosSetsFirstLastFlagsWhenPageSizeIsOne(AppUser user) {
-        final PhotosPageResponse page0 = feedPhotosPage(user, 0, 1, true);
-        final PhotosPageResponse page1 = feedPhotosPage(user, 1, 1, true);
+        PhotosPageResponse page0 = feedPhotosPage(user, 0, 1, true);
+        PhotosPageResponse page1 = feedPhotosPage(user, 1, 1, true);
 
         assertAll("page 0 flags",
                 () -> assertTrue(page0.hasTotal(), "total should be present"),
@@ -187,7 +187,7 @@ public class GetPhotosTest extends BaseTest {
     @DisplayName("GetFeedPhotos: пустой фид (content пуст, first=true,last=true, total=0)")
     @User
     public void getFeedPhotosReturnsEmptyPageWhenNoPhotos(AppUser user) {
-        final PhotosPageResponse page0 = feedPhotosPage(user, 0, 10, true);
+        PhotosPageResponse page0 = feedPhotosPage(user, 0, 10, true);
 
         assertAll("empty feed",
                 () -> assertTrue(page0.hasTotal(), "total should be present"),
@@ -201,7 +201,7 @@ public class GetPhotosTest extends BaseTest {
     @Test
     @DisplayName("GetFeedPhotos: невалидный user_id → INVALID_ARGUMENT")
     public void getFeedPhotosReturnsInvalidArgumentWhenUserIdInvalid() {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.getFeedPhotos(
                         PhotoPageRequest.newBuilder()
                                 .setUserId("not-a-uuid")

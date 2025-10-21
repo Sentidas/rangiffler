@@ -64,7 +64,7 @@ public class GetByCodesTest extends BaseTest {
     @Test
     @DisplayName("Дубликаты кодов страны во входе → дубликаты в ответе")
     void getByCodesPreservesDuplicatesWhenInputContainsDuplicates() {
-        List<String> mixedCaseInput = Arrays.asList("fr", "fr", "ww", "FR", "eS", "cn", "es");
+        final List<String> mixedCaseInput = Arrays.asList("fr", "fr", "ww", "FR", "eS", "cn", "es");
 
         CountriesResponse response = geoBlockingStub.getByCodes(
                 CodesRequest.newBuilder().addAllCodes(mixedCaseInput).build()
@@ -88,7 +88,7 @@ public class GetByCodesTest extends BaseTest {
     @Test
     @DisplayName("Возвращает INVALID_ARGUMENT при пустом элементе в списке кодов стран")
     void getByCodesReturnsInvalidArgumentWhenInputContainsEmptyElement() {
-        List<String> inputCodes = Arrays.asList("fr", "");
+        final List<String> inputCodes = Arrays.asList("fr", "");
 
         io.grpc.StatusRuntimeException exception = assertThrows(
                 io.grpc.StatusRuntimeException.class,

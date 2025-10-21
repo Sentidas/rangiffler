@@ -30,9 +30,9 @@ public class CreatePhotoTest extends BaseTest {
         final String expectedCountryCode = "fr";
         final String expectedDescription = "png created";
 
-        final PhotosPageResponse photosPageBefore = userPhotosPage(user, 0, pageSize, true);
+        PhotosPageResponse photosPageBefore = userPhotosPage(user, 0, pageSize, true);
 
-        final PhotoResponse createdPhoto = photoBlockingStub.createPhoto(
+        PhotoResponse createdPhoto = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setCountryCode(expectedCountryCode)
@@ -41,8 +41,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse photosPageAfter = userPhotosPage(user, 0, pageSize, true);
-        final PhotoResponse firstPhotoAfter = photosPageAfter.getContent(0);
+        PhotosPageResponse photosPageAfter = userPhotosPage(user, 0, pageSize, true);
+        PhotoResponse firstPhotoAfter = photosPageAfter.getContent(0);
 
         assertAll("created photo appears first and counters are correct",
                 () -> assertEquals(photosPageBefore.getTotal() + 1, photosPageAfter.getTotal(),
@@ -75,9 +75,9 @@ public class CreatePhotoTest extends BaseTest {
         final String expectedDescription = "jpeg created";
         final String expectedCountryCode = "fr";
 
-        final PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
 
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_JPEG)
@@ -86,8 +86,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
-        final PhotoResponse firstPhoto = after.getContent(0);
+        PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
+        PhotoResponse firstPhoto = after.getContent(0);
 
         assertAll("created jpeg photo appears first and fields match",
                 () -> assertEquals(before.getTotal() + 1, after.getTotal(),
@@ -121,10 +121,10 @@ public class CreatePhotoTest extends BaseTest {
         final String expectedCountryCode = "it";
         final String expectedDescription = "gif created";
 
-        final PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
         final int totalBefore = before.getTotal();
 
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_GIF)
@@ -133,8 +133,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
-        final PhotoResponse firstPhoto = after.getContent(0);
+        PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
+        PhotoResponse firstPhoto = after.getContent(0);
 
         assertAll("created gif photo appears first and fields match",
                 () -> assertEquals(totalBefore + 1, after.getTotal(),
@@ -168,10 +168,10 @@ public class CreatePhotoTest extends BaseTest {
         final String expectedCountryCode = "es";
         final String expectedDescription = "webp created";
 
-        final PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, pageSize, true);
         final int totalBefore = before.getTotal();
 
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_WEBP)
@@ -180,8 +180,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
-        final PhotoResponse firstPhoto = after.getContent(0);
+        PhotosPageResponse after = userPhotosPage(user, 0, pageSize, true);
+        PhotoResponse firstPhoto = after.getContent(0);
 
         assertAll("created webp photo appears first and fields match",
                 () -> assertEquals(totalBefore + 1, after.getTotal(),
@@ -214,7 +214,7 @@ public class CreatePhotoTest extends BaseTest {
         final PhotosPageResponse before = userPhotosPage(user, 0, 12, true);
         final int totalBefore = before.getTotal();
 
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_PNG)
@@ -223,8 +223,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, 12, true);
-        final PhotoResponse first = after.getContent(0);
+        PhotosPageResponse after = userPhotosPage(user, 0, 12, true);
+        PhotoResponse first = after.getContent(0);
 
         assertAll("country code normalization and total increment",
                 () -> assertEquals(totalBefore + 1, after.getTotal(),
@@ -240,7 +240,7 @@ public class CreatePhotoTest extends BaseTest {
     @User
     @DisplayName("Лайки по умолчанию при создании фото: total=0, список пуст")
     public void initializeLikesToZeroWhenPhotoCreated(AppUser user) {
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_PNG)
@@ -249,8 +249,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse page0 = userPhotosPage(user, 0, 10, true);
-        final PhotoResponse first = page0.getContent(0);
+        PhotosPageResponse page0 = userPhotosPage(user, 0, 10, true);
+        PhotoResponse first = page0.getContent(0);
 
         assertAll("likes initialized to zero",
                 () -> assertEquals(created.getPhotoId(), first.getPhotoId(),
@@ -267,10 +267,10 @@ public class CreatePhotoTest extends BaseTest {
     public void persistLongDescriptionAndPlacePhotoFirstWhenCreated(AppUser user) {
         final String longDescription = DATA_URL;
 
-        final PhotosPageResponse before = userPhotosPage(user, 0, 12, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, 12, true);
         final int totalBefore = before.getTotal();
 
-        final PhotoResponse created = photoBlockingStub.createPhoto(
+        PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL)
@@ -279,8 +279,8 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, 12, true);
-        final PhotoResponse first = after.getContent(0);
+        PhotosPageResponse after = userPhotosPage(user, 0, 12, true);
+        PhotoResponse first = after.getContent(0);
 
         assertAll("long description persisted and photo is first",
                 () -> assertEquals(totalBefore + 1, after.getTotal(),
@@ -299,7 +299,7 @@ public class CreatePhotoTest extends BaseTest {
         final PhotosPageResponse before = userPhotosPage(user, 0, 50, true);
         final int totalBefore = before.getTotal();
 
-        final PhotoResponse firstCreated = photoBlockingStub.createPhoto(
+        PhotoResponse firstCreated = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_WEBP)
@@ -310,7 +310,7 @@ public class CreatePhotoTest extends BaseTest {
 
         Thread.sleep(2000); //  пауза, чтобы гарантировать различие creationDate
 
-        final PhotoResponse secondCreated = photoBlockingStub.createPhoto(
+        PhotoResponse secondCreated = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
                         .setUserId(user.id().toString())
                         .setSrc(DATA_URL_WEBP)
@@ -319,7 +319,7 @@ public class CreatePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse page0 = userPhotosPage(user, 0, 12, true);
+        PhotosPageResponse page0 = userPhotosPage(user, 0, 12, true);
 
         assertAll("second created should appear above the first",
                 () -> assertEquals(totalBefore + 2, page0.getTotal(),
@@ -336,7 +336,7 @@ public class CreatePhotoTest extends BaseTest {
     @DisplayName("Пустое описание допустимо: фото создаётся и первое")
     public void createPhotoWithEmptyDescriptionPlacesFirstWhenCreated(AppUser user) {
         PhotosPageResponse before = userPhotosPage(user, 0, 12, true);
-        long totalBefore = before.getTotal();
+        final int totalBefore = before.getTotal();
 
         PhotoResponse created = photoBlockingStub.createPhoto(
                 CreatePhotoRequest.newBuilder()
@@ -376,8 +376,8 @@ public class CreatePhotoTest extends BaseTest {
 
         // Запоминаем «хвост» первой страницы (последний элемент page 0)
         // — он должен переехать на страницу 2 после добавления нового фото
-        String previousTailPhotoId = before.getContent(pageSize - 1).getPhotoId();
-        int totalBefore = before.getTotal();
+        final String previousTailPhotoId = before.getContent(pageSize - 1).getPhotoId();
+        final int totalBefore = before.getTotal();
 
         Selenide.sleep(1000);
 
@@ -418,7 +418,7 @@ public class CreatePhotoTest extends BaseTest {
         final int requestedPageSize = 2;
 
         // page 0
-        final PhotosPageResponse page0 = userPhotosPage(user, 0, requestedPageSize, true);
+        PhotosPageResponse page0 = userPhotosPage(user, 0, requestedPageSize, true);
         assertAll("page 0 metadata",
                 () -> assertEquals(expectedTotalPhotosAcrossAllPages, page0.getTotal(), "total should match expected total photos"),
                 () -> assertEquals(requestedPageSize, page0.getSize(), "page size should match requested size"),
@@ -427,7 +427,7 @@ public class CreatePhotoTest extends BaseTest {
                 () -> assertTrue(page0.getFirst(), "first must be true on the first page")
         );
         for (int i = 0; i < page0.getContentCount(); i++) {
-            final PhotoResponse photo = page0.getContent(i);
+            PhotoResponse photo = page0.getContent(i);
             assertAll("page 0 content[" + i + "] contract",
                     () -> assertNotNull(photo.getPhotoId(), "photoId must not be null"),
                     () -> assertEquals(user.id().toString(), photo.getUserId(), "userId should equal requesting user id"),
@@ -443,7 +443,7 @@ public class CreatePhotoTest extends BaseTest {
         }
 
         // page 1
-        final PhotosPageResponse page1 = userPhotosPage(user, 1, requestedPageSize, true);
+        PhotosPageResponse page1 = userPhotosPage(user, 1, requestedPageSize, true);
         assertAll("page 1 metadata",
                 () -> assertEquals(expectedTotalPhotosAcrossAllPages, page1.getTotal(), "total should match expected total photos"),
                 () -> assertEquals(requestedPageSize, page1.getSize(), "page size should match requested size"),
@@ -453,7 +453,7 @@ public class CreatePhotoTest extends BaseTest {
                 () -> assertEquals(1, page1.getPage(), "page index should be 1")
         );
         for (int i = 0; i < page1.getContentCount(); i++) {
-            final PhotoResponse photo = page1.getContent(i);
+            PhotoResponse photo = page1.getContent(i);
             assertAll("page 1 content[" + i + "] contract",
                     () -> assertNotNull(photo.getPhotoId(), "photoId must not be null"),
                     () -> assertEquals(user.id().toString(), photo.getUserId(), "userId should equal requesting user id"),
@@ -469,7 +469,7 @@ public class CreatePhotoTest extends BaseTest {
         }
 
         // page 2
-        final PhotosPageResponse page2 = userPhotosPage(user, 2, requestedPageSize, true);
+        PhotosPageResponse page2 = userPhotosPage(user, 2, requestedPageSize, true);
         assertAll("page 2 metadata",
                 () -> assertEquals(expectedTotalPhotosAcrossAllPages, page2.getTotal(), "total should match expected total photos"),
                 () -> assertEquals(requestedPageSize, page2.getSize(), "page size should match requested size"),
@@ -479,7 +479,7 @@ public class CreatePhotoTest extends BaseTest {
                 () -> assertEquals(2, page2.getPage(), "page index should be 2")
         );
         for (int i = 0; i < page2.getContentCount(); i++) {
-            final PhotoResponse photo = page2.getContent(i);
+            PhotoResponse photo = page2.getContent(i);
             assertAll("page 2 content[" + i + "] contract",
                     () -> assertNotNull(photo.getPhotoId(), "photoId must not be null"),
                     () -> assertEquals(user.id().toString(), photo.getUserId(), "userId should equal requesting user id"),
@@ -500,7 +500,7 @@ public class CreatePhotoTest extends BaseTest {
     @Test
     @DisplayName("Невалидный user_id: INVALID_ARGUMENT")
     public void invalidUserId_invalidArgument() {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId("not-a-uuid")
@@ -518,7 +518,7 @@ public class CreatePhotoTest extends BaseTest {
     @DisplayName("Пустой src: INVALID_ARGUMENT")
     @User
     public void emptySrc_invalidArgument(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId(user.id().toString())
@@ -535,7 +535,7 @@ public class CreatePhotoTest extends BaseTest {
     @DisplayName("src не data:-URL: INVALID_ARGUMENT")
     @User
     public void notDataUrl_invalidArgument(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId(user.id().toString())
@@ -552,7 +552,7 @@ public class CreatePhotoTest extends BaseTest {
     @DisplayName("Битая base64 в data:-URL: INVALID_ARGUMENT")
     @User
     public void brokenBase64_invalidArgument(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId(user.id().toString())
@@ -569,7 +569,7 @@ public class CreatePhotoTest extends BaseTest {
     @DisplayName("Пустой country_code: INVALID_ARGUMENT")
     @User
     public void emptyCountry_invalidArgument(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId(user.id().toString())
@@ -584,9 +584,9 @@ public class CreatePhotoTest extends BaseTest {
 
     @Test
     @DisplayName("country_code не ISO-2: INVALID_ARGUMENT")
-    @User(photos = {})
+    @User
     public void invalidCountryFormat_invalidArgument(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.createPhoto(
                         CreatePhotoRequest.newBuilder()
                                 .setUserId(user.id().toString())

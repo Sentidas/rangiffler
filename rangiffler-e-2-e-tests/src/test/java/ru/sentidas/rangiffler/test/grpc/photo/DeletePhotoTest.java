@@ -38,7 +38,7 @@ public class DeletePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, 5, true);
+        PhotosPageResponse after = userPhotosPage(user, 0, 5, true);
         assertAll("owner deletes own photo",
                 () -> assertEquals(before.getTotal() - 1, after.getTotal(), "total should decrease by one"),
                 () -> assertFalse(containsPhotoId(after, targetPhotoId), "deleted photo should not be present")
@@ -53,7 +53,7 @@ public class DeletePhotoTest extends BaseTest {
     })
     @DisplayName("Удаление второго фото: исчезает именно выбранное фото")
     public void deleteSpecificPhotoRemovesThatPhotoWhenMiddleItem(AppUser user) {
-        final PhotosPageResponse before = userPhotosPage(user, 0, 10, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, 10, true);
 
         assertEquals(3, before.getContentCount(), "fixture should create three photos");
 
@@ -66,7 +66,7 @@ public class DeletePhotoTest extends BaseTest {
                         .build()
         );
 
-        final PhotosPageResponse after = userPhotosPage(user, 0, 10, true);
+        PhotosPageResponse after = userPhotosPage(user, 0, 10, true);
         assertAll("delete second photo",
                 () -> assertEquals(2, after.getContentCount(), "content count should decrease to two"),
                 () -> assertFalse(containsPhotoId(after, idToDelete), "deleted photo must not be present")
@@ -77,7 +77,8 @@ public class DeletePhotoTest extends BaseTest {
     @User(photo = 1, friends = 1)
     @DisplayName("После удаления фото: попытка лайка даёт NOT_FOUND")
     public void likeAfterDelete_notFound(AppUser user) {
-        final PhotosPageResponse before = userPhotosPage(user, 0, 20, true);
+        PhotosPageResponse before = userPhotosPage(user, 0, 20, true);
+
         final String targetPhotoId = firstPhotoId(before);
         final String friendUserId = friendId(user, 0).toString();
 
@@ -98,7 +99,7 @@ public class DeletePhotoTest extends BaseTest {
         );
 
         // Попытка другом лайкнуть удалённое фото
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.toggleLike(
                         LikeRequest.newBuilder()
                                 .setUserId(friendUserId)
@@ -109,7 +110,7 @@ public class DeletePhotoTest extends BaseTest {
         assertEquals(Status.NOT_FOUND.getCode(), ex.getStatus().getCode());
 
         // Фото отсутствует
-        final PhotosPageResponse after = userPhotosPage(user, 0, 20, true);
+        PhotosPageResponse after = userPhotosPage(user, 0, 20, true);
         assertFalse(containsPhotoId(after, targetPhotoId));
     }
 
@@ -119,12 +120,12 @@ public class DeletePhotoTest extends BaseTest {
     @User(photo = 1, friends = 1)
     @DisplayName("Удаление чужого фото запрещено: PERMISSION_DENIED")
     public void deletePhotoReturnsPermissionDeniedWhenRequesterIsNotOwner(AppUser user) {
-        final PhotosPageResponse page = userPhotosPage(user, 0, 20, true);
-        final String targetPhotoId = firstPhotoId(page);
+        PhotosPageResponse page = userPhotosPage(user, 0, 20, true);
 
+        final String targetPhotoId = firstPhotoId(page);
         final String friendRequester = friendId(user, 0).toString();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.deletePhoto(
                         DeletePhotoRequest.newBuilder()
                                 .setRequesterId(friendRequester)
@@ -141,7 +142,7 @@ public class DeletePhotoTest extends BaseTest {
     public void deletePhotoReturnsNotFoundWhenPhotoDoesNotExist(AppUser user) {
         final String randomPhotoId = UUID.randomUUID().toString();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.deletePhoto(
                         DeletePhotoRequest.newBuilder()
                                 .setRequesterId(user.id().toString())
@@ -156,7 +157,7 @@ public class DeletePhotoTest extends BaseTest {
     @User
     @DisplayName("Неверный UUID photo_id: INVALID_ARGUMENT")
     public void deletePhotoReturnsInvalidArgumentWhenPhotoIdInvalid(AppUser user) {
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.deletePhoto(
                         DeletePhotoRequest.newBuilder()
                                 .setRequesterId(user.id().toString())
@@ -174,7 +175,7 @@ public class DeletePhotoTest extends BaseTest {
         final PhotosPageResponse page = userPhotosPage(user, 0, 20, true);
         final String targetPhotoId = firstPhotoId(page);
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.deletePhoto(
                         DeletePhotoRequest.newBuilder()
                                 .setRequesterId("not-a-uuid")

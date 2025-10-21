@@ -28,7 +28,7 @@ public class CurrentUserTest extends BaseTest {
     @DisplayName("Корректно возвращаются обязательные данные после регистрации пользователя: id, username, code")
     @User
     void currentUserReturnsMinimalCardWhenUserHasNoOptionalFields(AppUser user) {
-        final UserResponse response = userdataBlockingStub.currentUser(
+        UserResponse response = userdataBlockingStub.currentUser(
                 UsernameRequest.newBuilder().setUsername(user.username()).build()
         );
 
@@ -50,11 +50,11 @@ public class CurrentUserTest extends BaseTest {
     @DisplayName("Возврат одинаковых данных пользователя при запросе по username и по ID")
     @User
     void currentUserByIdReturnsSameDataAsCurrentUserWhenQueriedById(AppUser user) {
-        final UserResponse byName = userdataBlockingStub.currentUser(
+        UserResponse byName = userdataBlockingStub.currentUser(
                 UsernameRequest.newBuilder().setUsername(user.username()).build()
         );
 
-        final UserResponse byId = userdataBlockingStub.currentUserById(
+        UserResponse byId = userdataBlockingStub.currentUserById(
                 UserIdRequest.newBuilder().setUserId(user.id().toString()).build()
         );
 
@@ -79,7 +79,7 @@ public class CurrentUserTest extends BaseTest {
                 .build()
         );
 
-        final UserResponse response = userdataBlockingStub.currentUser(
+        UserResponse response = userdataBlockingStub.currentUser(
                 UsernameRequest.newBuilder().setUsername(user.username()).build()
         );
 
@@ -100,11 +100,11 @@ public class CurrentUserTest extends BaseTest {
     @Test
     @DisplayName("Текущий пользователь не существует_username: NOT_FOUND")
     void currentUserReturnsNotFoundWhenUsernameDoesNotExist() {
-        final UsernameRequest request = UsernameRequest.newBuilder()
+        UsernameRequest request = UsernameRequest.newBuilder()
                 .setUsername("non_existing_user")
                 .build();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> userdataBlockingStub.currentUser(request));
 
         assertEquals(Status.NOT_FOUND.getCode(), ex.getStatus().getCode(), "status should be NOT_FOUND");
@@ -114,11 +114,11 @@ public class CurrentUserTest extends BaseTest {
     @DisplayName("Текущий пользователь не существует_id: NOT_FOUND")
     void currentUserByIdReturnsNotFoundWhenUserMissing() {
         final String unknownUserId = java.util.UUID.randomUUID().toString();
-        final UserIdRequest request = UserIdRequest.newBuilder()
+        UserIdRequest request = UserIdRequest.newBuilder()
                 .setUserId(unknownUserId)
                 .build();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> userdataBlockingStub.currentUserById(request));
 
         assertEquals(Status.NOT_FOUND.getCode(), ex.getStatus().getCode(), "status should be NOT_FOUND");
@@ -127,11 +127,11 @@ public class CurrentUserTest extends BaseTest {
     @Test
     @DisplayName("Неверный UUID user_id: INVALID_ARGUMENT")
     void currentUserByIdReturnsInvalidArgumentWhenUserIdIsNotUuid() {
-        final UserIdRequest request = UserIdRequest.newBuilder()
+        UserIdRequest request = UserIdRequest.newBuilder()
                 .setUserId("not-a-uuid")
                 .build();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> userdataBlockingStub.currentUserById(request));
 
         assertEquals(Status.INVALID_ARGUMENT.getCode(), ex.getStatus().getCode(), "status should be INVALID_ARGUMENT");

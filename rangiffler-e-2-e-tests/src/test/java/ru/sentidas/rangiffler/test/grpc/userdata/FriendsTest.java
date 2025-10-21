@@ -25,7 +25,7 @@ public class FriendsTest extends BaseTest {
     @User
     void createFriendshipRequestCreatesOutcomeAndIncomeWhenSendingInvite(AppUser user) {
         // создаём отдельного адресата (аннотацией либо фабрикой — здесь используем UpdateUser как “минимального”)
-        String inviteeUsername = "invitee_user_" + UUID.randomUUID();
+        final String inviteeUsername = "invitee_user_" + UUID.randomUUID();
         userdataBlockingStub.updateUser(UpdateUserRequest.newBuilder()
                 .setUsername(inviteeUsername)
                 .build());
@@ -58,7 +58,7 @@ public class FriendsTest extends BaseTest {
     @DisplayName("Принятие инвайта - создаёт взаимную дружбу и очищает инвайты - когда адресат соглашается")
     @User(incomeInvitation = 1)
     void acceptFriendshipCreatesMutualFriendshipAndClearsInvitesWhenInviteeAccepts(AppUser user) {
-        String inviterId = user.testData().incomeInvitations().getFirst().id().toString();
+        final String inviterId = user.testData().incomeInvitations().getFirst().id().toString();
 
         userdataBlockingStub.acceptFriendshipRequest(
                 FriendshipRequest.newBuilder()
@@ -92,7 +92,7 @@ public class FriendsTest extends BaseTest {
     @DisplayName("Отклонение инвайта - удаляет заявку без дружбы - когда адресат отклоняет")
     @User(incomeInvitation = 1)
     void declineFriendshipRemovesInviteWithoutFriendshipWhenInviteeDeclines(AppUser user) {
-        String inviterId = user.testData().incomeInvitations().getFirst().id().toString();
+        final String inviterId = user.testData().incomeInvitations().getFirst().id().toString();
 
         userdataBlockingStub.declineFriendshipRequest(
                 FriendshipRequest.newBuilder()
@@ -118,8 +118,8 @@ public class FriendsTest extends BaseTest {
     @DisplayName("Удаление друга - удаляет связь у обоих - когда дружба уже установлена")
     @User(friends = 2)
     void removeFriendDeletesBondOnBothSidesWhenFriendshipEstablished(AppUser user) {
-        String removedFriendId = user.testData().friends().getFirst().id().toString();
-        String removedFriendUsername = user.testData().friends().getFirst().username();
+        final String removedFriendId = user.testData().friends().getFirst().id().toString();
+        final String removedFriendUsername = user.testData().friends().getFirst().username();
 
         userdataBlockingStub.removeFriend(
                 FriendshipRequest.newBuilder()
@@ -145,7 +145,7 @@ public class FriendsTest extends BaseTest {
     @DisplayName("Удаление друга - безопасно повторяется - когда связи уже нет")
     @User(friends = 1)
     void removeFriendIsIdempotentWhenBondAlreadyRemoved(AppUser user) {
-        String friendId = user.testData().friends().getFirst().id().toString();
+        final String friendId = user.testData().friends().getFirst().id().toString();
 
         userdataBlockingStub.removeFriend(
                 FriendshipRequest.newBuilder()
@@ -173,12 +173,12 @@ public class FriendsTest extends BaseTest {
     @DisplayName("Удаление друга_targetId не существует: NOT_FOUND")
     @User
     void removeFriendReturnsNotFoundWhenTargetDoesNotExist(AppUser user) {
-        final FriendshipRequest request = FriendshipRequest.newBuilder()
+        FriendshipRequest request = FriendshipRequest.newBuilder()
                 .setUsername(user.username())
                 .setUser(java.util.UUID.randomUUID().toString())
                 .build();
 
-        final StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> userdataBlockingStub.removeFriend(request));
 
         assertEquals(Status.NOT_FOUND.getCode(), ex.getStatus().getCode(), "status should be NOT_FOUND");

@@ -19,7 +19,7 @@ public class AllFriendsTest extends BaseTest {
     @DisplayName("Список друзей: корректная пагинация, когда друзей больше размера страницы")
     @User(friends = 3)
     void allFriendsPagePaginatedCorrectlyWhenMoreThanPageSize(AppUser user) {
-        final UsersPageResponse page0 = userdataBlockingStub.allFriendsPage(
+        UsersPageResponse page0 = userdataBlockingStub.allFriendsPage(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)

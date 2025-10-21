@@ -20,7 +20,7 @@ public class IncomeInvitationTest extends BaseTest {
     @DisplayName("Входящие приглашения: корректная пагинация при нескольких страницах")
     @User(incomeInvitation = 3)
     void incomeInvitationsAreListedAndPaginatedWhenMultipleInvites(AppUser user) {
-        final UsersPageResponse page0 = userdataBlockingStub.incomeInvitations(
+        UsersPageResponse page0 = userdataBlockingStub.incomeInvitations(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)
@@ -33,7 +33,7 @@ public class IncomeInvitationTest extends BaseTest {
                 () -> assertFalse(page0.getLast(), "last should be false")
         );
 
-        final UsersPageResponse page1 = userdataBlockingStub.incomeInvitations(
+        UsersPageResponse page1 = userdataBlockingStub.incomeInvitations(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(1)
@@ -52,7 +52,7 @@ public class IncomeInvitationTest extends BaseTest {
     void outcomeInvitationsAreListedAndFilteredWhenSearchQueryProvided(AppUser user) {
         final String inviteeUsername = AnnotationHelper.outgoingInviteeUsername(user);
 
-        final UsersPageResponse filtered = userdataBlockingStub.outcomeInvitations(
+        UsersPageResponse filtered = userdataBlockingStub.outcomeInvitations(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)

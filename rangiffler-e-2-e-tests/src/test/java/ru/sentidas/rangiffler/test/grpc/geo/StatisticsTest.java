@@ -311,7 +311,7 @@ public class StatisticsTest extends BaseTest {
             @Photo(countryCode = "cn", count = 1),
             @Photo(owner = Photo.Owner.FRIEND, partyIndex = 0, countryCode = "cn", count = 1),
     }, friends = 1)
-    void friends_recomputedWhenFriendChangesCountry(AppUser user) {
+    void friendsStatsRecomputedWhenFriendChangesCountry(AppUser user) {
         final UUID fid = friendId(user, 0);
         final UUID pid = firstPhotoId(user, fid);
 
@@ -344,7 +344,7 @@ public class StatisticsTest extends BaseTest {
                     @Photo(owner = Photo.Owner.OUTCOME, partyIndex = 0, countryCode = "fr", count = 1),
                     @Photo(owner = Photo.Owner.OUTCOME, partyIndex = 0, countryCode = "cn", count = 1),
             })
-    void friends_aggregateIncreasesWhenOutcomeAccepted(AppUser user) {
+    void friendsAggregateIncreasesWhenOutcomeAccepted(AppUser user) {
         final Map<String, Integer> before = expectedMyCountsCountryCode(user);
         StatResponse response1 = awaitFriendsStat(user, before);
         assertAll("Before accept friendship (outcome pending)",
@@ -377,17 +377,18 @@ public class StatisticsTest extends BaseTest {
 
     @Test
     @DisplayName("Статистика (я + друзья): растёт после принятия мной приглашения от друга")
-    @User(full = false, incomeInvitation = 1,
+    @User(incomeInvitation = 1,
             photos = {
                     @Photo(countryCode = "fr", count = 2),
                     @Photo(owner = Photo.Owner.INCOME, partyIndex = 0, countryCode = "fr", count = 1),
                     @Photo(owner = Photo.Owner.INCOME, partyIndex = 0, countryCode = "cn", count = 1),
             })
-    void friends_aggregateIncreasesWhenIncomeAccepted(AppUser user) {
+    void friendsAggregateIncreasesWhenIncomeAccepted(AppUser user) {
         final UUID inviteeId = user.testData().incomeInvitations().getFirst().id();
 
         final Map<String, Integer> before = expectedMyCountsCountryCode(user);
         StatResponse response1 = awaitFriendsStat(user, before);
+
         assertAll("Before accept friendship (income pending)",
                 () -> assertEquals(before.size(), response1.getStatCount()),
                 () -> assertCountyCodes(before, response1)
@@ -419,7 +420,7 @@ public class StatisticsTest extends BaseTest {
     @DisplayName("Статистика (я + друзья): уменьшается — когда удаляем друга")
     @User(photos = {@Photo(countryCode = "fr", count = 1)},
             friends = 1, friendsWithPhotosEach = 1)
-    void friends_decreasesWhenRemoveFriend(AppUser user) {
+    void friendsDecreasesWhenRemoveFriend(AppUser user) {
         final Map<String, Integer> before = expectedFeedCountsCountryCode(user);
         StatResponse response1 = awaitFriendsStat(user, before);
         assertAll("Before remove friend",
@@ -443,10 +444,10 @@ public class StatisticsTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Статистика (я + друзья): без эффекта — когда отклоняем входящее приглашение")
+    @DisplayName("Статистика (я + друзья): без эффекта — когда мной отклоняется входящее приглашение")
     @User(photos = {@Photo(countryCode = "fr", count = 1)},
             incomeInvitation = 1)
-    void friends_noEffectWhenDeclineIncomeInvitation(AppUser user) {
+    void friendsNoEffectWhenDeclineIncomeInvitation(AppUser user) {
         final Map<String, Integer> before = expectedMyCountsCountryCode(user);
         StatResponse response1 = awaitFriendsStat(user, before);
         assertAll("Before decline incoming",
@@ -471,7 +472,7 @@ public class StatisticsTest extends BaseTest {
     @DisplayName("Статистика (я + друзья): без эффекта — когда адресат отклоняет исходящее приглашение")
     @User(photos = {@Photo(countryCode = "fr", count = 1)},
             outcomeInvitation = 1)
-    void friends_noEffectWhenInviteeDeclinesOutcome(AppUser user) {
+    void friendsNoEffectWhenInviteeDeclinesOutcome(AppUser user) {
         final Map<String, Integer> before = expectedMyCountsCountryCode(user);
         StatResponse r1 = awaitFriendsStat(user, before);
         assertAll("Before invitee decline",
@@ -496,7 +497,7 @@ public class StatisticsTest extends BaseTest {
     @DisplayName("Статистика (я + друзья): растёт только от принятой дружбы — когда входящих приглашений несколько")
     @User(photos = {@Photo(countryCode = "fr", count = 1)},
             incomeInvitation = 2)
-    void friends_increasesOnlyFromAcceptedOneWhenMultipleIncome(AppUser user) {
+    void friendsIncreasesOnlyFromAcceptedOneWhenMultipleIncome(AppUser user) {
         final Map<String, Integer> before = expectedMyCountsCountryCode(user);
         StatResponse r1 = awaitFriendsStat(user, before);
         assertAll("Before accept one of multiple",
@@ -522,7 +523,7 @@ public class StatisticsTest extends BaseTest {
     @DisplayName("Статистика (я + друзья): без эффекта — когда у друга нет фото")
     @User(photos = {@Photo(countryCode = "fr", count = 1)},
             friends = 1, friendsWithPhotosEach = 0)
-    void friends_noEffectWhenFriendHasNoPhotos(AppUser user) {
+    void friendsNoEffectWhenFriendHasNoPhotos(AppUser user) {
         final Map<String, Integer> expected = expectedMyCountsCountryCode(user);
         StatResponse r = awaitFriendsStat(user, expected);
         assertAll("Friend without photos",
@@ -534,7 +535,7 @@ public class StatisticsTest extends BaseTest {
     @Test
     @DisplayName("Статистика (я + друзья): без эффекта — когда друг обновляет только описание фото")
     @User(friends = 1, friendsWithPhotosEach = 1)
-    void friends_noEffectWhenFriendUpdatesDescription(AppUser user) {
+    void friendsNoEffectWhenFriendUpdatesDescription(AppUser user) {
         final Map<String, Integer> before = expectedFeedCountsCountryCode(user);
         StatResponse r1 = awaitFriendsStat(user, before);
         assertAll("Before friend updates description",
@@ -561,35 +562,44 @@ public class StatisticsTest extends BaseTest {
     // ==== Негативные сценарии ====
 
     @Test
-    @DisplayName("Статистика: NOT_FOUND — когда пользователь не существует")
-    void geo_notFoundWhenUserMissing() {
-        try {
-            geoBlockingStub.statistics(StatRequest.newBuilder()
-                    .setUserId(java.util.UUID.randomUUID().toString())
-                    .build());
-        } catch (StatusRuntimeException e) {
-            assertEquals(Status.NOT_FOUND.getCode(), e.getStatus().getCode());
-        }
+    @DisplayName("Статистика_пользователь не существует: NOT_FOUND")
+    void geoStatisticsReturnsNotFoundWhenUserMissing() {
+        final String unknownUserId = UUID.randomUUID().toString();
+
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class, () ->
+                geoBlockingStub.statistics(StatRequest.newBuilder()
+                        .setUserId(unknownUserId)
+                        .build())
+        );
+        assertEquals(Status.NOT_FOUND.getCode(), ex.getStatus().getCode(), "status should be NOT_FOUND");
     }
 
     @Test
-    @DisplayName("Статистика: INVALID_ARGUMENT — когда user_id пустой")
-    void geo_invalidArgumentWhenUserIdEmpty() {
-        try {
-            geoBlockingStub.statistics(StatRequest.newBuilder().setUserId("").build());
-        } catch (StatusRuntimeException e) {
-            assertEquals(Status.INVALID_ARGUMENT.getCode(), e.getStatus().getCode());
-        }
+    @DisplayName("Статистика user_id пустой: INVALID_ARGUMENT")
+    void geoStatisticsReturnsInvalidArgumentWhenUserIdIsEmpty() {
+        StatRequest request = StatRequest.newBuilder()
+                .setUserId("")
+                .build();
+
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                () -> geoBlockingStub.statistics(request),
+                "exception should be thrown");
+        assertEquals(Status.INVALID_ARGUMENT.getCode(), ex.getStatus().getCode(),
+                "status should be INVALID_ARGUMENT");
     }
 
     @Test
-    @DisplayName("Статистика: INVALID_ARGUMENT — когда user_id не UUID")
-    void geo_invalidArgumentWhenUserIdNotUuid() {
-        try {
-            geoBlockingStub.statistics(StatRequest.newBuilder().setUserId("not-a-uuid").build());
-        } catch (StatusRuntimeException e) {
-            assertEquals(Status.INVALID_ARGUMENT.getCode(), e.getStatus().getCode());
-        }
+    @DisplayName("Статистика user_id не UUID: INVALID_ARGUMENT")
+    void geoStatisticsReturnsInvalidArgumentWhenUserIdIsNotUuid() {
+        StatRequest request = StatRequest.newBuilder()
+                .setUserId("not-a-uuid")
+                .build();
+
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                () -> geoBlockingStub.statistics(request),
+                "exception should be thrown");
+        assertEquals(Status.INVALID_ARGUMENT.getCode(), ex.getStatus().getCode(),
+                "status should be INVALID_ARGUMENT");
     }
 
     // ==== Helpers ====

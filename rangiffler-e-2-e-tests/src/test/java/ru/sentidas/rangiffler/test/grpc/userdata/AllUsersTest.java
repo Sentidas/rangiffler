@@ -28,7 +28,7 @@ public class AllUsersTest extends BaseTest {
         final String inviterId = incomingInviterIdToString(user);
         final String inviteeId = outgoingInviteeIdToString(user);
 
-        final UsersPageResponse response = userdataBlockingStub.allUsersPage(
+        UsersPageResponse response = userdataBlockingStub.allUsersPage(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)
@@ -67,7 +67,7 @@ public class AllUsersTest extends BaseTest {
     void allUsersPageIsFilteredBySearchQueryWhenSearchQueryProvided(AppUser user) {
         final String friendUsername = firstFriendUsername(user);
 
-        final UsersPageResponse filtered = userdataBlockingStub.allUsersPage(
+        UsersPageResponse filtered = userdataBlockingStub.allUsersPage(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)
@@ -87,7 +87,7 @@ public class AllUsersTest extends BaseTest {
     @DisplayName("Список пользователей: корректная пагинация, когда пользователей больше размера страницы")
     @User(friends = 2, incomeInvitation = 1, outcomeInvitation = 1)
     void allUsersPagePaginatedCorrectlyWhenMoreThanPageSize(AppUser user) {
-        final UsersPageResponse page0 = userdataBlockingStub.allUsersPage(
+        UsersPageResponse page0 = userdataBlockingStub.allUsersPage(
                 UserPageRequest.newBuilder()
                         .setUsername(user.username())
                         .setPage(0)

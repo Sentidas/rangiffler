@@ -17,20 +17,19 @@ import ru.sentidas.rangiffler.test.grpc.BaseTest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
-import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL2;
 
 @GrpcTest
 @DisplayName("Photo: updatePhoto")
 public class UpdatePhotoTest extends BaseTest {
 
     @Test
-    @User(photos = { @Photo(countryCode = "fr", description = "desc", src = DATA_URL) })
+    @User(photos = {@Photo(countryCode = "fr", description = "desc", src = DATA_URL)})
     @DisplayName("Обновление описания фото: значение меняется")
     public void updatePhotoChangesDescriptionWhenOwnerUpdates(AppUser user) {
         final String ownerId = user.id().toString();
         final AppPhoto photo = firstPhoto(user, user.id());
 
-        final PhotoResponse updated = photoBlockingStub.updatePhoto(
+        PhotoResponse updated = photoBlockingStub.updatePhoto(
                 UpdatePhotoRequest.newBuilder()
                         .setPhotoId(photo.id().toString())
                         .setRequesterId(ownerId)
@@ -42,13 +41,13 @@ public class UpdatePhotoTest extends BaseTest {
     }
 
     @Test
-    @User(photos = { @Photo(countryCode = "fr", description = "desc", src = DATA_URL) })
+    @User(photos = {@Photo(countryCode = "fr", description = "desc", src = DATA_URL)})
     @DisplayName("Обновление страны фото: код меняется")
     public void updatePhotoChangesCountryCodeWhenOwnerUpdates(AppUser user) {
         final String ownerId = user.id().toString();
         final AppPhoto photo = firstPhoto(user, user.id());
 
-        final PhotoResponse updated = photoBlockingStub.updatePhoto(
+        PhotoResponse updated = photoBlockingStub.updatePhoto(
                 UpdatePhotoRequest.newBuilder()
                         .setPhotoId(photo.id().toString())
                         .setRequesterId(ownerId)
@@ -68,7 +67,7 @@ public class UpdatePhotoTest extends BaseTest {
         final String friend = friendId(user, 0).toString();
         final String photoId = firstPhotoId(user, user.id()).toString();
 
-        final StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.updatePhoto(UpdatePhotoRequest.newBuilder()
                         .setPhotoId(photoId)
                         .setRequesterId(friend)
@@ -80,7 +79,7 @@ public class UpdatePhotoTest extends BaseTest {
     @Test
     @DisplayName("Неверный UUID photo_id: INVALID_ARGUMENT")
     public void updatePhotoReturnsInvalidArgumentWhenPhotoIdIsInvalid() {
-        final StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
                 photoBlockingStub.updatePhoto(UpdatePhotoRequest.newBuilder()
                         .setPhotoId("not-a-uuid")
                         .setRequesterId("11111111-1111-1111-1111-111111111111")
