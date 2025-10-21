@@ -131,4 +131,19 @@ public class PhotoApi {
         ApolloResponse<LikePhotoMutation.Data> response = Rx2Apollo.single(call).blockingGet();
         return response.dataOrThrow();
     }
+    public ApolloResponse<LikePhotoMutation.Data> tryLikePhotoRaw(String bearerToken, String photoId, String likerUserId) {
+        PhotoInput input = PhotoInput.builder()
+                .id(photoId)
+                .like(LikeInput.builder().user(likerUserId).build())
+                .build();
+
+        LikePhotoMutation mutation = LikePhotoMutation.builder()
+                .input(input)
+                .build();
+
+        ApolloCall<LikePhotoMutation.Data> call = apollo.mutation(mutation)
+                .addHttpHeader("authorization", bearerToken);
+
+        return Rx2Apollo.single(call).blockingGet();
+    }
 }

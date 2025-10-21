@@ -22,6 +22,11 @@ public final class ErrorGql {
         return extensions != null ? (String) extensions.get("classification") : null;
     }
 
+    public static String error(ApolloResponse<?> response) {
+        Map<String, Object> extensions = response.errors.getFirst().getExtensions();
+        return extensions != null ? (String) extensions.get("error") : null;
+    }
+
     public static String path(ApolloResponse<?> response) {
         if (response.errors == null || response.errors.isEmpty()) {
             return null;

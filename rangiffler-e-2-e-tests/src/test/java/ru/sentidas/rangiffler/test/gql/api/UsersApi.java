@@ -5,6 +5,7 @@ import com.apollographql.apollo.api.ApolloResponse;
 import com.apollographql.java.client.ApolloCall;
 import com.apollographql.java.client.ApolloClient;
 import com.apollographql.java.rx2.Rx2Apollo;
+import ru.sentidas.GetFriendsOfFriendsQuery;
 import ru.sentidas.GetPeopleQuery;
 
 
@@ -28,5 +29,13 @@ public class UsersApi {
 
         ApolloResponse<GetPeopleQuery.Data> response = Rx2Apollo.single(call).blockingGet();
         return response.dataOrThrow();
+    }
+
+    public ApolloResponse<GetFriendsOfFriendsQuery.Data> getFriendsOfFriends(String token) {
+        GetFriendsOfFriendsQuery query = GetFriendsOfFriendsQuery.builder().build();
+
+        ApolloCall<GetFriendsOfFriendsQuery.Data> call = apollo.query(query)
+                .addHttpHeader("Authorization", token);
+        return Rx2Apollo.single(call).blockingGet();
     }
 }

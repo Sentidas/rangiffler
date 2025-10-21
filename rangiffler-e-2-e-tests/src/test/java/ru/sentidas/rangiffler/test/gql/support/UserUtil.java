@@ -13,6 +13,4 @@ public class UserUtil {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("node not found: " + userId));
     }
-
-
 }

@@ -6,6 +6,8 @@ import com.apollographql.java.client.ApolloClient;
 import com.apollographql.java.rx2.Rx2Apollo;
 import ru.sentidas.GetFeedQuery;
 
+import javax.annotation.Nonnull;
+
 public class FeedApi {
 
     private final ApolloClient apollo;
@@ -14,6 +16,7 @@ public class FeedApi {
         this.apollo = apollo;
     }
 
+    @Nonnull
     public GetFeedQuery.Data getFeed(String token, int page, int size, boolean withFriends) {
         GetFeedQuery query = GetFeedQuery.builder()
                 .page(page)
@@ -26,5 +29,17 @@ public class FeedApi {
 
         ApolloResponse<GetFeedQuery.Data> response = Rx2Apollo.single(call).blockingGet();
         return response.dataOrThrow();
+    }
+
+    @Nonnull
+    public ApolloResponse<GetFeedQuery.Data> tryGetFeedWithoutAuth(int page, int size, boolean withFriends) {
+        GetFeedQuery query = GetFeedQuery.builder()
+                .page(page)
+                .size(size)
+                .withFriends(withFriends)
+                .build();
+
+        ApolloCall<GetFeedQuery.Data> call = apollo.query(query);
+        return Rx2Apollo.single(call).blockingGet();
     }
 }

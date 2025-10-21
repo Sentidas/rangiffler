@@ -19,7 +19,6 @@ import ru.sentidas.rangiffler.utils.AnnotationHelper;
 import ru.sentidas.type.FriendStatus;
 import ru.sentidas.type.FriendshipAction;
 
-import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -92,12 +91,12 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         final String inviterUsername = incomingInviterUsername(user);
 
         // Подготовка: INVITATION_SENT в users() до принятия приглашения
-        GetPeopleQuery.Data beforePage  = usersApi.users(bearerToken, 0, 10, inviterUsername);
+        GetPeopleQuery.Data beforePage = usersApi.users(bearerToken, 0, 10, inviterUsername);
         final GetPeopleQuery.Node beforeNode = findNodeById(beforePage, inviterId);
         assertEquals(FriendStatus.INVITATION_RECEIVED, beforeNode.friendStatus);
 
         // Действие: принятие приглашения
-        FriendshipActionMutation.Data acceptResponse  = friendshipApi.accept(bearerToken, inviterId);
+        FriendshipActionMutation.Data acceptResponse = friendshipApi.accept(bearerToken, inviterId);
         assertAll("ACCEPT response fields — users become friends",
                 () -> assertEquals(inviterId, acceptResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(inviterUsername, acceptResponse.friendship.username, "username mismatch"),
@@ -105,7 +104,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         );
 
         // Пост-проверка FRIEND в users()
-        GetPeopleQuery.Data afterPage  = usersApi.users(bearerToken, 0, 10, inviterUsername);
+        GetPeopleQuery.Data afterPage = usersApi.users(bearerToken, 0, 10, inviterUsername);
         GetPeopleQuery.Node afterNode = findNodeById(afterPage, inviterId);
         assertEquals(FriendStatus.FRIEND, afterNode.friendStatus);
     }
@@ -119,12 +118,12 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         final String inviterUsername = incomingInviterUsername(user);
 
         // Подготовка: INVITATION_SENT в users() до отклонения приглашения
-        GetPeopleQuery.Data beforePage  = usersApi.users(bearerToken, 0, 10, inviterUsername);
+        GetPeopleQuery.Data beforePage = usersApi.users(bearerToken, 0, 10, inviterUsername);
         final GetPeopleQuery.Node beforeNode = findNodeById(beforePage, inviterId);
         assertEquals(FriendStatus.INVITATION_RECEIVED, beforeNode.friendStatus);
 
         // Действие: отклонение приглашения
-        FriendshipActionMutation.Data rejectResponse  = friendshipApi.reject(bearerToken, inviterId);
+        FriendshipActionMutation.Data rejectResponse = friendshipApi.reject(bearerToken, inviterId);
         assertAll("REJECT response fields — invitation removed",
                 () -> assertEquals(inviterId, rejectResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(inviterUsername, rejectResponse.friendship.username, "username mismatch"),
@@ -132,7 +131,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         );
 
         // Пост-проверка null в users()
-        GetPeopleQuery.Data afterPage  = usersApi.users(bearerToken, 0, 10, inviterUsername);
+        GetPeopleQuery.Data afterPage = usersApi.users(bearerToken, 0, 10, inviterUsername);
         final GetPeopleQuery.Node afterNode = UserUtil.findNodeById(afterPage, inviterId);
         assertEquals(null, afterNode.friendStatus, "friendStatus must be null after DELETE");
     }
@@ -145,13 +144,13 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         final String inviteeId = outgoingInviteeId(user).toString();
         final String inviteeUsername = outgoingInviteeUsername(user);
 
-        ApolloResponse<FriendshipActionMutation.Data> response  =
+        ApolloResponse<FriendshipActionMutation.Data> response =
                 friendshipApi.tryAction(bearerToken, inviteeId, FriendshipAction.ADD);
         assertEquals(FriendStatus.INVITATION_SENT, response.data.friendship.friendStatus);
 
 
         GetPeopleQuery.Data usersPage = usersApi.users(bearerToken, 0, 10, inviteeUsername);
-        GetPeopleQuery.Node inviteeNode = usersPage .users.edges.getFirst().node;
+        GetPeopleQuery.Node inviteeNode = usersPage.users.edges.getFirst().node;
         assertEquals(FriendStatus.INVITATION_SENT, inviteeNode.friendStatus);
     }
 
@@ -164,7 +163,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         final String friendUsername = AnnotationHelper.firstFriendUsername(user);
 
         // Повторный ADD к уже другу — подтверждение FRIEND
-        FriendshipActionMutation.Data invitationResponse  = friendshipApi.sentInvitation(bearerToken, friendId);
+        FriendshipActionMutation.Data invitationResponse = friendshipApi.sentInvitation(bearerToken, friendId);
         assertAll("ADD response fields — already friends remain FRIEND",
                 () -> assertEquals(friendId, invitationResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(friendUsername, invitationResponse.friendship.username, "username mismatch"),
@@ -186,11 +185,11 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         final String inviteeUsername = outgoingInviteeUsername(user);
 
         // Предусловие: статус в user INVITATION_SENT
-        GetPeopleQuery.Data beforePage  = usersApi.users(bearerToken, 0, 10, inviteeUsername);
-        assertEquals(FriendStatus.INVITATION_SENT, findNodeById(beforePage , inviteeId).friendStatus);
+        GetPeopleQuery.Data beforePage = usersApi.users(bearerToken, 0, 10, inviteeUsername);
+        assertEquals(FriendStatus.INVITATION_SENT, findNodeById(beforePage, inviteeId).friendStatus);
 
         // REJECT своей исходящей — не должен ничего удалять
-        FriendshipActionMutation.Data rejectResponse  = friendshipApi.reject(bearerToken, inviteeId);
+        FriendshipActionMutation.Data rejectResponse = friendshipApi.reject(bearerToken, inviteeId);
         assertAll("REJECT on own outgoing — no-op, status preserved",
                 () -> assertEquals(inviteeId, rejectResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(inviteeUsername, rejectResponse.friendship.username, "username mismatch"),
@@ -199,7 +198,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         );
 
         // Постусловие: статус в users() неизменен INVITATION_SENT
-        GetPeopleQuery.Data afterPage  = usersApi.users(bearerToken, 0, 10, inviteeUsername);
+        GetPeopleQuery.Data afterPage = usersApi.users(bearerToken, 0, 10, inviteeUsername);
         assertEquals(FriendStatus.INVITATION_SENT, findNodeById(afterPage, inviteeId).friendStatus);
     }
 
@@ -216,7 +215,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         assertEquals(FriendStatus.INVITATION_RECEIVED, findNodeById(before, inviterId).friendStatus);
 
         // REJECT входящего приглашения
-        FriendshipActionMutation.Data rejectResponse  = friendshipApi.reject(bearerToken, inviterId);
+        FriendshipActionMutation.Data rejectResponse = friendshipApi.reject(bearerToken, inviterId);
         assertAll("REJECT response fields — invitation removed",
                 () -> assertEquals(inviterId, rejectResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(inviterUsername, rejectResponse.friendship.username, "username mismatch"),
@@ -227,7 +226,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         assertEquals(null, findNodeById(pageAfterReject, inviterId).friendStatus);
 
         // Снова ADD к тому же пользователю — должен появиться исходящий и вернуться INVITATION_SENT
-        FriendshipActionMutation.Data addResponse  = friendshipApi.sentInvitation(bearerToken, inviterId);
+        FriendshipActionMutation.Data addResponse = friendshipApi.sentInvitation(bearerToken, inviterId);
         assertAll("ADD-after-REJECT response fields — invitation re-created",
                 () -> assertEquals(inviterId, addResponse.friendship.id, "friend id mismatch"),
                 () -> assertEquals(inviterUsername, addResponse.friendship.username, "username mismatch"),
@@ -236,7 +235,7 @@ public class FriendshipActionGqlTest extends BaseGraphQlTest {
         );
 
         // И в users() — INVITATION_SENT
-        GetPeopleQuery.Data pageAfterAdd  = usersApi.users(bearerToken, 0, 10, inviterUsername);
+        GetPeopleQuery.Data pageAfterAdd = usersApi.users(bearerToken, 0, 10, inviterUsername);
         assertEquals(FriendStatus.INVITATION_SENT, findNodeById(pageAfterAdd, inviterId).friendStatus);
     }
 
