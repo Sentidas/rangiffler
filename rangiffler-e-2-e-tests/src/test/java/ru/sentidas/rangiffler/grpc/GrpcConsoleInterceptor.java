@@ -1,0 +1,63 @@
+package ru.sentidas.rangiffler.grpc;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.util.JsonFormat;
+import io.grpc.*;
+
+public class GrpcConsoleInterceptor implements  io.grpc.ClientInterceptor {
+
+  private static final JsonFormat.Printer printer = JsonFormat.printer();
+
+  // Фича-флаг: включаем детальный трассинг gRPC вручную (дефолт — false).
+  // private static final boolean TRACE = Boolean.getBoolean("rangiffler.grpc.trace");
+  private static final boolean TRACE = true;
+  private static final boolean TRACE_request = false;
+
+
+  @Override
+  public <ReqT, RespT> ClientCall<ReqT, RespT> interceptCall(MethodDescriptor<ReqT, RespT> methodDescriptor, CallOptions callOptions, Channel channel) {
+    return new ForwardingClientCall.SimpleForwardingClientCall(
+        channel.newCall(methodDescriptor, callOptions)
+    ) {
+
+      @Override
+      public void sendMessage(Object message) {
+        if (TRACE_request) {
+          try {
+            System.out.println("REQUEST: " + printer.print((MessageOrBuilder) message));
+          } catch (InvalidProtocolBufferException e) {
+            throw new RuntimeException(e);
+          }
+
+        }
+        super.sendMessage(message);
+      }
+
+      @Override
+      public void start(Listener responseListener, Metadata headers) {
+        ForwardingClientCallListener<Object> clientCallListener = new ForwardingClientCallListener<>() {
+
+          @Override
+          public void onMessage(Object message) {
+            if (TRACE) {
+              try {
+                System.out.println("RESPONSE: " + printer.print((MessageOrBuilder) message));
+              } catch (InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+              }
+
+            }
+            super.onMessage(message);
+          }
+
+          @Override
+          protected Listener<Object> delegate() {
+            return responseListener;
+          }
+        };
+        super.start(clientCallListener, headers);
+      }
+    };
+  }
+}
