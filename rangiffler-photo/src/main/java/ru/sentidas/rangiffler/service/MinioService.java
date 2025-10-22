@@ -21,43 +21,37 @@ public class MinioService {
 
     /**
      * Принимает data URL "data:image/...;base64,...."
-     * Кладёт в бакет, возвращает относительный путь (object key), напр. "photos/{userId}/{photoId}/{uuid}.png".
+     * Возвращает относительный путь (object key)
      */
-    public String uploadFromDataUrl(UUID userId, UUID photoId, String dataUrl) throws Exception {
-        if (dataUrl == null || !dataUrl.startsWith("data:")) {
-            throw new IllegalArgumentException("src must be data URL");
-        }
-        int comma = dataUrl.indexOf(',');
-        if (comma < 0) throw new IllegalArgumentException("invalid data URL");
-
-        String meta = dataUrl.substring(5, comma);                // image/png;base64
-        String contentType = meta.replace(";base64", "");         // image/png
-        byte[] bytes = Base64.getDecoder().decode(dataUrl.substring(comma + 1));
-
-        String ext = switch (contentType) {
+    public String upload(UUID userId, byte[] bytes, String mime) throws Exception {
+        String ext = switch (mime) {
             case "image/jpeg" -> "jpg";
             case "image/png"  -> "png";
+            case "image/gif"  -> "gif";
             case "image/webp" -> "webp";
-            default -> "bin";
+            default -> throw new IllegalArgumentException("Unsupported mime for upload: " + mime);
         };
 
+        // photos/{userId}/{randomUuid}.{ext}
         String objectKey = "photos/%s/%s.%s".formatted(userId, UUID.randomUUID(), ext);
 
-        try (var is = new ByteArrayInputStream(bytes)) {
+        try (ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes)) {
             minio.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
                             .object(objectKey)
-                            .contentType(contentType)
-                            .stream(is, bytes.length, -1)
+                            .contentType(mime)
+                            .stream(inputStream, bytes.length, -1)
                             .build()
             );
         }
-        return objectKey; // <-- ВОЗВРАЩАЕМ КЛЮЧ, НЕ ПОЛНЫЙ URL
+        return objectKey;
     }
 
     public void deleteObject(String objectKey) {
-        if (objectKey == null || objectKey.isBlank()) return;
+        if (objectKey == null || objectKey.isBlank()) {
+            return;
+        }
         try {
             minio.removeObject(
                     io.minio.RemoveObjectArgs.builder()
@@ -69,5 +63,4 @@ public class MinioService {
             // best-effort: не роняем бизнес-операцию
         }
     }
-
 }

@@ -5,13 +5,14 @@ CREATE TABLE IF NOT EXISTS `photo`
     `country_code` CHAR(2)                NOT NULL,
     `description`  TEXT                   NULL,
     `storage`      ENUM ('OBJECT','BLOB') NOT NULL DEFAULT 'OBJECT',
-    `photo`        LONGBLOB               NULL, -- для режима BLOB
-    `photo_url`    VARCHAR(512)           NULL, -- для режима OBJECT (ключ MinIO)
+    `photo`        LONGBLOB               NULL,            -- для режима BLOB
+    `photo_url`    VARCHAR(512)           NULL,            -- для режима OBJECT (ключ MinIO)
+    `photo_mime`    VARCHAR(64)            NOT NULL,       -- исходный MIME (image/png, ...)
     `created_date` DATETIME               NOT NULL,
     PRIMARY KEY (`id`),
     KEY `idx_photo_user_created` (`user_id`, `created_date`),
     KEY `idx_photo_created` (`created_date`)
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS `photo_like`
 (
@@ -19,4 +20,4 @@ CREATE TABLE IF NOT EXISTS `photo_like`
     `user_id`      BINARY(16) NOT NULL,
     `created_date` DATETIME   NOT NULL,
     PRIMARY KEY (`photo_id`, `user_id`)
-) ENGINE = InnoDB;
+) ENGINE = InnoDB DEFAULT CHARSET=utf8mb4  COLLATE=utf8mb4_0900_ai_ci;

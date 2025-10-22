@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.data;
+package ru.sentidas.rangiffler.model;
 
 public enum StorageType {
     OBJECT, BLOB

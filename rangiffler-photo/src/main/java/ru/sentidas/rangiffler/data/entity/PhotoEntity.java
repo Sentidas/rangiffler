@@ -3,7 +3,7 @@ package ru.sentidas.rangiffler.data.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import ru.sentidas.rangiffler.data.StorageType;
+import ru.sentidas.rangiffler.model.StorageType;
 
 import java.util.Date;
 import java.util.UUID;
@@ -41,9 +41,10 @@ public class PhotoEntity {
     @Column(name = "photo_url", length = 512)
     private String photoUrl; // для режима OBJECT (ключ MinIO или http)
 
+    @Column(name = "photo_mime", nullable = false)
+    private String photoMime;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_date", nullable = false)
     private Date createdDate;
-
 }

@@ -8,7 +8,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
-import ru.sentidas.rangiffler.events.ActivityEvent;
+import ru.sentidas.rangiffler.ActivityEvent;
 
 import java.util.Map;
 

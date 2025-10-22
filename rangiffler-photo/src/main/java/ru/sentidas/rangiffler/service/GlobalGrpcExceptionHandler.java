@@ -1,10 +1,12 @@
-package ru.sentidas.rangiffler.ex;
+package ru.sentidas.rangiffler.service;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import lombok.extern.slf4j.Slf4j;
 import net.devh.boot.grpc.server.advice.GrpcAdvice;
 import net.devh.boot.grpc.server.advice.GrpcExceptionHandler;
+import ru.sentidas.rangiffler.ex.AccessDeniedException;
+import ru.sentidas.rangiffler.ex.NotFoundException;
 
 @Slf4j
 @GrpcAdvice
@@ -16,7 +18,7 @@ public class GlobalGrpcExceptionHandler {
         return Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException();
     }
 
-    @GrpcExceptionHandler(AccessDeniedException.class) // ← РАЗКОММЕНТИРУЙ
+    @GrpcExceptionHandler(AccessDeniedException.class)
     public StatusRuntimeException handleAccessDenied(AccessDeniedException e) {
         log.warn("gRPC PERMISSION_DENIED: {}", e.getMessage());
         return Status.PERMISSION_DENIED.withDescription(e.getMessage()).asRuntimeException();
@@ -30,7 +32,6 @@ public class GlobalGrpcExceptionHandler {
 
     @GrpcExceptionHandler(Throwable.class)
     public StatusRuntimeException handleAny(Throwable e) {
-        // здесь логируй со стеком, чтобы видеть первопричину
         log.error("gRPC INTERNAL (unhandled)", e);
         return Status.INTERNAL.withDescription("Unhandled error").asRuntimeException();
     }

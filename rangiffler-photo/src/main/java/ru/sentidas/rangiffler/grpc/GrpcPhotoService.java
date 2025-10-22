@@ -7,16 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.transaction.annotation.Transactional;
 import ru.sentidas.rangiffler.grpc.client.GrpcUserdataClient;
 import ru.sentidas.rangiffler.model.CreatePhoto;
 import ru.sentidas.rangiffler.model.Like;
 import ru.sentidas.rangiffler.model.Photo;
 import ru.sentidas.rangiffler.service.PhotoService;
 
-import java.util.List;
-import java.util.UUID;
-
+import java.util.*;
 
 @GrpcService
 public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhotoServiceImplBase {
@@ -31,13 +28,14 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         this.grpcUserdataClient = grpcUserdataClient;
     }
 
-    @Transactional
     @Override
     public void createPhoto(CreatePhotoRequest request, StreamObserver<PhotoResponse> responseObserver) {
+        String normalizedCountryCode = normalizeCountryCode(request.getCountryCode());
+
         CreatePhoto createdPhoto = new CreatePhoto(
                 UUID.fromString(request.getUserId()),
                 request.getSrc(),
-                request.getCountryCode(),
+                normalizedCountryCode,
                 request.getDescription()
         );
         Photo photo = photoService.addPhoto(createdPhoto);
@@ -45,42 +43,61 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         responseObserver.onCompleted();
     }
 
-    @Transactional
+    @Override
     public void updatePhoto(UpdatePhotoRequest request, StreamObserver<PhotoResponse> responseObserver) {
-        Photo photo = Photo.fromProto(request);
+        UpdatePhotoRequest normalizedRequest = request;
+
+        if (request.hasCountryCode()) {
+            String normalizedCountryCode = normalizeCountryCode(request.getCountryCode());
+            normalizedRequest = UpdatePhotoRequest.newBuilder(request)
+                    .setCountryCode(normalizedCountryCode)
+                    .build();
+        }
+
+        Photo photo = Photo.fromProto(normalizedRequest);
         Photo updated = photoService.updatePhoto(photo);
         responseObserver.onNext(toProto(updated));
         responseObserver.onCompleted();
     }
 
-    @Transactional(readOnly = true)
+    @Override
     public void getUserPhotos(PhotoPageRequest request, StreamObserver<PhotosPageResponse> responseObserver) {
-        final String username = grpcUserdataClient.getUsernameById(UUID.fromString(request.getUserId()));
+        UUID userId = UUID.fromString(request.getUserId());
         Pageable pageable = PageRequest.of(
                 request.getPage(),
                 request.getSize()
         );
 
-        Slice<Photo> photos = photoService.userPhotos(username, pageable);
-        responseObserver.onNext(toProto(photos));
-        responseObserver.onCompleted();
+        Slice<Photo> photos = photoService.userPhotos(userId, pageable);
 
+        Integer total = null;
+        if (request.getIncludeTotal()) {
+            total = photoService.countUserPhotos(UUID.fromString(request.getUserId()));
+        }
+        responseObserver.onNext(toProtoWithBatchedLikes(photos, total));
+        responseObserver.onCompleted();
     }
-    @Transactional(readOnly = true)
+
+
+    @Override
     public void getFeedPhotos(PhotoPageRequest request, StreamObserver<PhotosPageResponse> responseObserver) {
-        final String username = grpcUserdataClient.getUsernameById(UUID.fromString(request.getUserId()));
+        UUID userId = UUID.fromString(request.getUserId());
         Pageable pageable = PageRequest.of(
                 request.getPage(),
                 request.getSize()
         );
 
-        Slice<Photo> photos = photoService.feedPhotos(username, pageable);
-        responseObserver.onNext(toProto(photos));
-        responseObserver.onCompleted();
+        Slice<Photo> photos = photoService.feedPhotos(userId, pageable);
 
+        Integer total = null;
+        if (request.getIncludeTotal()) {
+            total = photoService.countFeedPhotos(UUID.fromString(request.getUserId()));
+        }
+
+        responseObserver.onNext(toProtoWithBatchedLikes(photos, total));
+        responseObserver.onCompleted();
     }
 
-    @Transactional
     @Override
     public void deletePhoto(DeletePhotoRequest request, StreamObserver<Empty> responseObserver) {
         photoService.deletePhoto(
@@ -91,75 +108,86 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         responseObserver.onCompleted();
     }
 
-//    @Transactional
-//    @Override
-//    public void toggleLike(LikeRequest request, StreamObserver<PhotoResponse> responseObserver) {
-//        UUID user = UUID.fromString(request.getUserId());
-//        UUID photoId = UUID.fromString(request.getPhotoId());
-//
-//        Photo updated = photoService.toggleLike(user, photoId);
-//        responseObserver.onNext(toProto(updated));
-//        responseObserver.onCompleted();
-//    }
 
-    @Transactional
     @Override
     public void toggleLike(LikeRequest request, StreamObserver<PhotoResponse> out) {
         UUID requesterId = UUID.fromString(request.getUserId());
-        UUID photoId     = UUID.fromString(request.getPhotoId());
+        UUID photoId = UUID.fromString(request.getPhotoId());
 
         // переключили лайк
         Photo photo = photoService.toggleLike(requesterId, photoId);
 
         // добрали актуальные лайки
-        var likes = photoService.photoLikes(photoId);
-
-        // Гарантируем не-null список
+        List<Like> likes = photoService.photoLikes(photoId);
         if (likes == null) {
             likes = List.of();
         }
 
-        // List<ru.sentidas.rangiffler.model.Like>
-       // likes = likes != null ? likes : null;
-        // Гарантируем не-null список
-//        var likes = java.util.Optional.ofNullable(photoService.photoLikes(photoId))
-//                .orElseGet(java.util.List::of);// List<ru.sentidas.rangiffler.model.Like>
-//        // likes = likes != null ? likes : null;
+        PhotoResponse.Builder builder = PhotoResponse.newBuilder();
+        photo.toProto(builder);
+        builder.setLikes(ru.sentidas.rangiffler.model.Like.toProtoList(likes));
 
-        // собрали ответ
-        PhotoResponse.Builder b = PhotoResponse.newBuilder();
-        photo.toProto(b);                             // id/src/country/description/creationDate
-        b.setLikes(ru.sentidas.rangiffler.model.Like.toProtoList(likes)); // total + список
-
-        out.onNext(b.build());
+        out.onNext(builder.build());
         out.onCompleted();
     }
 
-    private PhotoResponse toProtoWithLikes(Photo photo) {
-        var b = PhotoResponse.newBuilder();
-        photo.toProto(b); // id/src/country/description/creationDate
+    @Override
+    public void getPhotoLikes(PhotoIdRequest request, StreamObserver<Likes> responseObserver) {
+        UUID photoId = UUID.fromString(request.getId());
+        List<Like> likes = photoService.photoLikes(photoId);
+        if (likes == null) {
+            likes = List.of();
+        }
 
-        // добираем лайки из сервиса
-        var likes = java.util.Optional.ofNullable(photoService.photoLikes(photo.id()))
-                .orElseGet(java.util.List::of);
-
-        b.setLikes(ru.sentidas.rangiffler.model.Like.toProtoList(likes)); // total + список
-        return b.build();
+        responseObserver.onNext(Like.toProtoList(likes));
+        responseObserver.onCompleted();
     }
 
-
-    private PhotosPageResponse toProto(Slice<Photo> page) {
-        PhotosPageResponse.Builder b = PhotosPageResponse.newBuilder();
-        b.setTotalElements(page.getNumberOfElements());
-        b.setTotalPages(page.getPageable().getPageSize()); // вместо page.getPageable().getPageSize()
-        b.setFirst(page.isFirst());
-        b.setLast(page.isLast());
-        b.setPage(page.getNumber());
-        b.setSize(page.getSize());
-        for (Photo p : page.getContent()) {
-            b.addContent(toProtoWithLikes(p));
+    private String normalizeCountryCode(String code) {
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("country_code is required");
         }
-        return b.build();
+        String normalized = code.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.matches("[a-z]{2}$")) {
+            throw new IllegalArgumentException(
+                    "country_code must be two lowercase letters (ISO alpha-2), e.g. 'it'");
+
+        }
+        return normalized;
+    }
+
+    // Собираем страницу фото с лайками, без N+1
+    private PhotosPageResponse toProtoWithBatchedLikes(Slice<Photo> page, Integer total) {
+        PhotosPageResponse.Builder builder = PhotosPageResponse.newBuilder()
+                .setTotalElements(page.getNumberOfElements())
+                .setFirst(page.isFirst())
+                .setLast(page.isLast())
+                .setPage(page.getNumber())
+                .setSize(page.getSize());
+
+        List<Photo> photos = page.getContent();
+        List<UUID> photoIds = new ArrayList<>(photos.size());
+        for (Photo photo : photos) {
+            photoIds.add(photo.id());
+        }
+
+        Map<UUID, List<Like>> likesByPhoto = photoService.photoLikesMap(photoIds);
+
+        for (Photo photo : photos) {
+            PhotoResponse.Builder photoBuilder = PhotoResponse.newBuilder();
+            photo.toProto(photoBuilder);
+
+            List<Like> likes = likesByPhoto.getOrDefault(photo.id(), List.of());
+            photoBuilder.setLikes(Like.toProtoList(likes));
+
+            builder.addContent(photoBuilder.build());
+        }
+
+        if (total != null) {
+            builder.setTotal(total);
+        }
+
+        return builder.build();
     }
 
     private static PhotoResponse toProto(Photo photo) {

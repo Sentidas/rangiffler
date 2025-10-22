@@ -5,6 +5,8 @@ import jakarta.annotation.Nonnull;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.sentidas.rangiffler.data.entity.PhotoEntity;
 
 import java.util.List;
@@ -16,8 +18,12 @@ public interface PhotoRepository extends JpaRepository<PhotoEntity, UUID> {
     Slice<PhotoEntity> findByUserOrderByCreatedDateDesc(@Nonnull UUID userId,
                                                         @Nonnull Pageable pageable);
 
-
     @Nonnull
     Slice<PhotoEntity> findByUserInOrderByCreatedDateDesc(@Nonnull List<UUID> userIds,
+
                                                           @Nonnull Pageable pageable);
+    int countByUser(@Nonnull UUID userId);
+
+    int countByUserIn(@Nonnull List<UUID> userIds);
+
 }

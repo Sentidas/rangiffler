@@ -4,7 +4,7 @@ package ru.sentidas.rangiffler.grpc.client;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.grpc.*;
-import ru.sentidas.rangiffler.grpc.utils.GrpcCall;
+
 
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +37,6 @@ public class GrpcUserdataClient {
         return UUID.fromString(userResponse.getId());
     }
 
-
     public List<UUID> friendIdsAll(UUID userId) {
         UserIdRequest request = UserIdRequest.newBuilder()
                 .setUserId(userId.toString())
@@ -48,6 +47,4 @@ public class GrpcUserdataClient {
                 .map(UUID::fromString)
                 .toList();
     }
-
-
 }

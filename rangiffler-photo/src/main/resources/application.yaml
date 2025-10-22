@@ -4,6 +4,7 @@ server:
 grpc:
   server:
     port: 8095
+    max-inbound-message-size: 33554432   # 32 MiB, выберите запас: 8/16/32
 
 spring:
   application:
@@ -96,8 +97,7 @@ app:
     bucket: rangiffler-media
     public-base-url: http://localhost:9002/rangiffler-media
     storage:
-      default: OBJECT               # OBJECT или BLOB
-      auto-migrate-on-update: true  # если режим в yaml сменили — запись мигрнёт при update
+      default: BLOB  # OBJECT или BLOB
 
 spring:
   servlet:

@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.grpc.utils;
+package ru.sentidas.rangiffler.grpc.client;
 
 import io.grpc.StatusRuntimeException;
 import org.springframework.http.HttpStatus;

@@ -7,30 +7,29 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.sentidas.rangiffler.config.ActivityPublisher;
-import ru.sentidas.rangiffler.data.StorageType;
+import ru.sentidas.rangiffler.DataUrl;
+import ru.sentidas.rangiffler.EventType;
 import ru.sentidas.rangiffler.data.entity.LikeEntity;
 import ru.sentidas.rangiffler.data.entity.PhotoEntity;
 import ru.sentidas.rangiffler.data.entity.PhotoLikeId;
 import ru.sentidas.rangiffler.data.repository.LikeRepository;
 import ru.sentidas.rangiffler.data.repository.PhotoRepository;
-import ru.sentidas.rangiffler.events.ActivityEvent;
-import ru.sentidas.rangiffler.events.EventType;
+import ru.sentidas.rangiffler.ex.AccessDeniedException;
+import ru.sentidas.rangiffler.ex.NotFoundException;
 import ru.sentidas.rangiffler.grpc.client.GrpcUserdataClient;
 import ru.sentidas.rangiffler.model.CreatePhoto;
+import ru.sentidas.rangiffler.model.Like;
 import ru.sentidas.rangiffler.model.Photo;
-import ru.sentidas.rangiffler.model.PhotoStatEvent;
-import ru.sentidas.rangiffler.utils.NotFoundException;
+import ru.sentidas.rangiffler.model.StorageType;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static ru.sentidas.rangiffler.data.StorageType.BLOB;
-import static ru.sentidas.rangiffler.data.StorageType.OBJECT;
+import static ru.sentidas.rangiffler.model.StorageType.BLOB;
+import static ru.sentidas.rangiffler.model.StorageType.OBJECT;
+
 
 @Service
 @RequiredArgsConstructor
@@ -39,64 +38,22 @@ public class PhotoService {
     private static final Logger LOG = LoggerFactory.getLogger(PhotoService.class);
 
     private final PhotoRepository photoRepository;
-    private final GrpcUserdataClient grpcUserdataClient;
-    private final KafkaTemplate<String, PhotoStatEvent> kafkaTemplate;
     private final LikeRepository likeRepository;
-    private final ActivityPublisher activityPublisher;
+
+    private final GrpcUserdataClient grpcUserdataClient;
+
+    private final PhotoStatService photoStatService;
+    private final ActivityService activityService;
 
     private final MinioService minioService;
     @Value("${app.media.storage.default:OBJECT}")
-    private String defaultStorageStr;
+    private String storageMode;
 
-    @Value("${app.media.storage.auto-migrate-on-update:true}")
-    private boolean autoMigrateOnUpdate;
 
-    private ru.sentidas.rangiffler.data.StorageType defaultStorage() {
-        return ru.sentidas.rangiffler.data.StorageType.valueOf(defaultStorageStr.toUpperCase());
+    public StorageType storageMode() {
+        return currentStorageMode();
     }
 
-
-    //    @Transactional
-//    public Photo addPhoto(@Nonnull CreatePhoto createPhoto) {
-//        PhotoEntity photo = new PhotoEntity();
-//
-//        setPhoto(photo, createPhoto.src());
-//        photo.setDescription(createPhoto.description());
-//        photo.setCreatedDate(new Date());
-//        photo.setCountryCode(createPhoto.countryCode());
-//        photo.setUser(createPhoto.userId());
-//        PhotoEntity saved = photoRepository.save(photo);
-//
-//        Photo newPhoto = Photo.fromEntity(saved);
-//        //  добавляем: бизнес-событие для лога
-//        Map<String, Object> payload = new HashMap<>();
-//        if (newPhoto.countryCode() != null) payload.put("countryCode", newPhoto.countryCode());
-//
-//        activityPublisher.publish(new ActivityEvent(
-//                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-//                EventType.PHOTO_ADDED,       // тип события
-//                Instant.now(),                 // occurredAt (UTC)
-//                newPhoto.requesterId(),                 // actor: кто удалил
-//                newPhoto.id(),                       // фото
-//                newPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-//                "photo",                       // sourceService
-//                payload                        // свободные поля
-//        ));
-//
-//
-//        PhotoStatEvent photoStatEvent = new PhotoStatEvent(
-//                saved.getUser(),
-//                saved.getCountryCode(),
-//                +1
-//        );
-//
-//        kafkaTemplate.send("rangiffler_photo", photoStatEvent);
-//        LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
-//
-//
-//        return newPhoto;
-//    }
-//
     @Transactional
     public Photo addPhoto(@Nonnull CreatePhoto createPhoto) {
         PhotoEntity photoEntity = new PhotoEntity();
@@ -106,64 +63,60 @@ public class PhotoService {
         photoEntity.setCountryCode(createPhoto.countryCode());
         photoEntity.setUser(createPhoto.userId());
 
-        photoEntity = photoRepository.save(photoEntity);
+        // парсим data: URL (фронт всегда отправляет dataURL при создании)
+        DataUrl dataUrl = DataUrl.parse(createPhoto.src()); // бросит IllegalArgumentException, если не data:
+        String mime = dataUrl.mime();
+        byte[] bytes = dataUrl.bytes();
 
-        StorageType mode = defaultStorage();
-
+        StorageType mode = currentStorageMode(); // OBJECT или BLOB (настройка)
 
         try {
-            if (mode == OBJECT) { // <-- если enum в entity-пакете, замени на .data.entity.StorageType
+            if (mode == OBJECT) {
                 // OBJECT: грузим в MinIO и сохраняем ключ
-                String key = minioService.uploadFromDataUrl(createPhoto.userId(), photoEntity.getId(), createPhoto.src());
+                String key = minioService.upload(photoEntity.getUser(), bytes, mime);
                 photoEntity.setPhotoUrl(key);
                 photoEntity.setPhoto(null);
-                photoEntity.setStorage(OBJECT); // <-- поправь пакет при необходимости
+                photoEntity.setStorage(OBJECT);
+                photoEntity.setPhotoMime(mime);
             } else {
-                // BLOB: как у тебя было — используем твой setPhoto(...)
-                setPhoto(photoEntity, createPhoto.src());
+                // BLOB: пишем байты в БД
+                photoEntity.setPhoto(bytes);
                 photoEntity.setPhotoUrl(null);
                 photoEntity.setStorage(BLOB);
+                photoEntity.setPhotoMime(mime);
             }
         } catch (Exception e) {
             throw new RuntimeException("Failed to store photo content", e);
         }
 
+        //  save с полями контента
         PhotoEntity saved = photoRepository.save(photoEntity);
+        Photo createdPhoto = Photo.fromEntity(saved);
 
-        Photo newPhoto = Photo.fromEntity(saved);
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (newPhoto.countryCode() != null) payload.put("countryCode", newPhoto.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.PHOTO_ADDED,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                newPhoto.requesterId(),                 // actor: кто удалил
-                newPhoto.id(),                       // фото
-                newPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-                "photo",                       // sourceService
-                payload                        // свободные поля
-        ));
-
-        PhotoStatEvent photoStatEvent = new PhotoStatEvent(
-                saved.getUser(),
-                saved.getCountryCode(),
-                +1
+        // бизнес-событие для лога
+        activityService.publishPhotoEvent(
+                EventType.PHOTO_ADDED,        // тип события
+                createdPhoto.requesterId(),
+                createdPhoto.id(),
+                createdPhoto.requesterId(),
+                createPhoto.countryCode()
         );
 
-        kafkaTemplate.send("rangiffler_photo", photoStatEvent);
-        LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
+        photoStatService.sendDeltaAfterCommit(
+                saved.getUser(),
+                saved.getCountryCode(),
+                +1);
 
-        return newPhoto;
+        return createdPhoto;
     }
 
     @Transactional
     public Photo updatePhoto(@Nonnull Photo photo) {
         PhotoEntity photoEntity = getRequiredPhoto(photo.id());
+        final String oldCountryCode = photoEntity.getCountryCode();
 
-        if (!userHasFullAccessToPhoto(photo.requesterId(), photoEntity)) {
-            throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Can`t access to photo");
+        if (!isOwner(photo.requesterId(), photoEntity)) {
+            throw new AccessDeniedException("Cannot access to photo");
         }
 
         if (photo.countryCode() != null) {
@@ -173,142 +126,112 @@ public class PhotoService {
             photoEntity.setDescription(photo.description());
         }
 
+        // Изменение контента только если пришёл data:
         if (photo.src() != null && !photo.src().isBlank()) {
-            if (!photo.src().startsWith("data:")) {
-                throw new IllegalArgumentException("`src` must be data URL");
-            }
+            if (photo.src().startsWith("data:")) {
+                DataUrl parsed = DataUrl.parse(photo.src());
+                String mime = parsed.mime();
+                byte[] bytes = parsed.bytes();
 
-            // ЛОГИКА ХРАНЕНИЯ ФОТО:
-            // - Если auto-migrate-on-update = true → сохраняем в режим из YAML и переключаем storage у записи.
-            // - Если false → сохраняем в том режиме, в котором запись сейчас (storage не меняем).
-            StorageType currentStorage = photoEntity.getStorage();
-            StorageType configuredDefaultStorage = defaultStorage();
-            StorageType storageForThisUpdate =
-                    autoMigrateOnUpdate ? configuredDefaultStorage : currentStorage;
+                StorageType targetMode = currentStorageMode();
+                StorageType previousMode = photoEntity.getStorage();
 
-            try {
-                if (storageForThisUpdate == OBJECT) {
-                    // OBJECT: кладём новый файл в MinIO → пишем новый ключ; старый ключ (если был) удаляем best-effort.
-                    String oldKey = photoEntity.getPhotoUrl();
-                    String newKey = minioService.uploadFromDataUrl(photoEntity.getUser(), photoEntity.getId(), photo.src());
-                    photoEntity.setPhotoUrl(newKey);
-                    photoEntity.setPhoto(null);
-                    photoEntity.setStorage(OBJECT);
-                    if (oldKey != null && !oldKey.isBlank() && !oldKey.equals(newKey)) {
-                        minioService.deleteObject(oldKey);
+                try {
+                    if (targetMode == OBJECT) {
+                        String oldKey = photoEntity.getPhotoUrl();
+                        String newKey = minioService.upload(photoEntity.getUser(), bytes, mime);
+                        photoEntity.setPhotoUrl(newKey);
+                        photoEntity.setPhoto(null);
+                        photoEntity.setStorage(OBJECT);
+                        photoEntity.setPhotoMime(mime);
+                        if (oldKey != null && !oldKey.isBlank() && !oldKey.equals(newKey)) {
+                            minioService.deleteObject(oldKey);
+                        }
+                    } else {
+                        if (previousMode == OBJECT) {
+                            String oldKey = photoEntity.getPhotoUrl();
+                            if (oldKey != null && !oldKey.isBlank()) {
+                                minioService.deleteObject(oldKey);
+                            }
+                        }
+                        photoEntity.setPhoto(bytes);
+                        photoEntity.setPhotoUrl(null);
+                        photoEntity.setStorage(BLOB);
+                        photoEntity.setPhotoMime(mime);
                     }
-                } else {
-                    // BLOB: пишем байты в колонку photo (через твой setPhoto), url очищаем; storage = BLOB.
-                    setPhoto(photoEntity, photo.src());
-                    photoEntity.setPhotoUrl(null);
-                    photoEntity.setStorage(BLOB);
+                } catch (Exception ex) {
+                    throw new RuntimeException("Failed to store photo content", ex);
                 }
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to store photo content", e);
+            } else {
+                // Не data: — фронт прислал echo-URL, контент не меняем
+                LOG.debug("UpdatePhoto: non data: src received -> treating as 'no image change'");
             }
         }
 
         PhotoEntity updated = photoRepository.save(photoEntity);
         Photo updatedPhoto = Photo.fromEntity(updated);
 
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (photo.countryCode() != null) payload.put("countryCode", photo.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.PHOTO_UPDATED,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                updatedPhoto.requesterId(),                 // actor: кто удалил
-                updatedPhoto.id(),                       // фото
-                updatedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-                "photo",                       // sourceService
-                payload                        // свободные поля
-        ));
-
-        PhotoStatEvent photoStatEvent = new PhotoStatEvent(
-                updated.getUser(),
-                updated.getCountryCode(),
-                +1
+        activityService.publishPhotoEvent(
+                ru.sentidas.rangiffler.EventType.PHOTO_UPDATED,
+                updatedPhoto.requesterId(),
+                updatedPhoto.id(),
+                updatedPhoto.requesterId(),
+                photo.countryCode() // если была передана — попадёт в payload
         );
 
-        kafkaTemplate.send("rangiffler_photo", photoStatEvent);
-        LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
+        if (photo.countryCode() != null && !photo.countryCode().isBlank()) {
+            photoStatService.sendDeltaAfterCommit(updated.getUser(), updated.getCountryCode(), +1);
+            photoStatService.sendDeltaAfterCommit(updated.getUser(), oldCountryCode, -1);
+        }
 
         return updatedPhoto;
     }
 
-//    @Transactional
-//    public Photo updatePhoto(@Nonnull Photo photo) {
-//        PhotoEntity photoEntity = getRequiredPhoto(photo.id());
-//
-//        if (!userHasFullAccessToPhoto(photo.requesterId(), photoEntity)) {
-//            throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Can`t access to photo");
-//        }
-//
-//        if (photo.countryCode() != null) {
-//            photoEntity.setCountryCode(photo.countryCode());
-//        }
-//        if (photo.description() != null) {
-//            photoEntity.setDescription(photo.description());
-//        }
-//        setPhoto(photoEntity, photo.src());
-//        PhotoEntity updated = photoRepository.save(photoEntity);
-//
-//        Photo updatedPhoto = Photo.fromEntity(
-//                photoRepository.save(updated));
-//
-//        //  добавляем: бизнес-событие для лога
-//        Map<String, Object> payload = new HashMap<>();
-//        if (photo.countryCode() != null) payload.put("countryCode", photo.countryCode());
-//
-//        activityPublisher.publish(new ActivityEvent(
-//                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-//                EventType.PHOTO_UPDATED,       // тип события
-//                Instant.now(),                 // occurredAt (UTC)
-//                updatedPhoto.requesterId(),                 // actor: кто удалил
-//                updatedPhoto.id(),                       // фото
-//                updatedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-//                "photo",                       // sourceService
-//                payload                        // свободные поля
-//        ));
-//
-//        PhotoStatEvent photoStatEvent = new PhotoStatEvent(
-//                updated.getUser(),
-//                updated.getCountryCode(),
-//                +1
-//        );
-//
-//        kafkaTemplate.send("rangiffler_photo", photoStatEvent);
-//        LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
-//
-//        return updatedPhoto;
-//    }
 
-    private void setPhoto(PhotoEntity photoEntity, String src) {
-        if (src != null) {
-            // Убедитесь, что это Data URL и извлеките base64 часть
-            if (src.startsWith("data:")) {
-                String base64Data = src.substring(src.indexOf(",") + 1);
-                photoEntity.setPhoto(Base64.getDecoder().decode(base64Data));
-            } else {
-                // Если это не Data URL, сохраняем как есть (в байтах)
-                photoEntity.setPhoto(src.getBytes(StandardCharsets.UTF_8));
-            }
-        }
-    }
-
-    public List<ru.sentidas.rangiffler.model.Like> photoLikes(@Nonnull UUID photoId) {
+    public List<Like> photoLikes(@Nonnull UUID photoId) {
         return likeRepository.findAllByIdPhotoId(photoId)
                 .stream()
-                .map(ru.sentidas.rangiffler.model.Like::fromEntity)
+                .map(Like::fromEntity)
                 .toList();
     }
 
+    // батч-метод для листингов (убирает N+1 на странице)
     @Transactional(readOnly = true)
-    public Slice<Photo> userPhotos(@Nonnull String username,
+    public Map<UUID, List<Like>> photoLikesMap(Collection<UUID> photoIds) {
+        if (photoIds == null || photoIds.isEmpty()) {
+            return Map.of();
+        }
+
+        // Один запрос на все фото страницы, с упорядочением: в каждом фото новые лайки идут первыми
+        List<LikeEntity> entities = likeRepository.findAllByPhotoIds(photoIds);
+
+        // Выставляем пустые списки в порядке входных идентификаторов — чтобы сохранить порядок фото
+        Map<UUID, List<Like>> byPhoto = new LinkedHashMap<>();
+        for (UUID id : photoIds) {
+            byPhoto.put(id, new ArrayList<>());
+        }
+
+        for (LikeEntity entity : entities) {
+            UUID pid = entity.getId().getPhotoId();
+            Like like = ru.sentidas.rangiffler.model.Like.fromEntity(entity);
+            List<Like> list = byPhoto.computeIfAbsent(pid, k -> new ArrayList<>());
+            list.add(like);
+        }
+
+        return byPhoto.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> List.copyOf(e.getValue()),
+                        (a, b) -> a,
+                        LinkedHashMap::new
+                ));
+    }
+
+    //   ==== Листинги фото ====
+
+    @Transactional(readOnly = true)
+    public Slice<Photo> userPhotos(@Nonnull UUID userId,
                                    @Nonnull Pageable pageable) {
-        UUID userId = getRequiredUser(username);
 
         return photoRepository.findByUserOrderByCreatedDateDesc(
                         userId,
@@ -318,10 +241,8 @@ public class PhotoService {
     }
 
     @Transactional(readOnly = true)
-    public Slice<Photo> feedPhotos(@Nonnull String username,
+    public Slice<Photo> feedPhotos(@Nonnull UUID userId,
                                    @Nonnull Pageable pageable) {
-
-        UUID userId = getRequiredUser(username);
 
         List<UUID> meAndFriends = new ArrayList<>(
                 grpcUserdataClient.friendIdsAll(userId)
@@ -337,128 +258,115 @@ public class PhotoService {
     @Transactional
     public void deletePhoto(@Nonnull UUID requesterId, @Nonnull UUID photoId) {
         PhotoEntity photoEntity = getRequiredPhoto(photoId);
-        UUID userId = photoEntity.getUser();
+        UUID ownerId = photoEntity.getUser();
         String countryCode = photoEntity.getCountryCode();
 
+        if (!isOwner(requesterId, photoEntity)) {
+            throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Cannot access to photo");
+        }
 
-        if (userHasFullAccessToPhoto(requesterId, photoEntity)) {
-            likeRepository.deleteByIdPhotoId(photoId);
+        // чистим лайки
+        likeRepository.deleteByIdPhotoId(photoId);
 
-            // если фото хранилось в OBJECT — удаляем файл из MinIO (best-effort)
-            if (photoEntity.getStorage() == OBJECT) {
-                String key = photoEntity.getPhotoUrl();
-                if (key != null && !key.isBlank()) {
-                    minioService.deleteObject(key);
-                }
+        // если фото хранилось в OBJECT — удаляем файл из MinIO (best-effort)
+        if (photoEntity.getStorage() == OBJECT) {
+            String key = photoEntity.getPhotoUrl();
+            if (key != null && !key.isBlank()) {
+                minioService.deleteObject(key);
             }
+        }
 
-            photoRepository.delete(photoEntity);
+        // удаляем запись фото
+        photoRepository.delete(photoEntity);
 
-            PhotoStatEvent photoStatEvent = new PhotoStatEvent(
-                    userId,
-                    countryCode,
-                    -1
-            );
+        // статистика: delta -1
+        photoStatService.sendDeltaAfterCommit(ownerId, countryCode, -1);
 
-            kafkaTemplate.send("rangiffler_photo", photoStatEvent);
-            LOG.info("### Kafka topic [rangiffler_photo] sent message: {}", photoStatEvent);
-
-            // добавляем: бизнес-событие для лога
-            Map<String, Object> payload = new HashMap<>();
-            if (countryCode != null) payload.put("countryCode", countryCode);
-
-            activityPublisher.publish(new ActivityEvent(
-                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                    EventType.PHOTO_DELETED,       // тип события
-                    Instant.now(),                 // occurredAt (UTC)
-                    requesterId,                   // actor: кто удалил
-                    photoId,                       // фото
-                    userId,                        // targetUserId: владелец фото (можно null, если не нужно)
-                    "photo",                       // sourceService
-                    payload                        // свободные поля
-            ));
-
-        } else
-            throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Can`t access to photo");
-    }
-
-    @Nonnull
-    private UUID getRequiredUser(@Nonnull String username) {
-        return grpcUserdataClient.getIdByUsername(username);
-    }
-
-    @Nonnull
-    private String getRequiredUser(@Nonnull UUID userId) {
-        return grpcUserdataClient.getUsernameById(userId);
-
-    }
-
-    @Nonnull
-    PhotoEntity getRequiredPhoto(@Nonnull UUID photoId) {
-        return photoRepository.findById(photoId)
-                .orElseThrow(() -> new NotFoundException("Can`t find photo by id: " + photoId));
+        // событие: удаление фото
+        activityService.publishPhotoEvent(
+                ru.sentidas.rangiffler.EventType.PHOTO_DELETED,
+                requesterId,  // инициатор
+                photoId,
+                ownerId,      // владелец
+                countryCode
+        );
     }
 
     @Transactional
     public Photo toggleLike(UUID requesterId, UUID photoId) {
         PhotoEntity photoEntity = getRequiredPhoto(photoId);
 
-        if (userHasFullAccessToPhoto(requesterId, photoEntity)) {
-            throw new ru.sentidas.rangiffler.ex.AccessDeniedException(
-                    "Can`t access to like yourself"
-            );
+        if (isOwner(requesterId, photoEntity)) {
+            throw new ru.sentidas.rangiffler.ex.AccessDeniedException("Self-like is not allowed");
         }
 
         PhotoLikeId id = new PhotoLikeId();
         id.setUserId(requesterId);
         id.setPhotoId(photoId);
 
-        PhotoEntity requiredPhoto = getRequiredPhoto(photoId);
-        Photo likedPhoto = Photo.fromEntity(requiredPhoto);
-        Map<String, Object> payload = new HashMap<>();
+        Photo likedPhoto = Photo.fromEntity(photoEntity);
 
         if (likeRepository.existsById(id)) {
             likeRepository.deleteById(id);
 
-            if (likedPhoto.countryCode() != null) payload.put("countryCode", likedPhoto.countryCode());
+            activityService.publishPhotoEvent(
+                    ru.sentidas.rangiffler.EventType.LIKE_REMOVED,
+                    requesterId,
+                    likedPhoto.id(),
+                    likedPhoto.requesterId(),
+                    likedPhoto.countryCode()
+            );
 
-            activityPublisher.publish(new ActivityEvent(
-                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                    EventType.LIKE_REMOVED,       // тип события
-                    Instant.now(),                 // occurredAt (UTC)
-                    requesterId,                   // actor: кто удалил
-                    likedPhoto.id(),                       // фото
-                    likedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-                    "photo",                       // sourceService
-                    payload                        // свободные поля
-            ));
-
-        }
-        else {
+        } else {
             LikeEntity like = new LikeEntity();
             like.setId(id);
             like.setCreationDate(new Date());
             likeRepository.save(like);
 
-            if (likedPhoto.countryCode() != null) payload.put("countryCode", likedPhoto.countryCode());
-            activityPublisher.publish(new ActivityEvent(
-                    java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                    EventType.LIKE_ADDED,       // тип события
-                    Instant.now(),                 // occurredAt (UTC)
-                    requesterId,                   // actor: кто удалил
-                    likedPhoto.id(),                       // фото
-                    likedPhoto.requesterId(),                        // targetUserId: владелец фото (можно null, если не нужно)
-                    "photo",                       // sourceService
-                    payload                        // свободные поля
-            ));
-
+            activityService.publishPhotoEvent(
+                    ru.sentidas.rangiffler.EventType.LIKE_ADDED,
+                    requesterId,
+                    likedPhoto.id(),
+                    likedPhoto.requesterId(),
+                    likedPhoto.countryCode()
+            );
         }
 
         return likedPhoto;
     }
 
-    private boolean userHasFullAccessToPhoto(@Nonnull UUID userId, @Nonnull PhotoEntity photo) {
+    //   ==== Счетчики ====
+
+    @Transactional(readOnly = true)
+    public int countUserPhotos(UUID userId) {
+        return photoRepository.countByUser(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public int countFeedPhotos(UUID userId) {
+        List<UUID> meAndFriends = new ArrayList<>(grpcUserdataClient.friendIdsAll(userId));
+        meAndFriends.add(userId);
+        return photoRepository.countByUserIn(meAndFriends);
+    }
+
+    //   ==== Helpers ====
+
+    private boolean isOwner(@Nonnull UUID userId, @Nonnull PhotoEntity photo) {
         return photo.getUser().equals(userId);
     }
 
+    @Nonnull
+    PhotoEntity getRequiredPhoto(@Nonnull UUID photoId) {
+        return photoRepository.findById(photoId)
+                .orElseThrow(() -> new NotFoundException("Cannot find photo by id: " + photoId));
+    }
+
+    private StorageType currentStorageMode() {
+        try {
+            return StorageType.valueOf(storageMode.toUpperCase());
+        } catch (Exception e) {
+            LOG.warn("Unknown storage mode '{}', fallback to BLOB", storageMode);
+            return BLOB;
+        }
+    }
 }
