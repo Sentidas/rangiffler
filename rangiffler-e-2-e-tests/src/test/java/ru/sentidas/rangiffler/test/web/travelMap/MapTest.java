@@ -8,10 +8,12 @@ import ru.sentidas.rangiffler.jupiter.annotaion.Photo;
 import ru.sentidas.rangiffler.jupiter.annotaion.ScreenShotTest;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
+import ru.sentidas.rangiffler.model.AppPhoto;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
 import ru.sentidas.rangiffler.page.FeedPage;
 import ru.sentidas.rangiffler.service.PhotoApiClient;
+import ru.sentidas.rangiffler.utils.AnnotationHelper;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -113,14 +115,15 @@ public class MapTest {
             "screenshots/fill_clear/after.png"
     })
     @DisplayName("Заливка: исчезает после удаления моего фото")
-    void countryFillDisappearsAfterDeletingMyPhoto(BufferedImage before, BufferedImage after) {
+    void countryFillDisappearsAfterDeletingMyPhoto(BufferedImage before, BufferedImage after, AppUser user) {
+        final AppPhoto appPhoto = firstPhoto(user, user.id());
 
         FeedPage feedPage = new FeedPage();
         assertMapOnBothTabs(feedPage, before, before);
 
         feedPage.deletePhoto(
-                CANADA,
-                TEST_DESCRIPTION);
+                countryName(appPhoto.countryCode()),
+                appPhoto.description());
 
         assertMapOnBothTabs(feedPage, after, after);
     }
@@ -160,7 +163,7 @@ public class MapTest {
     })
     @DisplayName("Заливка: не меняется при замене изображения")
     void countryFillUnchangedWhenReplacingImage(AppUser user, BufferedImage before, BufferedImage after) {
-        String description = myPhoto(user, 0).description();
+        final String description = myPhoto(user, 0).description();
 
         FeedPage feedPage = new FeedPage();
         assertMapOnBothTabs(feedPage, before, before);
@@ -213,8 +216,8 @@ public class MapTest {
                                                         BufferedImage before,
                                                         BufferedImage afterOnlyMy,
                                                         BufferedImage afterWithFriends) {
-        UUID friendId1 = friendId(user, 0);
-        UUID friendId2 = friendId(user, 1);
+        final UUID friendId1 = friendId(user, 0);
+        final UUID friendId2 = friendId(user, 1);
 
         FeedPage feedPage = new FeedPage();
 
@@ -244,9 +247,8 @@ public class MapTest {
     void friendsCountryFillDisappearsAfterDeletingFriendPhotoInCountry(AppUser user,
                                                                        BufferedImage beforeWithFriends,
                                                                        BufferedImage afterWithFriends) {
-
-        UUID friendId = friendId(user, 0);
-        UUID photoId = firstPhotoId(user, friendId);
+        final UUID friendId = friendId(user, 0);
+        final UUID photoId = firstPhotoId(user, friendId);
 
         FeedPage feedPage = new FeedPage();
         assertMapOnTabWithMyFriends(feedPage, beforeWithFriends);
@@ -368,9 +370,8 @@ public class MapTest {
             "screenshots/opacity_variable/my.png",
             "screenshots/opacity_variable/friends.png"
     })
-    @DisplayName("Заливка: интенсивность различается на «С друзьями» при разном количестве фото")
-    void mapFillOpacityVariesOnFriendsWithDifferentPhotoCounts(AppUser user,
-                                                               BufferedImage my,
+    @DisplayName("Заливка: интенсивность различается на 'Фото с друзьями' при разном количестве фото")
+    void mapFillOpacityVariesOnFriendsWithDifferentPhotoCounts(BufferedImage my,
                                                                BufferedImage friends) {
         FeedPage feedPage = new FeedPage();
         assertMapOnBothTabs(feedPage, my, friends);
@@ -391,7 +392,7 @@ public class MapTest {
     })
     @ApiLogin
     @ScreenShotTest(value = "screenshots/opacity_variable.png")
-    @DisplayName("Заливка: интенсивность различается на «Мои» при разном количестве фото")
+    @DisplayName("Заливка: интенсивность различается на 'Мои фото' при разном количестве фото")
     void mapFillOpacityVariesOnMyWithDifferentPhotoCounts(BufferedImage expectedMap) {
         FeedPage feedPage = new FeedPage();
         assertMapOnBothTabs(feedPage, expectedMap);

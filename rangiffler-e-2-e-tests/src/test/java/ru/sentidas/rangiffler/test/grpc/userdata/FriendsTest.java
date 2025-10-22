@@ -9,12 +9,14 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.GrpcTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.test.grpc.BaseTest;
+import ru.sentidas.rangiffler.utils.generation.GenerationDataUser;
 
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static ru.sentidas.rangiffler.utils.generation.GenerationDataUser.getUniqueTestUsername;
 
 @GrpcTest
 @DisplayName("Grpc_Userdata: allFriendsPage")
@@ -25,7 +27,7 @@ public class FriendsTest extends BaseTest {
     @User
     void createFriendshipRequestCreatesOutcomeAndIncomeWhenSendingInvite(AppUser user) {
         // создаём отдельного адресата (аннотацией либо фабрикой — здесь используем UpdateUser как “минимального”)
-        final String inviteeUsername = "invitee_user_" + UUID.randomUUID();
+        final String inviteeUsername = getUniqueTestUsername();
         userdataBlockingStub.updateUser(UpdateUserRequest.newBuilder()
                 .setUsername(inviteeUsername)
                 .build());

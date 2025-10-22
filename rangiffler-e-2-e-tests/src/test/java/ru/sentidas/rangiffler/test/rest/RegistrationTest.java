@@ -48,12 +48,23 @@ class RegistrationTest extends BaseAuthTest {
                 () -> assertTrue(registerResponse.body().string().contains("Congratulations! You've registered!"))
         );
 
-        final AppUser userExists = usersDbClient.findUserByUsername(username);
+        final long deadlineMs = System.currentTimeMillis() + 2_000;
+        AppUser userExists = null;
 
-        assertAll("the user exists",
-                () -> assertNotNull(userExists.id()),
-                () -> assertEquals(username, userExists.username())
-        );
+        while (System.currentTimeMillis() < deadlineMs) {
+            try {
+                userExists = usersDbClient.findUserByUsername(username);
+                if (userExists != null) break;
+            } catch (Exception ignored) {
+                // NotFound — нормально, ждём дальше
+            }
+            Thread.sleep(100);
+        }
+
+        assertNotNull(userExists, "User should appear in userdata after registration");
+        assertEquals(username, userExists.username());
+        assertNotNull(userExists.id());
+        assertEquals(username, userExists.username());
     }
 
     @Test

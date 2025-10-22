@@ -81,7 +81,6 @@ public class ProfileTest {
                 .setNewCountry(countryName)
                 .save();
 
-
         profile
                 .checkThatPageLoaded()
                 .checkAlert("Your profile is successfully updated")

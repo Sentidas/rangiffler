@@ -198,7 +198,7 @@ public class StatisticTest {
 
     }, friends = 1)
     @ApiLogin
-    @DisplayName("На вкладке «С друзьями» счётчик агрегируется c фото друзей")
+    @DisplayName("Фото с друзьями: счётчик агрегируется c фото друзей")
     void countryTooltipAggregatesOnFriendsTabAfterFriendAddsPhoto() {
         FeedPage feedPage = new FeedPage();
         assertTooltipOnBothTabs(feedPage, CANADA, 1, 2);
@@ -211,7 +211,7 @@ public class StatisticTest {
             @Photo(countryCode = "ca")
     }, friends = 3)
     @ApiLogin
-    @DisplayName("С друзьями: счётчик агрегируется после добавления фото друзей")
+    @DisplayName("Фото с друзьями: счётчик агрегируется после добавления фото друзей")
     void countryTooltipAggregatesOnFriendsTabAfterFriendsAddsPhoto(AppUser user) {
         final UUID friendId1 = friendId(user, 0);
         final UUID friendId2 = friendId(user, 1);
@@ -296,7 +296,7 @@ public class StatisticTest {
             @Photo(owner = Photo.Owner.FRIEND, partyIndex = 1, countryCode = "ru", count = 5)
     }, friends = 2)
     @ApiLogin
-    @DisplayName("С друзьями: счётчик не меняется после переключения вкладок")
+    @DisplayName("Фото с друзьями: счётчик не меняется после переключения вкладок")
     void shouldKeepCorrectCounts_WhenSwitchingBetweenMyFeedAndFriendsFeed() {
         FeedPage feedPage = new FeedPage();
 

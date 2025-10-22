@@ -142,6 +142,20 @@ public class PhotoTest {
     }
 
     @Test
+    @User
+    @ApiLogin
+    @DisplayName("Создание поста: нет возможности загрузить фото больше лимита 19 MB")
+    void createPostUnsupportedImageMoreThan19MB() {
+        FeedPage feed = new FeedPage()
+                .addPhoto()
+                .uploadNewImage("disable/big_size.gif")
+                .setNewCountry(SPAIN)
+                .save();
+
+        feed.checkAlert("Can not create new post. Limit 19 MB");
+    }
+
+    @Test
     @User(photo = 2)
     @ApiLogin
     @DisplayName("Создание поста при наличии других постов: карточка появляется первой и виден алерт об успехе")
