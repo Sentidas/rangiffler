@@ -5,10 +5,7 @@ import ru.sentidas.rangiffler.data.entity.UserEntity;
 import ru.sentidas.rangiffler.grpc.UpdateUserRequest;
 import ru.sentidas.rangiffler.grpc.UserResponse;
 
-import java.util.Base64;
 import java.util.UUID;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public record User(
         UUID id,
@@ -22,16 +19,12 @@ public record User(
 
     public static User fromEntity(UserEntity userEntity, FriendshipStatus friendStatus) {
 
-        String avatarDataUrl = null;
-        if (userEntity.getAvatar() != null && userEntity.getAvatar().length > 0) {
-            avatarDataUrl = "data:image/png;base64," + Base64.getEncoder().encodeToString(userEntity.getAvatar());
-        }
         return new User(
                 userEntity.getId(),
                 userEntity.getUsername(),
                 userEntity.getFirstname(),
                 userEntity.getSurname(),
-                avatarDataUrl,
+                null,  // avatar собирается отдельно в UserService.toUser(...)
                 friendStatus,
                 userEntity.getCountryCode()
         );

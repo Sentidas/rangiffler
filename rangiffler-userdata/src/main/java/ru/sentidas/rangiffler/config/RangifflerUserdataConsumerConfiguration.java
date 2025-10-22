@@ -12,7 +12,6 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 import ru.sentidas.rangiffler.model.UserEvent;
 
-
 @Configuration
 public class RangifflerUserdataConsumerConfiguration {
 
@@ -33,7 +32,6 @@ public class RangifflerUserdataConsumerConfiguration {
                 jsonDeserializer
         );
     }
-
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, UserEvent> kafkaListenerContainerFactory(SslBundles sslBundles) {

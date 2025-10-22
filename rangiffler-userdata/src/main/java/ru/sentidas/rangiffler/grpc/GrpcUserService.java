@@ -1,10 +1,10 @@
 package ru.sentidas.rangiffler.grpc;
 
 import com.google.protobuf.Empty;
-import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,22 +12,27 @@ import org.springframework.data.domain.Slice;
 import org.springframework.transaction.annotation.Transactional;
 import ru.sentidas.rangiffler.model.User;
 import ru.sentidas.rangiffler.model.UserBulk;
+import ru.sentidas.rangiffler.service.FriendshipService;
 import ru.sentidas.rangiffler.service.UserService;
 
-
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
-
 
 @GrpcService
 public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUserdataServiceImplBase {
 
     private final UserService userService;
+    private final FriendshipService friendshipService;
+
+    @Value("${app.media.storage.default:BLOB}")
+    private String storageMode;
 
     @Autowired
-    public GrpcUserService(UserService userService) {
+    public GrpcUserService(UserService userService, FriendshipService friendshipService) {
         this.userService = userService;
-
+        this.friendshipService = friendshipService;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +46,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Transactional(readOnly = true)
     @Override
     public void currentUserById(UserIdRequest request, StreamObserver<UserResponse> responseObserver) {
-        User currentUser = userService.getUserById(UUID.fromString(request.getUserId()));
+        User currentUser = userService.getUserById(parseUuidOrThrow(request.getUserId()));
         responseObserver.onNext(toProto(currentUser));
         responseObserver.onCompleted();
     }
@@ -49,6 +54,13 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
 
     @Override
     public void updateUser(UpdateUserRequest request, StreamObserver<UserResponse> responseObserver) {
+        if (request.getUsername() == null || request.getUsername().isBlank()) {
+            throw new IllegalArgumentException("username is required");
+        }
+        if (request.hasCountryCode()) {
+            normalizeCountryOrThrow(request.getCountryCode());
+        }
+
         User dto = User.fromProto(request);
         User saved = userService.update(dto);
         responseObserver.onNext(toProto(saved));
@@ -57,34 +69,17 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
 
     @Override
     public void friendsId(UserIdRequest request, StreamObserver<UserIdsResponse> responseObserver) {
-        String userIdStr = request.getUserId();
-        if (userIdStr == null || userIdStr.isBlank()) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("user_id is required").asRuntimeException());
-            return;
-        }
+        final UUID userId = parseUuidOrThrow(request.getUserId());
 
-        final UUID userId;
-        try {
-            userId = UUID.fromString(userIdStr.trim());
-        } catch (IllegalArgumentException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("user_id must be a valid UUID").asRuntimeException());
-            return;
-        }
-
-        // можно сразу сделать метод в сервисе: friendsIdByUserId(userId)
-        // но раз уже есть friendsId(username), достанем username:
         User currentUser = userService.getUserById(userId);
         List<UUID> ids = userService.friendsId(currentUser.username());
-
         List<String> asStrings = ids.stream().map(UUID::toString).toList();
 
-        UserIdsResponse response = UserIdsResponse.newBuilder()
-                .addAllUserIds(asStrings)         // ВАЖНО: repeated -> addAll...
+        UserIdsResponse response = UserIdsResponse
+                .newBuilder()
+                .addAllUserIds(asStrings)
                 .build();
-
-        responseObserver.onNext(response);    // отправляем то, что собрали
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 
@@ -174,7 +169,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Override
     public void removeFriend(FriendshipRequest request, StreamObserver<Empty> responseObserver) {
 
-        userService.deleteFriend(
+        friendshipService.deleteFriend(
                 request.getUsername(),
                 request.getUser()
         );
@@ -186,7 +181,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Override
     public void createFriendshipRequest(FriendshipRequest request, StreamObserver<UserResponse> responseObserver) {
 
-        User sendInvitationRequest = userService.sendInvitation(
+        User sendInvitationRequest = friendshipService.sendInvitation(
                 request.getUsername(),
                 request.getUser()
         );
@@ -198,7 +193,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Override
     public void acceptFriendshipRequest(FriendshipRequest request, StreamObserver<UserResponse> responseObserver) {
 
-        User acceptInvitationRequest = userService.acceptInvitation(
+        User acceptInvitationRequest = friendshipService.acceptInvitation(
                 request.getUsername(),
                 request.getUser()
         );
@@ -210,7 +205,7 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     @Override
     public void declineFriendshipRequest(FriendshipRequest request, StreamObserver<UserResponse> responseObserver) {
 
-        User declineInvitationRequest = userService.declineInvitation(
+        User declineInvitationRequest = friendshipService.declineInvitation(
                 request.getUsername(),
                 request.getUser()
         );
@@ -218,6 +213,40 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
         responseObserver.onNext(toProto(declineInvitationRequest));
         responseObserver.onCompleted();
     }
+
+    @Override
+    public void usernamesByIds(UserIdsRequest request, io.grpc.stub.StreamObserver<UsernamesResponse> out) {
+        List<UUID> ids = new java.util.ArrayList<>(request.getUserIdsCount());
+        for (String s : request.getUserIdsList()) {
+            try {
+                ids.add(java.util.UUID.fromString(s));
+            } catch (Exception ignore) {
+            }
+        }
+
+        Map<UUID, String> map = userService.usernamesByIds(ids);
+
+        UsernamesResponse.Builder rb = UsernamesResponse.newBuilder();
+        for (Map.Entry<UUID, String> e : map.entrySet()) {
+            rb.addItems(
+                    UsernamesResponse.Item.newBuilder()
+                            .setUserId(e.getKey().toString())
+                            .setUsername(e.getValue() == null ? "" : e.getValue())
+                            .build()
+            );
+        }
+        out.onNext(rb.build());
+        out.onCompleted();
+    }
+
+    @Override
+    public void getStorageMode(Empty request, StreamObserver<StorageModeResponse> responseObserver) {
+        responseObserver.onNext(StorageModeResponse.newBuilder()
+                .setMode(storageMode.toUpperCase())
+                .build());
+        responseObserver.onCompleted();
+    }
+
 
     private static UserResponse toProto(User user) {
         UserResponse.Builder b = UserResponse.newBuilder();
@@ -230,14 +259,15 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
         u.toProto(b);
         return b.build();
     }
+
     private static int calcTotalPagesForSlice(Slice<?> s) {
-        // номер страницы 0-based; если есть следующая, добавляем ещё одну "виртуальную" страницу
         return s.getNumber() + 1 + (s.hasNext() ? 1 : 0);
     }
+
     private static UsersPageResponse toProto(Slice<UserBulk> page) {
         UsersPageResponse.Builder b = UsersPageResponse.newBuilder();
         b.setTotalElements(page.getNumberOfElements());
-        b.setTotalPages(calcTotalPagesForSlice(page)); // вместо page.getPageable().getPageSize()
+        b.setTotalPages(calcTotalPagesForSlice(page));
         b.setFirst(page.isFirst());
         b.setLast(page.isLast());
         b.setPage(page.getNumber());
@@ -246,5 +276,24 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
             b.addContent(toProto(u));
         }
         return b.build();
+    }
+
+    private static UUID parseUuidOrThrow(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("user_id is required");
+        }
+        try {
+            return UUID.fromString(raw.trim());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("user_id must be a valid UUID");
+        }
+    }
+
+    private static String normalizeCountryOrThrow(String code) {
+        String normalized = code.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.matches("[a-z]{2}$")) {
+            throw new IllegalArgumentException("country_code must be two lowercase letters (ISO 3166-1 alpha-2), e.g. 'fr'");
+        }
+        return normalized;
     }
 }

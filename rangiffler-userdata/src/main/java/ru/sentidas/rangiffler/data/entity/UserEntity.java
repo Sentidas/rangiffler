@@ -4,112 +4,92 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.proxy.HibernateProxy;
+import ru.sentidas.rangiffler.model.StorageType;
 
 import java.io.Serializable;
-import java.util.*;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "`user`")
 public class UserEntity implements Serializable {
-  @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
-  @Column(name = "id", nullable = false, columnDefinition = "BINARY(16)")
-  private UUID id;
 
-  @Column(nullable = false, unique = true)
-  private String username;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", nullable = false, columnDefinition = "BINARY(16)")
+    private UUID id;
 
-  @Column
-  private String firstname;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-  @Column
-  private String surname;
+    @Column
+    private String firstname;
 
-  @Lob
-  @Column(columnDefinition = "LONGBLOB")
-  private byte[] avatar;
+    @Column
+    private String surname;
 
-  @Lob
-  @Column(name = "avatar_small", columnDefinition = "LONGBLOB")
-  private byte[] avatarSmall;
+    @Column(name = "country_code", length = 2, nullable = false)
+    private String countryCode;
 
-  @OneToMany(mappedBy = "requester", fetch = FetchType.LAZY)
-  private List<FriendshipEntity> friendshipRequests = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storage", nullable = false)
+    private StorageType storage;
 
-  @OneToMany(mappedBy = "addressee", fetch = FetchType.LAZY)
-  private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
+    @Column(name = "object_key")
+    private String objectKey;        // OBJECT-режим ссылка в minio
 
-  @Column(name = "country_code", length = 2, nullable = false)
-  private String countryCode;
+    @Lob
+    @Column(name = "avatar", columnDefinition = "LONGBLOB")
+    private byte[] avatar;           // BLOB-режим: оригинал
 
-  public void addFriends(FriendshipStatus status, UserEntity... friends) {
-    List<FriendshipEntity> friendsEntities = Stream.of(friends)
-        .map(f -> {
-          FriendshipEntity fe = new FriendshipEntity();
-          fe.setRequester(this);
-          fe.setAddressee(f);
-          fe.setStatus(status);
-          fe.setCreatedDate(new Date());
-          return fe;
-        }).toList();
-    this.friendshipRequests.addAll(friendsEntities);
-  }
-//
-//  public void addPhotos(PhotoEntity... photos) {
-//    this.photos.addAll(Stream.of(photos).peek(
-//        p -> p.setUser(this)
-//    ).toList());
-//  }
-//
-//  public void removeFriends(UserEntity... friends) {
-//    List<UUID> idsToBeRemoved = Arrays.stream(friends).map(UserEntity::getId).toList();
-//    for (Iterator<FriendshipEntity> i = getFriendshipRequests().iterator(); i.hasNext(); ) {
-//      FriendshipEntity friendsEntity = i.next();
-//      if (idsToBeRemoved.contains(friendsEntity.getAddressee().getId())) {
-//        friendsEntity.setAddressee(null);
-//        i.remove();
-//      }
-//    }
-//  }
-//
-  public void removeInvites(UserEntity... invitations) {
-    List<UUID> idsToBeRemoved = Arrays.stream(invitations).map(UserEntity::getId).toList();
-    for (Iterator<FriendshipEntity> i = getFriendshipAddressees().iterator(); i.hasNext(); ) {
-      FriendshipEntity friendsEntity = i.next();
-      if (idsToBeRemoved.contains(friendsEntity.getRequester().getId())) {
-        friendsEntity.setRequester(null);
-        i.remove();
-      }
+    @Column(name = "mime")
+    private String mime;             // MIME оригинала
+
+    @Lob
+    @Column(name = "avatar_small", columnDefinition = "LONGBLOB")
+    private byte[] avatarSmall;      // PNG 100×100 от avatar (любого формата из разрешенных)
+
+
+    @OneToMany(
+            mappedBy = "requester",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<FriendshipEntity> friendshipRequests = new ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "addressee",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
+
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy
+                ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass()
+                : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass()
+                : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        UserEntity that = (UserEntity) o;
+        return getId() != null && Objects.equals(getId(), that.getId());
     }
-  }
-//
-//  public void removePhotos(PhotoEntity... photos) {
-//    List<UUID> idsToBeRemoved = Arrays.stream(photos).map(PhotoEntity::getId).toList();
-//    for (Iterator<PhotoEntity> i = getPhotos().iterator(); i.hasNext(); ) {
-//      PhotoEntity photoEntity = i.next();
-//      if (idsToBeRemoved.contains(photoEntity.getId())) {
-//        photoEntity.setUser(null);
-//        i.remove();
-//      }
-//    }
-//  }
 
-  @Override
-  public final boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null) return false;
-    Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-    Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-    if (thisEffectiveClass != oEffectiveClass) return false;
-    UserEntity that = (UserEntity) o;
-    return getId() != null && Objects.equals(getId(), that.getId());
-  }
-
-  @Override
-  public final int hashCode() {
-    return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
-  }
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy
+                ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode()
+                : getClass().hashCode();
+    }
 }

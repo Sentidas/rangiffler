@@ -6,6 +6,9 @@ import ru.sentidas.rangiffler.grpc.UserResponse;
 
 import java.util.UUID;
 
+/** DTO для отдачи пользователя в списках
+ * (avatarSmall-превью, вычисленный friendStatus, countryCode).
+ * */
 public record UserBulk(
         UUID id,
         String username,
@@ -17,6 +20,7 @@ public record UserBulk(
         String countryCode) {
 
 
+    //Преобразует проекцию "друзья/входящие" в DTO с dataURL-миниатюрой и нужным friendStatus
     public static @Nonnull UserBulk fromFriendEntityProjection(@Nonnull UserWithStatus projection) {
         String small = (projection.photoSmall() != null && projection.photoSmall().length > 0)
                 ? "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(projection.photoSmall())
@@ -36,6 +40,7 @@ public record UserBulk(
         );
     }
 
+    // Преобразует проекцию "исходящие" в DTO с dataURL-миниатюрой и friendStatus=INVITATION_SENT при PENDING
     public static @Nonnull UserBulk fromUserEntityProjection(@Nonnull UserWithStatus projection) {
         String small = (projection.photoSmall() != null && projection.photoSmall().length > 0)
                 ? "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(projection.photoSmall())
@@ -52,6 +57,41 @@ public record UserBulk(
                         ? FriendshipStatus.INVITATION_SENT
                         : null,
                 projection.countryCode()
+        );
+    }
+
+    //Преобразует би-направленную проекцию в DTO, сворачивая out/in статусы в единый friendStatus
+    public static @Nonnull UserBulk fromUserBiProjection(
+            @Nonnull ru.sentidas.rangiffler.data.projection.UserWithBiStatus p) {
+
+        String small = (p.photoSmall() != null && p.photoSmall().length > 0)
+                ? "data:image/png;base64," + java.util.Base64.getEncoder().encodeToString(p.photoSmall())
+                : null;
+
+        var out = p.outStatus(); // PENDING/ACCEPTED/null
+        var in  = p.inStatus();  // PENDING/ACCEPTED/null
+
+        FriendshipStatus fs;
+        if (out == ru.sentidas.rangiffler.data.entity.FriendshipStatus.ACCEPTED
+                || in == ru.sentidas.rangiffler.data.entity.FriendshipStatus.ACCEPTED) {
+            fs = FriendshipStatus.FRIEND;
+        } else if (out == ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING) {
+            fs = FriendshipStatus.INVITATION_SENT;      // я отправил
+        } else if (in == ru.sentidas.rangiffler.data.entity.FriendshipStatus.PENDING) {
+            fs = FriendshipStatus.INVITATION_RECEIVED;  // мне отправили
+        } else {
+            fs = null;
+        }
+
+        return new UserBulk(
+                p.id(),
+                p.username(),
+                p.firstname(),
+                p.surname(),
+                small,  // avatar (совместимость)
+                small,  // avatarSmall (нативное)
+                fs,
+                p.countryCode()
         );
     }
 

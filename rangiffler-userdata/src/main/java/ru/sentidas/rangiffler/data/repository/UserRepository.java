@@ -16,6 +16,49 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
+    @Query("""
+select distinct new ru.sentidas.rangiffler.data.projection.UserWithBiStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall,
+  fOut.status,
+  fIn.status,
+  u.countryCode
+)
+from UserEntity u
+left join FriendshipEntity fOut
+  on (u = fOut.addressee and fOut.requester = :current)
+left join FriendshipEntity fIn
+  on (u = fIn.requester and fIn.addressee = :current)
+where u <> :current
+""")
+    Page<ru.sentidas.rangiffler.data.projection.UserWithBiStatus>
+    findUsersWithBiStatus(@Param("current") UserEntity current, Pageable pageable);
+
+    @Query("""
+select distinct new ru.sentidas.rangiffler.data.projection.UserWithBiStatus(
+  u.id, u.username, u.firstname, u.surname, u.avatarSmall,
+  fOut.status,
+  fIn.status,
+  u.countryCode
+)
+from UserEntity u
+left join FriendshipEntity fOut
+  on (u = fOut.addressee and fOut.requester = :current)
+left join FriendshipEntity fIn
+  on (u = fIn.requester and fIn.addressee = :current)
+where u <> :current and (
+  lower(u.username) like lower(concat('%', :q, '%'))
+  or lower(u.firstname) like lower(concat('%', :q, '%'))
+  or lower(u.surname) like lower(concat('%', :q, '%'))
+)
+""")
+    Page<ru.sentidas.rangiffler.data.projection.UserWithBiStatus>
+    findUsersWithBiStatus(@Param("current") UserEntity current,
+                          @Param("q") String q,
+                          Pageable pageable);
+
+
+
+
     Optional<UserEntity> findByUsername(@Nonnull String username);
 
     Slice<UserEntity> findByUsernameNot(@Nonnull String username,

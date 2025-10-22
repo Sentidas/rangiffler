@@ -7,9 +7,9 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
-import ru.sentidas.rangiffler.events.ActivityEvent;
-import ru.sentidas.rangiffler.events.ActivityHeaders;
-import ru.sentidas.rangiffler.events.MessageKeyStrategy;
+import ru.sentidas.rangiffler.ActivityEvent;
+import ru.sentidas.rangiffler.ActivityHeaders;
+import ru.sentidas.rangiffler.MessageKeyStrategy;
 
 @Component
 @RequiredArgsConstructor

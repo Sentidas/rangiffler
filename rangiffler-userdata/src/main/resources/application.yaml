@@ -4,6 +4,8 @@ server:
 grpc:
   server:
     port: 8087
+    # 32 MB запас по gRPC-пейлоаду (аватары и т.п.)
+    max-inbound-message-size: 33554432
 
 spring:
   application:
@@ -54,11 +56,18 @@ logging:
     ru.sentidas.rangiffler: DEBUG
     io.grpc : INFO
     net.devh.boot.grpc.server: DEBUG
-
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} trace=%X{trace_id} span=%X{span_id} - %msg%n"
 
+app:
+  media:
+    allowed-mime: [ "image/png", "image/jpeg", "image/gif", "image/webp" ]
+    bucket: rangiffler-media
+    storage:
+      # единый дефолт хранения; фактический режим выбирается на момент загрузки картинки
+      default: OBJECT
 
+# ===== profile: local =====
 ---
 spring:
   config:
@@ -84,5 +93,41 @@ rangiffler-userdata:
   base-uri: 'http://127.0.0.1:8088'
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
----
 
+minio:
+  endpoint: http://localhost:9002
+  access-key: root
+  secret-key: rootroot
+
+# ===== profile: docker =====
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://mysql:3306/rangiffler-userdata?serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+    hikari:
+      connection-timeout: 20000
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 10000
+      max-lifetime: 1000
+      auto-commit: true
+      connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+
+rangiffler-geo:
+  base-uri: http://rangiffler-geo:8085
+rangiffler-userdata:
+  base-uri: http://rangiffler-userdata:8088
+rangiffler-photo:
+  base-uri: http://rangiffler-photo:8094
+
+minio:
+  endpoint: http://minio:9000
+  access-key: ${MINIO_ACCESS_KEY:root}
+  secret-key: ${MINIO_SECRET_KEY:rootroot}

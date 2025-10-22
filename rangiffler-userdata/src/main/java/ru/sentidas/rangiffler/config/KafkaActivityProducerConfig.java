@@ -8,7 +8,7 @@ import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
-import ru.sentidas.rangiffler.events.ActivityEvent;
+import ru.sentidas.rangiffler.ActivityEvent;
 
 import java.util.Map;
 
@@ -20,7 +20,6 @@ public class KafkaActivityProducerConfig {
         Map<String, Object> cfg = props.buildProducerProperties();
         cfg.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         cfg.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        // чтобы не пихать type headers:
         cfg.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
         return new DefaultKafkaProducerFactory<>(cfg);
     }

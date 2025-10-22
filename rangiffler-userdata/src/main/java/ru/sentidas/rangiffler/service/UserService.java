@@ -3,47 +3,54 @@ package ru.sentidas.rangiffler.service;
 import jakarta.annotation.Nonnull;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.sentidas.rangiffler.config.ActivityPublisher;
-import ru.sentidas.rangiffler.data.entity.FriendshipEntity;
-import ru.sentidas.rangiffler.data.entity.FriendshipStatus;
+import ru.sentidas.rangiffler.DataUrl;
 import ru.sentidas.rangiffler.data.entity.UserEntity;
 import ru.sentidas.rangiffler.data.projection.UserWithStatus;
-import ru.sentidas.rangiffler.data.repository.FriendshipRepository;
 import ru.sentidas.rangiffler.data.repository.UserRepository;
-import ru.sentidas.rangiffler.events.ActivityEvent;
-import ru.sentidas.rangiffler.events.EventType;
 import ru.sentidas.rangiffler.ex.NotFoundException;
-import ru.sentidas.rangiffler.ex.SameUsernameException;
+import ru.sentidas.rangiffler.model.StorageType;
 import ru.sentidas.rangiffler.model.User;
 import ru.sentidas.rangiffler.model.UserBulk;
 import ru.sentidas.rangiffler.model.UserEvent;
 
-import java.time.Instant;
 import java.util.*;
 
+import static ru.sentidas.rangiffler.model.StorageType.valueOf;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
-    public static final String DEFAULT_USER_COUNTRY = "ru";
+    private static final String DEFAULT_USER_COUNTRY = "ru";
 
     private final UserRepository userRepository;
-    private final FriendshipRepository friendshipRepository;
-    private final ActivityPublisher activityPublisher;
+    private final AvatarService avatarService;
 
+    @Value("${app.media.storage.default:BLOB}")
+    private String storageMode;
+
+    // Определяет режим хранения image по конфигу
+    private StorageType currentStorageMode() {
+        try {
+            return valueOf(storageMode.toUpperCase());
+        } catch (Exception e) {
+            LOG.warn("Unknown storage mode '{}', fallback to BLOB", storageMode);
+            return StorageType.BLOB;
+        }
+    }
 
     @Transactional
     @KafkaListener(topics = "rangiffler_user", groupId = "userdata")
@@ -57,6 +64,7 @@ public class UserService {
                             UserEntity userDataEntity = new UserEntity();
                             userDataEntity.setUsername(user.username());
                             userDataEntity.setCountryCode(DEFAULT_USER_COUNTRY);
+                            userDataEntity.setStorage(currentStorageMode());
 
                             UserEntity userEntity = userRepository.save(userDataEntity);
 
@@ -69,120 +77,73 @@ public class UserService {
                 );
     }
 
+    // ===== ЧТЕНИЕ =====
+
     @Transactional(readOnly = true)
     public UserEntity getUserEntity(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new NotFoundException("User not found " + username));
+                .orElseThrow(() -> new NotFoundException("Cannot find user by username: '" + username));
 
     }
 
     @Transactional(readOnly = true)
     public UserEntity getUserEntityById(UUID userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found " + userId));
+                .orElseThrow(() -> new NotFoundException("Cannot find user by ID: " + userId));
 
+    }
+
+    @Transactional(readOnly = true)
+    public Map<UUID, String> usernamesByIds(List<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Map.of();
+        }
+
+        Iterable<UserEntity> users = userRepository.findAllById(userIds);
+
+        Map<UUID, String> byId = new HashMap<>();
+        for (UserEntity u : users) {
+            if (u.getId() != null && u.getUsername() != null) {
+                byId.put(u.getId(), u.getUsername());
+            }
+        }
+
+        Map<UUID, String> ordered = new LinkedHashMap<>();
+        for (UUID id : userIds) {
+            String username = byId.get(id);
+            if (username != null) {
+                ordered.put(id, username);
+            }
+        }
+        return ordered;
     }
 
     @Transactional(readOnly = true)
     public User getUser(String username) {
-        return User.fromEntity(getUserEntity(username));
+        UserEntity userEntity = getUserEntity(username);
+        return toUser(userEntity);
     }
 
     @Transactional(readOnly = true)
     public User getUserById(UUID userId) {
-        return User.fromEntity(getUserEntityById(userId));
+        UserEntity userEntity = getUserEntityById(userId);
+        return toUser(userEntity);
     }
 
-
-//    @Transactional(readOnly = true)
-//    public Page<UserBulk> allUsers(String excludedUsername, Pageable pageable, String searchQuery) {
-//        UserEntity currentUser = getUserEntity(excludedUsername);
-//
-//        Page<UserEntity> page;
-//
-//        if (searchQuery == null || searchQuery.isBlank()) {
-//            // Берём всех кроме excludedUser
-//            page = userRepository.findByIdNot(currentUser.getId(), pageable);
-//        } else {
-//            // Поиск с фильтром и исключением excludedUser
-//            page = userRepository.findByIdNotAndUsernameContainingIgnoreCaseOrFirstnameContainingIgnoreCaseOrSurnameContainingIgnoreCase(
-//                    currentUser.getId(),
-//                    searchQuery,
-//                    searchQuery,
-//                    searchQuery,
-//                    pageable
-//            );
-//        }
-//
-//        // Преобразуем в User DTO
-//        return page.map(userEntity ->
-//                UserBulk.fromUserEntityProjection(userEntity, getFriendStatus(currentUser, userEntity)));
-//    }
 
     @Transactional(readOnly = true)
     public Page<UserBulk> allUsers(String excludedUsername, Pageable pageable, String searchQuery) {
         UserEntity current = getUserEntity(excludedUsername);
 
-        Page<UserWithStatus> page = (searchQuery == null || searchQuery.isBlank())
-                ? userRepository.findUsersWithStatus(current, pageable)
-                : userRepository.findUsersWithStatus(current, searchQuery, pageable);
+        Page<ru.sentidas.rangiffler.data.projection.UserWithBiStatus> page =
+                (searchQuery == null || searchQuery.isBlank())
+                        ? userRepository.findUsersWithBiStatus(current, pageable)
+                        : userRepository.findUsersWithBiStatus(current, searchQuery, pageable);
 
-        return page.map(UserBulk::fromUserEntityProjection);
+        return page.map(UserBulk::fromUserBiProjection);
     }
 
-//    @Transactional(readOnly = true)
-//    public @Nonnull
-//    Slice<UserBulk> incomeInvitations(@Nonnull String username,
-//                                      @Nonnull Pageable pageable,
-//                                      @Nullable String searchQuery) {
-//        return searchQuery == null
-//                ? userRepository.findIncomeInvitations(
-//                getRequiredUser(username),
-//                pageable
-//        ).map(i -> UserBulk.fromEntity(i, FriendStatus.INVITATION_RECEIVED))
-//                : userRepository.findIncomeInvitations(
-//                getRequiredUser(username),
-//                pageable,
-//                searchQuery
-//        ).map(i -> UserBulk.fromEntity(i, FriendStatus.INVITATION_RECEIVED));
-//    }
-//
-//    @Transactional(readOnly = true)
-//    public @Nonnull
-//    Slice<UserBulk> outcomeInvitations(@Nonnull String username,
-//                                       @Nonnull Pageable pageable,
-//                                       @Nullable String searchQuery) {
-//        return searchQuery == null
-//                ? userRepository.findOutcomeInvitations(
-//                getRequiredUser(username),
-//                pageable
-//        ).map(o -> UserBulk.fromEntity(o, INVITATION_SENT))
-//                : userRepository.findOutcomeInvitations(
-//                getRequiredUser(username),
-//                pageable,
-//                searchQuery
-//        ).map(o -> UserBulk.fromEntity(o, INVITATION_SENT));
-//    }
-//
-//
-//    @Transactional(readOnly = true)
-//    public Slice<UserBulk> friends(String username, Pageable pageable, String searchQuery) {
-//        UserEntity user = getUserEntity(username);
-//
-//        if (searchQuery == null) {
-//            return userRepository.findFriends(
-//                    user,
-//                    pageable).map(friend -> UserBulk.fromEntity(friend, FriendStatus.FRIEND));
-//
-//        } else {
-//            return userRepository.findFriends(
-//                    user,
-//                    pageable,
-//                    searchQuery
-//            ).map(friend -> UserBulk.fromEntity(friend, FriendStatus.FRIEND));
-//        }
-//    }
-
+    @Transactional(readOnly = true)
     public Slice<UserBulk> incomeInvitations(String username, Pageable pageable, String q) {
         UserEntity current = getRequiredUser(username);
         Slice<UserWithStatus> s = (q == null)
@@ -191,6 +152,7 @@ public class UserService {
         return s.map(UserBulk::fromFriendEntityProjection);
     }
 
+    @Transactional(readOnly = true)
     public Slice<UserBulk> outcomeInvitations(String username, Pageable pageable, String q) {
         UserEntity current = getRequiredUser(username);
         Slice<UserWithStatus> s = (q == null)
@@ -199,12 +161,13 @@ public class UserService {
         return s.map(UserBulk::fromUserEntityProjection);
     }
 
+    @Transactional(readOnly = true)
     public Slice<UserBulk> friends(String username, Pageable pageable, String q) {
         UserEntity current = getRequiredUser(username);
         Slice<UserWithStatus> s = (q == null)
                 ? userRepository.findFriendsProjection(current, pageable)
                 : userRepository.findFriendsProjection(current, q, pageable);
-        return s.map(u -> UserBulk.fromFriendEntityProjection(u)); // статус FRIEND
+        return s.map(UserBulk::fromFriendEntityProjection);
     }
 
     @Transactional(readOnly = true)
@@ -215,257 +178,114 @@ public class UserService {
         return friends.stream().map(UserEntity::getId).toList();
     }
 
-
-//    private FriendStatus getFriendStatus(UserEntity currentUser, UserEntity other) {
-//        if (currentUser.getFriendshipRequests() != null) {
-//            for (FriendshipEntity f : currentUser.getFriendshipRequests()) {
-//                if (f.getAddressee().equals(other)) {
-//                    return switch (f.getStatus()) {
-//                        case PENDING -> INVITATION_SENT;
-//                        case ACCEPTED -> FriendStatus.FRIEND;
-//                    };
-//                }
-//            }
-//        }
-//
-//        if (currentUser.getFriendshipAddressees() != null) {
-//            for (FriendshipEntity f : currentUser.getFriendshipAddressees()) {
-//                if (f.getRequester().equals(other)) {
-//                    return switch (f.getStatus()) {
-//                        case PENDING -> FriendStatus.INVITATION_RECEIVED;
-//                        case ACCEPTED -> FriendStatus.FRIEND;
-//                    };
-//                }
-//            }
-//        }
-//
-//        return null;
-//    }
+    // ===== ЗАПИСЬ =====
 
     @Transactional
     public User update(User user) {
+        // 1) гарантируем, что пользователь есть: пробуем вставить «минимального»
         UserEntity userEntity = userRepository.findByUsername(user.username())
                 .orElseGet(() -> {
-                    UserEntity emptyUser = new UserEntity();
-                    emptyUser.setUsername(user.username());
-                    emptyUser.setCountryCode("RU");
-                    return emptyUser;
+                    UserEntity created = new UserEntity();
+                    created.setUsername(user.username());
+                    created.setCountryCode(DEFAULT_USER_COUNTRY);
+                    created.setStorage(currentStorageMode());
+                    try {
+                        return userRepository.save(created);
+                    } catch (ConstraintViolationException
+                             | DataIntegrityViolationException e) {
+                        // если кто-то успел вставить раньше — читаем уже существующую запись
+                        return userRepository.findByUsername(user.username())
+                                .orElseThrow(() ->
+                                        new NotFoundException("User exists but not readable: " + user.username()));
+                    }
                 });
 
         if (user.firstname() != null) userEntity.setFirstname(user.firstname());
         if (user.surname() != null) userEntity.setSurname(user.surname());
         if (user.countryCode() != null) userEntity.setCountryCode(user.countryCode());
 
-        if (user.avatar() != null && isDataUrl(user.avatar())) {
-            applyAvatar(userEntity, user.avatar());
+        // гарантируем, что у сущности есть id перед работой с аватаром/MinIO
+        userEntity = userRepository.save(userEntity);
+
+        if (user.avatar() != null) {
+            if (isDataUrl(user.avatar())) {
+                StorageType target = currentStorageMode();
+                StorageType previous = userEntity.getStorage();
+
+                AvatarService.Result result = avatarService.process(
+                        userEntity.getId(),
+                        user.avatar(),
+                        target,
+                        userEntity.getObjectKey() // старый ключ пригодится, если был OBJECT -> OBJECT
+                );
+
+                if (target == StorageType.OBJECT) {
+                    // Сохраняем в OBJECT (MinIO), BLOB-байты не храним
+                    userEntity.setStorage(StorageType.OBJECT);
+                    // если раньше был OBJECT и ключ сменился — AvatarService вернёт deleteOldObjectKey
+                    userEntity.setObjectKey(result.objectKey());
+                    userEntity.setAvatar(null);
+                    userEntity.setMime(result.mime());
+                    userEntity.setAvatarSmall(result.avatarSmallBytes());
+                    avatarService.deleteObjectIfNeeded(result.deleteOldObjectKey());
+
+                    // Если раньше был BLOB — перезаписываем на OBJECT; чистить нечего
+                } else {
+                    // Сохраняем в BLOB, удаляем объект из MinIO если уходили с OBJECT
+                    if (previous == StorageType.OBJECT) {
+                        avatarService.deleteObjectIfNeeded(userEntity.getObjectKey());
+                    }
+                    userEntity.setStorage(StorageType.BLOB);
+                    userEntity.setObjectKey(null);
+                    userEntity.setAvatar(result.avatarBytes());
+                    userEntity.setMime(result.mime());
+                    userEntity.setAvatarSmall(result.avatarSmallBytes());
+                }
+            } else {
+                LOG.debug("Avatar not updated for '{}': non-data URL received (frontend echo).", user.username());
+            }
         }
 
-        UserEntity updateUser = userRepository.save(userEntity);
-        return User.fromEntity(updateUser);
+        UserEntity saved = userRepository.save(userEntity);
+        return toUser(saved);
+    }
+
+    private User toUser(UserEntity userEntity) {
+        String avatar = null;
+
+        if (userEntity.getStorage() == StorageType.OBJECT) {
+            // для детальной карточки фронт ждёт objectKey, а не dataURL
+            avatar = userEntity.getObjectKey();
+        } else if (userEntity.getAvatar() != null && userEntity.getAvatar().length > 0) {
+            String mime = (userEntity.getMime() == null || userEntity.getMime().isBlank())
+                    ? "image/png"
+                    : userEntity.getMime();
+            avatar = DataUrl.build(mime, userEntity.getAvatar());
+        }
+
+        String countryCode = userEntity.getCountryCode() != null
+                ? userEntity.getCountryCode().toLowerCase(java.util.Locale.ROOT)
+                : null;
+
+        return new User(
+                userEntity.getId(),
+                userEntity.getUsername(),
+                userEntity.getFirstname(),
+                userEntity.getSurname(),
+                avatar,
+                null, // friend_status назначается на уровне вызова списков/страниц
+                countryCode
+        );
     }
 
     private static boolean isDataUrl(String s) {
         return s != null && s.startsWith("data:image");
     }
 
-    private static void applyAvatar(UserEntity ue, String avatarDataUrl) {
-        if (!isDataUrl(avatarDataUrl)) return;
-
-        // вытащили base64 из data-url
-        String base64 = avatarDataUrl.substring(avatarDataUrl.indexOf(',') + 1);
-        byte[] decoded = java.util.Base64.getDecoder().decode(base64);
-
-        // ОРИГИНАЛ: перекодируем в PNG и храним RAW-байты PNG
-        try (var is = new java.io.ByteArrayInputStream(decoded);
-             var os = new java.io.ByteArrayOutputStream()) {
-            net.coobird.thumbnailator.Thumbnails.of(javax.imageio.ImageIO.read(is))
-                    .scale(1.0)            // без изменения размера, только перекодирование
-                    .outputFormat("png")
-                    .toOutputStream(os);
-            ue.setAvatar(os.toByteArray());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to normalize avatar to PNG", e);
-        }
-
-        // SMALL: как и раньше, через SmallAvatar (он уже отдаёт PNG-байты)
-        ue.setAvatarSmall(new SmallAvatar(100, 100, avatarDataUrl).bytes());
-    }
-
     @Nonnull
     UserEntity getRequiredUser(@Nonnull String username) {
         return userRepository.findByUsername(username).orElseThrow(
-                () -> new NotFoundException("Can`t find user by username: '" + username + "'")
+                () -> new NotFoundException("Cannot find user by username: " + username)
         );
-    }
-
-    @Nonnull
-    UserEntity getRequiredUserById(@Nonnull UUID id) {
-        return userRepository.findById(id).orElseThrow(
-                () -> new NotFoundException("Can`t find user by Id: '" + id + "'")
-        );
-
-    }
-
-
-    public User sendInvitation(String username, String targetId) {
-        if (Objects.equals(username, targetId)) {
-            throw new SameUsernameException("Can`t create friendship request for self user");
-        }
-        UserEntity currentUser = getRequiredUser(username);
-        UserEntity targetUser = getRequiredUserById(UUID.fromString(targetId));
-
-        FriendshipEntity invite = new FriendshipEntity();
-        invite.setRequester(currentUser);
-        invite.setAddressee(targetUser);
-        invite.setStatus(FriendshipStatus.PENDING);
-        invite.setCreatedDate(new Date());
-
-        friendshipRepository.save(invite);// <-- сохраняем сам инвайт
-
-        User currentUserJson = User.fromEntity(currentUser);
-        User targetUserJson = User.fromEntity(targetUser);
-
-        User user = User.fromEntity(targetUser, ru.sentidas.rangiffler.model.FriendshipStatus.INVITATION_SENT);
-
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.FRIEND_INVITE_SENT,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                currentUserJson.id(),                 // инициатор
-                null,                       // фото
-                targetUserJson.id(),                        // targetUserId: кому отправляем
-                "userdata",                       // sourceService
-                payload                        // свободные поля
-        ));
-        return user;
-    }
-
-    public User acceptInvitation(String username, String targetId) {
-        if (Objects.equals(username, targetId)) {
-            throw new SameUsernameException("Can`t accept friendship request for self user");
-        } // fix проверить, возможно подходит только для rest
-
-        UserEntity currentUser = getRequiredUser(username);
-        UserEntity inviteUser = getRequiredUserById(UUID.fromString(targetId));
-
-        // найдём существующий инвайт (inviteUser -> currentUser)
-        FriendshipEntity invite = friendshipRepository
-                .findByRequesterAndAddressee(inviteUser, currentUser);
-        if (invite == null) {
-            throw new NotFoundException("Invitation not found");
-        }
-
-        // меняем статус входящего инвайта
-        invite.setStatus(FriendshipStatus.ACCEPTED);
-        friendshipRepository.save(invite);
-
-        // 3) создаём (если нет) обратную запись (currentUser -> inviteUser) и тоже сохраняем
-        FriendshipEntity reverse = friendshipRepository
-                .findByRequesterAndAddressee(currentUser, inviteUser);
-        if (reverse == null) {
-            reverse = new FriendshipEntity();
-            reverse.setRequester(currentUser);
-            reverse.setAddressee(inviteUser);
-            reverse.setStatus(FriendshipStatus.ACCEPTED);
-            reverse.setCreatedDate(new Date());
-            friendshipRepository.save(reverse);
-        } else if (reverse.getStatus() != FriendshipStatus.ACCEPTED) {
-            reverse.setStatus(FriendshipStatus.ACCEPTED);
-            friendshipRepository.save(reverse);
-        }
-
-        User currentUserJson = User.fromEntity(currentUser);
-        User targetUserJson = User.fromEntity(inviteUser);
-        User user = User.fromEntity(inviteUser, ru.sentidas.rangiffler.model.FriendshipStatus.FRIEND);
-
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.FRIEND_INVITE_ACCEPTED,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                currentUserJson.id(),                 // инициатор
-                null,                       // фото
-                targetUserJson.id(),                         // targetUserId: кто акцептнул
-                "userdata",                       // sourceService
-                payload                        // свободные поля
-        ));
-        return user;
-    }
-
-    public User declineInvitation(String username, String targetId) {
-        UserEntity currentUser = getRequiredUser(username);
-        UserEntity inviteUser = getRequiredUserById(UUID.fromString(targetId));
-
-        FriendshipEntity invite = friendshipRepository
-                .findByRequesterAndAddressee(inviteUser, currentUser);
-
-        if (invite == null) {
-            // ничего не делаем/или 404
-            throw new NotFoundException("Invitation not found");
-        }
-
-        friendshipRepository.delete(invite);
-
-
-        User currentUserJson = User.fromEntity(currentUser);
-        User targetUserJson = User.fromEntity(inviteUser);
-        User user = User.fromEntity(inviteUser, null);
-
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.FRIEND_INVITE_DECLINED,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                currentUserJson.id(),                 // инициатор
-                null,                       // фото
-                targetUserJson.id(),                        // targetUserId: кто отказалася
-                "userdata",                       // sourceService
-                payload                        // свободные поля
-        ));
-
-        return user;
-    }
-
-    public void deleteFriend(String username, String targetId) {
-        UserEntity currentUser = getRequiredUser(username);
-        UserEntity deletedUser = getRequiredUserById(UUID.fromString(targetId));
-
-        // ищем и удаляем две записи с дружбой
-        FriendshipEntity changeRequesterEntity = friendshipRepository.findByRequesterAndAddressee(currentUser, deletedUser);
-        FriendshipEntity changeAddresseeEntity = friendshipRepository.findByRequesterAndAddressee(deletedUser, currentUser);
-
-        if (changeRequesterEntity != null) {
-            friendshipRepository.delete(changeRequesterEntity);
-        }
-        if (changeAddresseeEntity != null) {
-            friendshipRepository.delete(changeAddresseeEntity);
-        }
-        User user = User.fromEntity(deletedUser, null);
-        User currentUserJson = User.fromEntity(currentUser);
-        User targetUserJson = User.fromEntity(deletedUser);
-        //  добавляем: бизнес-событие для лога
-        Map<String, Object> payload = new HashMap<>();
-        if (user.countryCode() != null) payload.put("countryCode", user.countryCode());
-
-        activityPublisher.publish(new ActivityEvent(
-                java.util.UUID.randomUUID(),   // eventId (для идемпотентности)
-                EventType.FRIEND_REMOVED,       // тип события
-                Instant.now(),                 // occurredAt (UTC)
-                currentUserJson.id(),                 // инициатор
-                null,                       // фото
-                targetUserJson.id(),                        // targetUserId: кого удалили
-                "userdata",                       // sourceService
-                payload                        // свободные поля
-        ));
     }
 }
