@@ -315,4 +315,20 @@ public class AnnotationHelper {
         return mine;
     }
 
+    // ожидание только по "моим фото"
+    public static Map<String, Integer> expectedMyCounts(AppUser user) {
+        return user.testData().photos().stream()
+                .collect(Collectors.groupingBy(AppPhoto::countryCode, Collectors.summingInt(p -> 1)));
+    }
+
+    // ожидание по "я + друзья"
+    public static Map<String, Integer> expectedFeedCounts(AppUser user) {
+        Map<String, Integer> mine = expectedMyCounts(user);
+        Map<String, Integer> friends = user.testData().friends().stream()
+                .flatMap(f -> f.testData().photos().stream())
+                .collect(Collectors.groupingBy(AppPhoto::countryCode, Collectors.summingInt(p -> 1)));
+
+        friends.forEach((code, c) -> mine.merge(code, c, Integer::sum));
+        return mine;
+    }
 }
