@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.config;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public interface Config {
 
@@ -52,6 +53,9 @@ public interface Config {
   @Nonnull
   String photoGrpcAddress();
 
+  @Nonnull
+  String kafkaAddress();
+
   default int photoGrpcPort() {
     return 8095;
   }
@@ -61,5 +65,9 @@ public interface Config {
 
   default int userdataGrpcPort() {
     return 8087;
+  }
+
+  default List<String> kafkaTopics() {
+    return List.of("rangiffler_user", "rangiffler_photo", "rangiffler.activity");
   }
 }

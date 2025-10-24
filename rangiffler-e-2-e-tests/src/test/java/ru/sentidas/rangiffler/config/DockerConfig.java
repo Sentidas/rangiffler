@@ -91,4 +91,10 @@ enum DockerConfig implements Config {
     public String userdataGrpcAddress() {
         return "userdata.rangiffler.dc";
     }
+
+    @NotNull
+    @Override
+    public String kafkaAddress() {
+        return "rangiffler_kafka:9092";
+    }
 }
