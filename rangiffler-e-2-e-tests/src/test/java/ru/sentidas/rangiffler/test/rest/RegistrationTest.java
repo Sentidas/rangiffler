@@ -7,7 +7,7 @@ import retrofit2.Response;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.rest.core.ThreadSafeCookieStore;
-import ru.sentidas.rangiffler.service.UsersDbClient;
+import ru.sentidas.rangiffler.service.impl.UsersDbClient;
 import ru.sentidas.rangiffler.utils.AnnotationHelper;
 
 import static org.junit.jupiter.api.Assertions.*;

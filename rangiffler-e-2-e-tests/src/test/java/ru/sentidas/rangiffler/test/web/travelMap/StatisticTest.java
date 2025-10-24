@@ -10,7 +10,7 @@ import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
 import ru.sentidas.rangiffler.page.FeedPage;
-import ru.sentidas.rangiffler.service.PhotoApiClient;
+import ru.sentidas.rangiffler.service.impl.PhotoApiClient;
 
 import java.util.UUID;
 

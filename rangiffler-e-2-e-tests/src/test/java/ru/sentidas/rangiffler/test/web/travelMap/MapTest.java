@@ -12,8 +12,7 @@ import ru.sentidas.rangiffler.model.AppPhoto;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
 import ru.sentidas.rangiffler.page.FeedPage;
-import ru.sentidas.rangiffler.service.PhotoApiClient;
-import ru.sentidas.rangiffler.utils.AnnotationHelper;
+import ru.sentidas.rangiffler.service.impl.PhotoApiClient;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -271,7 +270,7 @@ public class MapTest {
             "screenshots/fill_change_friend_update_code/before.png",
             "screenshots/fill_change_friend_update_code/after.png"
     })
-    @DisplayName("С друзьями — заливка: меняется страна при смене страны у фото друга")
+    @DisplayName("Фото с друзьями — заливка: меняется страна при смене страны у фото друга")
     void friendsCountryFillMovesWhenFriendChangesCountry(AppUser user,
                                                          BufferedImage beforeWithFriends,
                                                          BufferedImage afterWithFriends) {

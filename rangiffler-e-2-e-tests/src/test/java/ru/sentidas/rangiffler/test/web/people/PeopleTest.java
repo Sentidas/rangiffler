@@ -8,7 +8,7 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.page.PeoplePage;
-import ru.sentidas.rangiffler.service.UsersDbClient;
+import ru.sentidas.rangiffler.service.impl.UsersDbClient;
 
 import static ru.sentidas.rangiffler.page.PeopleTab.*;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;

@@ -273,7 +273,7 @@ public class UpdatePhotoGqlTest extends BaseGraphQlTest {
         assertAll("not found",
                 () -> assertTrue(tryUpdateRes.hasErrors()),
                 () -> assertEquals("NOT_FOUND", ErrorGql.classification(tryUpdateRes)),
-                () -> assertEquals("Can't find photo by id: " + randomId, ErrorGql.message(tryUpdateRes)),
+                () -> assertEquals("Cannot find photo by id: " + randomId, ErrorGql.message(tryUpdateRes)),
                 () -> assertEquals("photo", ErrorGql.path(tryUpdateRes), "error path must contain 'photo'")
         );
     }

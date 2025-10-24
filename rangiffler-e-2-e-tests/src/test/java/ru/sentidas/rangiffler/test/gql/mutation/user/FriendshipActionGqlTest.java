@@ -9,7 +9,7 @@ import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Token;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
-import ru.sentidas.rangiffler.service.UsersDbClient;
+import ru.sentidas.rangiffler.service.impl.UsersDbClient;
 import ru.sentidas.rangiffler.test.gql.BaseGraphQlTest;
 import ru.sentidas.rangiffler.test.gql.api.FriendshipApi;
 import ru.sentidas.rangiffler.test.gql.api.UsersApi;

@@ -10,8 +10,7 @@ import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.CountryName;
 import ru.sentidas.rangiffler.page.FeedPage;
 import ru.sentidas.rangiffler.page.component.Pagination;
-import ru.sentidas.rangiffler.service.PhotoDbClient;
-import ru.sentidas.rangiffler.utils.AnnotationHelper;
+import ru.sentidas.rangiffler.service.impl.PhotoDbClient;
 
 import java.util.UUID;
 
@@ -282,7 +281,7 @@ public class PaginationFeedTest {
         feedPage.openFriendsFeed()
                 .shouldHavePagination(Prev.DISABLE, Next.ENABLE);
 
-        photo.removePhotoById(photoId);
+        photo.deletePhoto(photoId, user.id());
         Selenide.refresh();
 
         feedPage.openFriendsFeed()

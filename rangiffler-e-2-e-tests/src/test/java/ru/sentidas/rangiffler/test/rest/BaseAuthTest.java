@@ -6,7 +6,7 @@ import ru.sentidas.rangiffler.config.Config;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.RestTest;
 import ru.sentidas.rangiffler.jupiter.extension.ApiLoginExtension;
 import ru.sentidas.rangiffler.rest.core.ThreadSafeCookieStore;
-import ru.sentidas.rangiffler.service.AuthApiClient;
+import ru.sentidas.rangiffler.service.impl.AuthApiClient;
 
 @RestTest
 public abstract class BaseAuthTest {

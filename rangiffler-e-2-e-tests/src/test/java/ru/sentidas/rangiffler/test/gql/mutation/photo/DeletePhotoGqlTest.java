@@ -68,7 +68,7 @@ public class DeletePhotoGqlTest extends BaseGraphQlTest {
 
         assertAll("forbidden delete",
                 () -> assertTrue(tryDeleteRes.hasErrors(), "response must contain errors"),
-                () -> assertEquals(ErrorGql.message(tryDeleteRes), "Can`t access to photo"),
+                () -> assertEquals(ErrorGql.message(tryDeleteRes), "Cannot access to photo"),
                 () -> assertEquals("deletePhoto", ErrorGql.path(tryDeleteRes), "error path must contain 'deletePhoto'")
         );
 
@@ -113,7 +113,7 @@ public class DeletePhotoGqlTest extends BaseGraphQlTest {
         assertAll("not found on delete",
                 () -> assertTrue(tryDeleteRes.hasErrors(), "response must contain errors"),
                 () -> assertEquals("NOT_FOUND", ErrorGql.classification(tryDeleteRes)),
-                () -> assertEquals(ErrorGql.message(tryDeleteRes), "Can't find photo by id: " + randomId),
+                () -> assertEquals(ErrorGql.message(tryDeleteRes), "Cannot find photo by id: " + randomId),
                 () -> assertEquals("deletePhoto", ErrorGql.path(tryDeleteRes), "error path must contain 'deletePhoto'")
         );
     }
