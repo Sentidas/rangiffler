@@ -8,7 +8,6 @@ option java_package = "ru.sentidas.rangiffler.grpc";
 option java_outer_classname = "RangifflerPhotoProto";
 
 service RangifflerPhotoService {
-  rpc GetPhotos (PageRequest) returns (PhotosPageResponse) {}
   rpc GetUserPhotos (PhotoPageRequest) returns (PhotosPageResponse) {}
   rpc GetFeedPhotos (PhotoPageRequest) returns (PhotosPageResponse) {}
 
@@ -19,8 +18,7 @@ service RangifflerPhotoService {
   rpc GetPhotoLikes (PhotoIdRequest) returns (Likes) {}
   rpc ToggleLike (LikeRequest) returns (PhotoResponse) {}
 
-  rpc AddLike (LikeRequest) returns (PhotoResponse) {}
-  rpc RemoveLike (LikeRequest) returns (PhotoResponse) {}
+  rpc GetStorageMode(google.protobuf.Empty) returns (PhotoStorageModeResponse) {}
 }
 
 // ---- Paging ----
@@ -34,16 +32,17 @@ message PhotoPageRequest {
   string user_id = 1;
   int32 page = 2;
   int32 size = 3;
+  optional bool include_total = 4; //  по запросу посчитать глобальный total
 }
 
 message PhotosPageResponse {
-  int64 total_elements = 1;
-  int32 total_pages = 2;
-  bool first = 3;
-  bool last = 4;
-  int32 page = 5;
-  int32 size = 6;
-  repeated PhotoResponse content = 7;
+  int32 total_elements = 1;
+  bool first = 2;
+  bool last = 3;
+  int32 page = 4;
+  int32 size = 5;
+  repeated PhotoResponse content = 6;
+  optional int32 total = 7;  // глобальное количество по всей выборке (если include_total=true)
 }
 
 // ---- Photo ----
@@ -99,7 +98,9 @@ message Like {
   google.protobuf.Timestamp creationDate = 2;
 }
 
-
+message PhotoStorageModeResponse {
+  string mode = 1; // "BLOB" или "OBJECT"
+}
 
 
 

@@ -19,6 +19,8 @@ service RangifflerUserdataService {
   rpc CreateFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
   rpc AcceptFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
   rpc DeclineFriendshipRequest (FriendshipRequest) returns (UserResponse) {}
+  rpc GetStorageMode(google.protobuf.Empty) returns (UserStorageModeResponse) {}
+  rpc UsernamesByIds (UserIdsRequest) returns (UsernamesResponse) {}
 }
 
 message UserResponse {
@@ -57,20 +59,18 @@ message UserIdRequest {
   string user_id = 1;
 }
 
-message UserSearchRequest {
-  string username = 1;
-  optional string search_query = 2;
+message UserIdsRequest {
+  repeated string user_ids = 1;
 }
 
-message UserRequest {
-  string id = 1;
-  string username = 2;
-  string firstname = 3;
-  string surname = 4;
-  string avatar = 5;
-  FriendStatus friend_status = 6;
-  string country_code = 7;
+message UsernamesResponse {
+  message Item {
+    string user_id = 1;
+    string username = 2;
+  }
+  repeated Item items = 1;
 }
+
 message UpdateUserRequest {
   string username = 1;
   optional string firstname = 2;
@@ -99,11 +99,7 @@ enum FriendStatus {
 
 }
 
-enum FriendshipAction {
-  UNSPECIFIED = 0;
-  ADD = 1;
-  ACCEPT = 2;
-  REJECT = 3;
-  DELETE = 4;
+message UserStorageModeResponse {
+  string mode = 1; // "BLOB" или "OBJECT"
 }
 
