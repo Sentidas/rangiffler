@@ -240,8 +240,8 @@ public class GrpcUserService extends RangifflerUserdataServiceGrpc.RangifflerUse
     }
 
     @Override
-    public void getStorageMode(Empty request, StreamObserver<StorageModeResponse> responseObserver) {
-        responseObserver.onNext(StorageModeResponse.newBuilder()
+    public void getStorageMode(Empty request, StreamObserver<UserStorageModeResponse> responseObserver) {
+        responseObserver.onNext(UserStorageModeResponse.newBuilder()
                 .setMode(storageMode.toUpperCase())
                 .build());
         responseObserver.onCompleted();
