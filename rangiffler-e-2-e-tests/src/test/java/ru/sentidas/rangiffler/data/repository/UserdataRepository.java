@@ -1,11 +1,18 @@
 package ru.sentidas.rangiffler.data.repository;
 
 import ru.sentidas.rangiffler.data.entity.userdata.UserEntity;
+import ru.sentidas.rangiffler.data.repository.impl.AuthUserRepositoryImpl;
+import ru.sentidas.rangiffler.data.repository.impl.UserDataUserRepositoryImpl;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UserdataRepository {
+
+    static UserdataRepository getInstance() {
+        return new UserDataUserRepositoryImpl();
+    }
+
 
     UserEntity create(UserEntity user);
 

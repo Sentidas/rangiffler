@@ -11,11 +11,12 @@ import java.util.UUID;
 import static ru.sentidas.rangiffler.data.jpa.EntityManagers.em;
 
 
-public class AuthUserRepository implements ru.sentidas.rangiffler.data.repository.AuthUserRepository {
+public class AuthUserRepositoryImpl implements ru.sentidas.rangiffler.data.repository.AuthUserRepository {
 
     private static final Config CFG = Config.getInstance();
 
     private final EntityManager entityManager = em(CFG.authJdbcUrl());
+
 
     @Override
     public AuthUserEntity create(AuthUserEntity user) {

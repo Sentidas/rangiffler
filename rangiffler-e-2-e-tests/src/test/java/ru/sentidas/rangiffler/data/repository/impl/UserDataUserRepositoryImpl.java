@@ -13,12 +13,15 @@ import java.util.UUID;
 import static ru.sentidas.rangiffler.data.jpa.EntityManagers.em;
 
 
-public class UserDataUserRepository implements UserdataRepository {
+public class UserDataUserRepositoryImpl implements UserdataRepository {
 
     private static final Config CFG = Config.getInstance();
 
     private final EntityManager entityManager = em(CFG.userdataJdbcUrl());
 
+    static UserDataUserRepositoryImpl getInstance() {
+        return new UserDataUserRepositoryImpl();
+    }
 
     @Override
     public UserEntity create(UserEntity user) {

@@ -1,11 +1,17 @@
 package ru.sentidas.rangiffler.data.repository;
 
 import ru.sentidas.rangiffler.data.entity.auth.AuthUserEntity;
+import ru.sentidas.rangiffler.data.repository.impl.AuthUserRepositoryImpl;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public interface AuthUserRepository {
+
+    static AuthUserRepository getInstance() {
+        return new AuthUserRepositoryImpl();
+    }
+
     AuthUserEntity create(AuthUserEntity user);
 
     AuthUserEntity update(AuthUserEntity user);

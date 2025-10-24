@@ -6,6 +6,7 @@ import ru.sentidas.rangiffler.config.Config;
 import ru.sentidas.rangiffler.data.entity.photo.LikeEntity;
 import ru.sentidas.rangiffler.data.entity.photo.PhotoEntity;
 import ru.sentidas.rangiffler.data.entity.photo.PhotoLikeId;
+import ru.sentidas.rangiffler.data.repository.PhotoRepository;
 
 import java.util.Date;
 import java.util.Optional;
@@ -13,17 +14,23 @@ import java.util.UUID;
 
 import static ru.sentidas.rangiffler.data.jpa.EntityManagers.em;
 
-public class PhotoRepository {
+public class PhotoRepositoryImpl implements PhotoRepository {
 
     private static final Config CFG = Config.getInstance();
 
     private final EntityManager entityManager = em(CFG.photoJdbcUrl());
+
+    static PhotoRepositoryImpl getInstance() {
+        return new PhotoRepositoryImpl();
+    }
+
 
     public PhotoEntity create(PhotoEntity photo) {
         entityManager.joinTransaction();
         entityManager.persist(photo);
         return photo;
     }
+
 
     public PhotoEntity update(PhotoEntity photo) {
         entityManager.joinTransaction();
@@ -51,6 +58,11 @@ public class PhotoRepository {
         }
     }
 
+    @Override
+    public Optional<PhotoEntity> findByUsernameAndCountry(String username, String code) {
+        return Optional.empty();
+    }
+
 
     public void remove(PhotoEntity photo) {
         entityManager.joinTransaction();
@@ -61,29 +73,4 @@ public class PhotoRepository {
         }
     }
 
-    public LikeEntity like(UUID photoId, UUID userId) {
-        entityManager.joinTransaction();
-
-        PhotoLikeId photoLikeId = new PhotoLikeId();
-        photoLikeId.setPhotoId(photoId);
-        photoLikeId.setUserId(userId);
-
-        LikeEntity existing = entityManager.find(LikeEntity.class, photoLikeId);
-        if (existing != null) {
-            return existing;
-        }
-
-        LikeEntity like = new LikeEntity();
-        like.setId(photoLikeId);
-        like.setCreationDate(new Date());
-
-        entityManager.persist(like);
-        entityManager.flush(); // ← принудительно «сбрасываем» INSERT
-        return like;
-
-    }
-
-    public void removeLike(LikeEntity like) {
-
-    }
 }
