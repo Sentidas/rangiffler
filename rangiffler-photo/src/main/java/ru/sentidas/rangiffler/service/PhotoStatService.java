@@ -24,7 +24,7 @@ public class PhotoStatService {
      */
     public void sendDeltaAfterCommit(UUID userId, String countryCode, int delta) {
         if (countryCode == null || countryCode.isBlank()) {
-            return; // Нечего слать
+            return;
         }
 
         PhotoStatEvent event = new PhotoStatEvent(userId, countryCode, delta);

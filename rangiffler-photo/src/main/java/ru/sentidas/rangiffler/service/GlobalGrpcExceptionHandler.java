@@ -30,6 +30,15 @@ public class GlobalGrpcExceptionHandler {
         return Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException();
     }
 
+    // 503 сетевая/инфраструктурная Minio не доступен
+    @GrpcExceptionHandler(ru.sentidas.rangiffler.ex.StorageUnavailableException.class)
+    public StatusRuntimeException handleStorageUnavailable(ru.sentidas.rangiffler.ex.StorageUnavailableException e) {
+        log.warn("gRPC UNAVAILABLE: {}", e.getMessage());
+        return Status.UNAVAILABLE
+                .withDescription(e.getMessage())
+                .asRuntimeException();
+    }
+
     @GrpcExceptionHandler(Throwable.class)
     public StatusRuntimeException handleAny(Throwable e) {
         log.error("gRPC INTERNAL (unhandled)", e);

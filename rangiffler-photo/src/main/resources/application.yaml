@@ -88,7 +88,7 @@ rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
 ---
 minio:
-  endpoint: http://localhost:9002     # ваши проброшенные порты
+  endpoint: http://localhost:9002
   access-key: root
   secret-key: rootroot
 
@@ -97,7 +97,7 @@ app:
     bucket: rangiffler-media
     public-base-url: http://localhost:9002/rangiffler-media
     storage:
-      default: BLOB  # OBJECT или BLOB
+      default: OBJECT  # OBJECT или BLOB
 
 spring:
   servlet:

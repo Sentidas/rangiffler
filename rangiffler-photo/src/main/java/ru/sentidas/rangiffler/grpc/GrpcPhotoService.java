@@ -4,6 +4,7 @@ import com.google.protobuf.Empty;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -21,6 +22,9 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
 
     private final PhotoService photoService;
     private final GrpcUserdataClient grpcUserdataClient;
+
+    @Value("${app.media.storage.default:BLOB}")
+    private String storageMode;
 
     @Autowired
     public GrpcPhotoService(PhotoService photoService, GrpcUserdataClient grpcUserdataClient) {
@@ -140,6 +144,14 @@ public class GrpcPhotoService extends RangifflerPhotoServiceGrpc.RangifflerPhoto
         }
 
         responseObserver.onNext(Like.toProtoList(likes));
+        responseObserver.onCompleted();
+    }
+
+    @Override
+    public void getStorageMode(Empty request, StreamObserver<PhotoStorageModeResponse> responseObserver) {
+        responseObserver.onNext(PhotoStorageModeResponse.newBuilder()
+                .setMode(storageMode.toUpperCase())
+                .build());
         responseObserver.onCompleted();
     }
 

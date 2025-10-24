@@ -70,42 +70,51 @@ public class PhotoService {
 
         StorageType mode = currentStorageMode(); // OBJECT или BLOB (настройка)
 
-        try {
-            if (mode == OBJECT) {
-                // OBJECT: грузим в MinIO и сохраняем ключ
+        if (mode == OBJECT) {
+            try {
+                // Пишем в MinIO; если MinIO недоступен — MinioService бросит StorageUnavailableException
                 String key = minioService.upload(photoEntity.getUser(), bytes, mime);
                 photoEntity.setPhotoUrl(key);
                 photoEntity.setPhoto(null);
                 photoEntity.setStorage(OBJECT);
                 photoEntity.setPhotoMime(mime);
-            } else {
-                // BLOB: пишем байты в БД
-                photoEntity.setPhoto(bytes);
-                photoEntity.setPhotoUrl(null);
-                photoEntity.setStorage(BLOB);
-                photoEntity.setPhotoMime(mime);
+            } catch (ru.sentidas.rangiffler.ex.StorageUnavailableException sue) {
+                // Пусть gRPC-Advice отдаст UNAVAILABLE с нормальным описанием
+                throw sue;
+            } catch (IllegalArgumentException iae) {
+                // Неверный mime и т.п. — это ошибка клиента (INVALID_ARGUMENT в вашем Advice)
+                throw iae;
+            } catch (Exception e) {
+                // Любая другая непредвиденная ошибка в OBJECT-ветке — это уже внутренняя
+                throw new RuntimeException("Unexpected error while storing photo in OBJECT storage", e);
             }
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to store photo content", e);
+        } else {
+            // BLOB: пишем байты в БД (без внешних зависимостей)
+            photoEntity.setPhoto(bytes);
+            photoEntity.setPhotoUrl(null);
+            photoEntity.setStorage(BLOB);
+            photoEntity.setPhotoMime(mime);
         }
 
-        //  save с полями контента
+        // Сохраняем метаданные/контент
         PhotoEntity saved = photoRepository.save(photoEntity);
         Photo createdPhoto = Photo.fromEntity(saved);
 
-        // бизнес-событие для лога
+        // Событие
         activityService.publishPhotoEvent(
-                EventType.PHOTO_ADDED,        // тип события
+                EventType.PHOTO_ADDED,
                 createdPhoto.requesterId(),
                 createdPhoto.id(),
                 createdPhoto.requesterId(),
                 createPhoto.countryCode()
         );
 
+        // Дельта статистики
         photoStatService.sendDeltaAfterCommit(
                 saved.getUser(),
                 saved.getCountryCode(),
-                +1);
+                +1
+        );
 
         return createdPhoto;
     }
@@ -126,44 +135,54 @@ public class PhotoService {
             photoEntity.setDescription(photo.description());
         }
 
-        // Изменение контента только если пришёл data:
+        // Меняем картинку только если пришёл data:
         if (photo.src() != null && !photo.src().isBlank()) {
             if (photo.src().startsWith("data:")) {
-                DataUrl parsed = DataUrl.parse(photo.src());
+                DataUrl parsed = DataUrl.parse(photo.src()); // IllegalArgumentException => INVALID_ARGUMENT
                 String mime = parsed.mime();
                 byte[] bytes = parsed.bytes();
 
                 StorageType targetMode = currentStorageMode();
                 StorageType previousMode = photoEntity.getStorage();
 
-                try {
-                    if (targetMode == OBJECT) {
-                        String oldKey = photoEntity.getPhotoUrl();
-                        String newKey = minioService.upload(photoEntity.getUser(), bytes, mime);
+                if (targetMode == OBJECT) {
+                    String oldKey = photoEntity.getPhotoUrl();
+                    try {
+                        String newKey = minioService.upload(photoEntity.getUser(), bytes, mime); // может бросить StorageUnavailableException
                         photoEntity.setPhotoUrl(newKey);
                         photoEntity.setPhoto(null);
                         photoEntity.setStorage(OBJECT);
                         photoEntity.setPhotoMime(mime);
+
+                        // Если ключ поменяли — старый удаляем best-effort
                         if (oldKey != null && !oldKey.isBlank() && !oldKey.equals(newKey)) {
                             minioService.deleteObject(oldKey);
                         }
-                    } else {
-                        if (previousMode == OBJECT) {
-                            String oldKey = photoEntity.getPhotoUrl();
-                            if (oldKey != null && !oldKey.isBlank()) {
-                                minioService.deleteObject(oldKey);
-                            }
-                        }
-                        photoEntity.setPhoto(bytes);
-                        photoEntity.setPhotoUrl(null);
-                        photoEntity.setStorage(BLOB);
-                        photoEntity.setPhotoMime(mime);
+                    } catch (ru.sentidas.rangiffler.ex.StorageUnavailableException sue) {
+                        // Отдаём наверх как UNAVAILABLE
+                        throw sue;
+                    } catch (IllegalArgumentException iae) {
+                        // Неподдерживаемый mime и т.п. — ошибка клиента
+                        throw iae;
+                    } catch (Exception e) {
+                        // Любая иная непредвиденная ошибка в OBJECT-ветке
+                        throw new RuntimeException("Unexpected error while updating photo content in OBJECT storage", e);
                     }
-                } catch (Exception ex) {
-                    throw new RuntimeException("Failed to store photo content", ex);
+                } else {
+                    // Переезд/обновление в BLOB: если раньше было OBJECT — чистим объект best-effort
+                    if (previousMode == OBJECT) {
+                        String ok = photoEntity.getPhotoUrl();
+                        if (ok != null && !ok.isBlank()) {
+                            minioService.deleteObject(ok);
+                        }
+                    }
+                    photoEntity.setPhoto(bytes);
+                    photoEntity.setPhotoUrl(null);
+                    photoEntity.setStorage(BLOB);
+                    photoEntity.setPhotoMime(mime);
                 }
             } else {
-                // Не data: — фронт прислал echo-URL, контент не меняем
+                // echo-URL — не меняем контент
                 LOG.debug("UpdatePhoto: non data: src received -> treating as 'no image change'");
             }
         }
@@ -172,11 +191,11 @@ public class PhotoService {
         Photo updatedPhoto = Photo.fromEntity(updated);
 
         activityService.publishPhotoEvent(
-                ru.sentidas.rangiffler.EventType.PHOTO_UPDATED,
+                EventType.PHOTO_UPDATED,
                 updatedPhoto.requesterId(),
                 updatedPhoto.id(),
                 updatedPhoto.requesterId(),
-                photo.countryCode() // если была передана — попадёт в payload
+                photo.countryCode()
         );
 
         if (photo.countryCode() != null && !photo.countryCode().isBlank()) {
@@ -186,7 +205,6 @@ public class PhotoService {
 
         return updatedPhoto;
     }
-
 
     public List<Like> photoLikes(@Nonnull UUID photoId) {
         return likeRepository.findAllByIdPhotoId(photoId)
