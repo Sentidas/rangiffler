@@ -3,10 +3,8 @@ package ru.sentidas.rangiffler.data.entity.photo;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import ru.sentidas.rangiffler.model.Like;
-import ru.sentidas.rangiffler.model.Photo;
+import ru.sentidas.rangiffler.model.AppPhoto;
 
-import java.util.Base64;
 import java.util.Date;
 import java.util.UUID;
 
@@ -48,26 +46,26 @@ public class PhotoEntity {
     @Column(name = "created_date", nullable = false)
     private Date createdDate;
 
-//    // Односторонняя связь на лайки: FK в таблице photo_like (колонка photo_id)
-//    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "photo_id", referencedColumnName = "id")
-//    private Set<LikeEntity> likes = new HashSet<>();
 
-    public static PhotoEntity fromJson(Photo photo) {
-        PhotoEntity fe = new PhotoEntity();
-        fe.setId(photo.id());
-        fe.setUser(photo.userId());
-        fe.setCountryCode(photo.countryCode());
-        fe.setCreatedDate(new Date(photo.creationDate().getTime()));
-        fe.setDescription(photo.description());
-        // Конвертируем base64 → byte[]
-        if (photo.src() != null && photo.src().startsWith("data:image")) {
-            String base64 = photo.src().substring(photo.src().indexOf(",") + 1);
-            fe.setPhoto(Base64.getDecoder().decode(base64));
-        } else {
-            fe.setPhoto(null);
+    public static PhotoEntity from(AppPhoto photo) {
+        PhotoEntity entity = new PhotoEntity();
+        entity.setId(photo.id());
+        entity.setUser(photo.userId());
+        entity.setCountryCode(photo.countryCode());
+        entity.setDescription(photo.description());
+
+        entity.setCreatedDate(photo.creationDate() != null
+                ? new Date(photo.creationDate().getTime())
+                : new Date());
+
+        String source = photo.src();
+        if (source != null && !source.isBlank() && source.startsWith("data:")) {
+            ru.sentidas.rangiffler.DataUrl parsedDataUrl = ru.sentidas.rangiffler.DataUrl.parse(source);
+            entity.setStorage(StorageType.BLOB);
+            entity.setPhoto(parsedDataUrl.bytes());
+            entity.setPhotoUrl(null);
         }
-        return fe;
+        return entity;
     }
 
 }

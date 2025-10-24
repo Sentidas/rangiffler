@@ -3,7 +3,6 @@ package ru.sentidas.rangiffler.data.entity.userdata;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.proxy.HibernateProxy;
 import ru.sentidas.rangiffler.model.AppUser;
 
 import java.io.Serializable;
@@ -15,133 +14,94 @@ import java.util.stream.Stream;
 @Entity
 @Table(name = "`user`")
 public class UserEntity implements Serializable {
-  @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
-  @Column(name = "id", nullable = false, columnDefinition = "BINARY(16)")
-  private UUID id;
 
-  @Column(nullable = false, unique = true)
-  private String username;
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id", nullable = false, columnDefinition = "BINARY(16)")
+    private UUID id;
 
-  @Column
-  private String firstname;
+    @Column(nullable = false, unique = true)
+    private String username;
 
-  @Column
-  private String surname;
+    @Column
+    private String firstname;
 
-  @Lob
-  @Column(columnDefinition = "LONGBLOB")
-  private byte[] avatar;
+    @Column
+    private String surname;
 
-  @Lob
-  @Column(name = "avatar_small", columnDefinition = "LONGBLOB")
-  private byte[] avatarSmall;
+    @Column(name = "country_code", length = 2, nullable = false)
+    private String countryCode;
 
-  @OneToMany(mappedBy = "requester", fetch = FetchType.LAZY,
-          cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<FriendshipEntity> friendshipRequests = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "storage", nullable = false)
+    private StorageType storage = StorageType.BLOB;
 
-  @OneToMany(mappedBy = "addressee", fetch = FetchType.LAZY,
-          cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
+    @Column(name = "object_key")
+    private String objectKey;        // OBJECT-режим
 
-  @Column(name = "country_code", length = 2, nullable = false)
-  private String countryCode;
+    @Lob
+    @Column(name = "avatar", columnDefinition = "LONGBLOB")
+    private byte[] avatar;           // BLOB-режим: оригинал
 
-  public void addFriends(FriendshipStatus status, UserEntity... friends) {
-    List<FriendshipEntity> friendsEntities = Stream.of(friends)
-        .map(f -> {
-          FriendshipEntity fe = new FriendshipEntity();
-          fe.setRequester(this);
-          fe.setAddressee(f);
-          fe.setStatus(status);
-          fe.setCreatedDate(new Date());
-          return fe;
-        }).toList();
-    this.friendshipRequests.addAll(friendsEntities);
-  }
-//
-//  public void addPhotos(PhotoEntity... photos) {
-//    this.photos.addAll(Stream.of(photos).peek(
-//        p -> p.setUser(this)
-//    ).toList());
-//  }
+    @Column(name = "mime")
+    private String mime;             // MIME оригинала (опционально)
+
+    @Lob
+    @Column(name = "avatar_small", columnDefinition = "LONGBLOB")
+    private byte[] avatarSmall;      // PNG превью
 
 
-  public static UserEntity from(AppUser user) {
-    UserEntity ue = new UserEntity();
-    //ue.setId(userId.id());
-    ue.setUsername(user.username());
-    ue.setFirstname(user.firstname());
-    ue.setSurname(user.surname());
-    ue.setCountryCode(user.countryCode());
+    @OneToMany(
+            mappedBy = "requester",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<FriendshipEntity> friendshipRequests = new ArrayList<>();
 
-    if (user.avatar() != null && user.avatar().startsWith("data:image")) {
-      String base64 = user.avatar().substring(user.avatar().indexOf(",") + 1);
-      ue.setAvatar(Base64.getDecoder().decode(base64));
-    } else {
-      ue.setAvatar(null);
-    }
-    if (user.avatarSmall() != null && user.avatarSmall().startsWith("data:image")) {
-      String base64 = user.avatarSmall().substring(user.avatarSmall().indexOf(",") + 1);
-      ue.setAvatarSmall(Base64.getDecoder().decode(base64));
-    } else {
-      ue.setAvatarSmall(null);
+    @OneToMany(
+            mappedBy = "addressee",
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<FriendshipEntity> friendshipAddressees = new ArrayList<>();
+
+    public void addFriends(FriendshipStatus status, UserEntity... friends) {
+        List<FriendshipEntity> friendsEntities = Stream.of(friends)
+                .map(f -> {
+                    FriendshipEntity fe = new FriendshipEntity();
+                    fe.setRequester(this);
+                    fe.setAddressee(f);
+                    fe.setStatus(status);
+                    fe.setCreatedDate(new Date());
+                    return fe;
+                }).toList();
+        this.friendshipRequests.addAll(friendsEntities);
     }
 
-    return ue;
-  }
 
+    public static UserEntity from(AppUser user) {
+        UserEntity ue = new UserEntity();
+        ue.setUsername(user.username());
+        ue.setFirstname(user.firstname());
+        ue.setSurname(user.surname());
+        ue.setCountryCode(user.countryCode());
 
-  public void addInvitations(UserEntity... invitations) {
-    List<FriendshipEntity> invitationsEntities = Stream.of(invitations)
-            .map(i -> {
-              FriendshipEntity fe = new FriendshipEntity();
-              fe.setRequester(i);
-              fe.setAddressee(this);
-              fe.setStatus(FriendshipStatus.PENDING);
-              fe.setCreatedDate(new Date());
-              return fe;
-            }).toList();
-    this.friendshipAddressees.addAll(invitationsEntities);
-  }
+        // BLOB: кладём байты, если пришёл dataURL
+        if (user.avatar() != null && user.avatar().startsWith("data:image")) {
+            String base64 = user.avatar().substring(user.avatar().indexOf(',') + 1);
+            ue.setAvatar(Base64.getDecoder().decode(base64));
+        } else {
+            ue.setAvatar(null);
+        }
+        if (user.avatarSmall() != null && user.avatarSmall().startsWith("data:image")) {
+            String base64s = user.avatarSmall().substring(user.avatarSmall().indexOf(',') + 1);
+            ue.setAvatarSmall(Base64.getDecoder().decode(base64s));
+        } else {
+            ue.setAvatarSmall(null);
+        }
 
-  public void removeFriends(UserEntity... friends) {
-    List<UUID> idsToBeRemoved = Arrays.stream(friends).map(UserEntity::getId).toList();
-    for (Iterator<FriendshipEntity> i = getFriendshipRequests().iterator(); i.hasNext(); ) {
-      FriendshipEntity friendsEntity = i.next();
-      if (idsToBeRemoved.contains(friendsEntity.getAddressee().getId())) {
-        friendsEntity.setAddressee(null);
-        i.remove();
-      }
+        return ue;
     }
-  }
-
-  public void removeInvites(UserEntity... invitations) {
-    List<UUID> idsToBeRemoved = Arrays.stream(invitations).map(UserEntity::getId).toList();
-    for (Iterator<FriendshipEntity> i = getFriendshipAddressees().iterator(); i.hasNext(); ) {
-      FriendshipEntity friendsEntity = i.next();
-      if (idsToBeRemoved.contains(friendsEntity.getRequester().getId())) {
-        friendsEntity.setRequester(null);
-        i.remove();
-      }
-    }
-  }
-
-
-  @Override
-  public final boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null) return false;
-    Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-    Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-    if (thisEffectiveClass != oEffectiveClass) return false;
-    UserEntity that = (UserEntity) o;
-    return getId() != null && Objects.equals(getId(), that.getId());
-  }
-
-  @Override
-  public final int hashCode() {
-    return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
-  }
 }

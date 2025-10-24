@@ -20,7 +20,6 @@ public class StatisticEntity {
     @Column(name = "user_id")
     private UUID userId;
 
-
     @Column(name = "country_id")
     private UUID countryId;
 
