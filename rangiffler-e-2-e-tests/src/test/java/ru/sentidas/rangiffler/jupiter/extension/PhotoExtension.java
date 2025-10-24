@@ -3,12 +3,16 @@ package ru.sentidas.rangiffler.jupiter.extension;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.extension.*;
 import org.junit.platform.commons.support.AnnotationSupport;
+import org.springframework.beans.factory.annotation.Value;
 import ru.sentidas.rangiffler.jupiter.annotaion.Photo;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.AppPhoto;
-import ru.sentidas.rangiffler.service.GeoDbClient;
-import ru.sentidas.rangiffler.service.PhotoApiClient;
+import ru.sentidas.rangiffler.service.GeoClient;
+import ru.sentidas.rangiffler.service.PhotoClient;
+import ru.sentidas.rangiffler.service.impl.GeoApiClient;
+import ru.sentidas.rangiffler.service.impl.GeoDbClient;
+import ru.sentidas.rangiffler.service.impl.PhotoApiClient;
 import ru.sentidas.rangiffler.utils.generation.GenerationDataUser;
 import ru.sentidas.rangiffler.utils.generation.LocaleUtil;
 import ru.sentidas.rangiffler.utils.generation.PhotoDescriptions;
@@ -24,7 +28,7 @@ public class PhotoExtension implements BeforeEachCallback, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(PhotoExtension.class);
 
     private final PhotoApiClient photoClient = new PhotoApiClient();
-    private final GeoDbClient geoClient = new GeoDbClient();
+    private final GeoClient geoClient = new GeoApiClient();
 
 
     @Override

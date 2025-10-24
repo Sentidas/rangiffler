@@ -1,5 +1,6 @@
 package ru.sentidas.rangiffler.jupiter.extension;
 
+import com.codeborne.selenide.Configuration;
 import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.WebDriverRunner;
 import com.codeborne.selenide.logevents.SelenideLogger;
@@ -26,7 +27,7 @@ public class BrowserExtension implements
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        // Configuration.browserSize = "1920x1080";
+       Configuration.browserSize = "1920x1080";
         SelenideLogger.addListener("Allure-selenide", new AllureSelenide()
                 .savePageSource(false)
                 .screenshots(false)

@@ -6,11 +6,13 @@ import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.model.TestData;
 import ru.sentidas.rangiffler.service.UsersClient;
-import ru.sentidas.rangiffler.service.UsersDbClient;
+import ru.sentidas.rangiffler.service.impl.UsersDbClient;
 import ru.sentidas.rangiffler.utils.generation.GenerationDataUser;
 import ru.sentidas.rangiffler.utils.generation.UserData;
 
 import javax.annotation.Nullable;
+
+import static ru.sentidas.rangiffler.utils.generation.GenerationDataUser.randomUsername;
 
 public class UserExtension implements BeforeEachCallback, ParameterResolver {
     public static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(UserExtension.class);
@@ -20,8 +22,6 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        System.out.println("[INFO] Userdata storage mode: " + usersDbClient.getStorageMode());
-
         AnnotationSupport.findAnnotation(context.getRequiredTestMethod(), User.class)
                 .ifPresent(anno -> {
                     AppUser user;
@@ -34,7 +34,7 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
                         if (anno.full()) {
                             user = usersDbClient.createFullUser(randomFullUser());
                         } else {
-                            user = usersDbClient.createUser(GenerationDataUser.randomUsername(), defaultPassword);
+                            user = usersDbClient.createUser(randomUsername(), defaultPassword);
                         }
                     }
 
@@ -98,7 +98,7 @@ public class UserExtension implements BeforeEachCallback, ParameterResolver {
     }
 
     private AppUser randomFullUser() {
-        final String username = GenerationDataUser.randomUsername();
+        final String username = randomUsername();
         final UserData userdata = GenerationDataUser.randomUser();
         final String avatar = GenerationDataUser.randomAvatarDataUrl();
         return new AppUser(

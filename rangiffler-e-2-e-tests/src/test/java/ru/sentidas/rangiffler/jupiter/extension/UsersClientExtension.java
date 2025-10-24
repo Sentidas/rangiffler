@@ -4,7 +4,7 @@ package ru.sentidas.rangiffler.jupiter.extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestInstancePostProcessor;
 import ru.sentidas.rangiffler.service.UsersClient;
-import ru.sentidas.rangiffler.service.UsersDbClient;
+import ru.sentidas.rangiffler.service.impl.UsersDbClient;
 
 import java.lang.reflect.Field;
 

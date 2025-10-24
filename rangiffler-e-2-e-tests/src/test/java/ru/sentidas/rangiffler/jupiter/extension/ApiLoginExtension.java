@@ -12,7 +12,7 @@ import ru.sentidas.rangiffler.jupiter.annotaion.Token;
 import ru.sentidas.rangiffler.model.TestData;
 import ru.sentidas.rangiffler.model.AppUser;
 import ru.sentidas.rangiffler.page.FeedPage;
-import ru.sentidas.rangiffler.service.AuthApiClient;
+import ru.sentidas.rangiffler.service.impl.AuthApiClient;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
