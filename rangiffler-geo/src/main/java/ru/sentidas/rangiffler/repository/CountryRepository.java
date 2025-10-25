@@ -12,7 +12,6 @@ import java.util.UUID;
 
 public interface CountryRepository extends JpaRepository<CountryEntity, UUID> {
 
-
     Optional<CountryEntity> findByCode(String code);
 
     @Query("select c from CountryEntity c where c.code in :codes")

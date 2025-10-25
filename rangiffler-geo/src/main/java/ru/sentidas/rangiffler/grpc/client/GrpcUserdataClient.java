@@ -1,7 +1,6 @@
 package ru.sentidas.rangiffler.grpc.client;
 
 import net.devh.boot.grpc.client.inject.GrpcClient;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.model.User;
@@ -18,21 +17,17 @@ public class GrpcUserdataClient {
     private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
 
     public User currentUser(String username) {
-
         UsernameRequest request = UsernameRequest.newBuilder()
                 .setUsername(username)
                 .build();
-
-        UserResponse userResponse = GrpcCall.run(() -> stub.currentUser(request), SERVICE);
+        UserResponse userResponse = stub.currentUser(request);
         return UserProtoMapper.fromProto(userResponse);
     }
 
-
-
     public String usernameById(UUID userId) {
-        var req = UserIdRequest.newBuilder().setUserId(userId.toString()).build();
-        var resp = GrpcCall.run(() -> stub.currentUserById(req), SERVICE); // вернёт UserResponse
-        return resp.getUsername();
+        UserIdRequest request = UserIdRequest.newBuilder().setUserId(userId.toString()).build();
+        UserResponse response = stub.currentUserById(request);
+        return response.getUsername();
     }
 
     public List<UUID> friendIdsAll(UUID userId) {
@@ -40,10 +35,9 @@ public class GrpcUserdataClient {
                 .setUserId(userId.toString())
                 .build();
 
-        UserIdsResponse response = GrpcCall.run(() -> stub.friendsId(request), SERVICE);
+        UserIdsResponse response = stub.friendsId(request);
         return response.getUserIdsList().stream()
                 .map(UUID::fromString)
                 .toList();
     }
-
 }

@@ -1,14 +1,9 @@
 package ru.sentidas.rangiffler.grpc.client;
 
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.SliceImpl;
 import ru.sentidas.rangiffler.grpc.UserResponse;
-import ru.sentidas.rangiffler.grpc.UsersPageResponse;
 import ru.sentidas.rangiffler.model.FriendStatus;
 import ru.sentidas.rangiffler.model.User;
 
-import java.util.List;
 import java.util.UUID;
 
 public final class UserProtoMapper {
@@ -30,18 +25,4 @@ public final class UserProtoMapper {
                 null
         );
     }
-
-    public static Slice<User> fromProto(UsersPageResponse response) {
-        List<User> content = response.getContentList()
-                .stream()
-                .map(UserProtoMapper::fromProto)
-                .toList();
-
-        boolean hasNext = !response.getLast();
-        return new SliceImpl<>(content,
-                PageRequest.of(response.getPage(), response.getSize()),
-                hasNext
-        );
-    }
-
 }

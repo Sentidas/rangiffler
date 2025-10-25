@@ -6,9 +6,6 @@ public record PhotoStatEvent(
         UUID userId,
         String countryCode,
         int delta
-
 ) {
-
-
 }
 

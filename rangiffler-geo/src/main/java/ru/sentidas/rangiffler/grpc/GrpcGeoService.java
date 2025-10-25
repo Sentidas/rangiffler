@@ -1,22 +1,22 @@
-package ru.sentidas.rangiffler.service;
+package ru.sentidas.rangiffler.grpc;
 
 import io.grpc.stub.StreamObserver;
-
 import net.devh.boot.grpc.server.service.GrpcService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
-import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.model.Country;
+import ru.sentidas.rangiffler.model.Stat;
+import ru.sentidas.rangiffler.service.GeoService;
+import ru.sentidas.rangiffler.utils.CountryCodeValidator;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static ru.sentidas.rangiffler.grpc.Stat.newBuilder;
+
 @GrpcService
 public class GrpcGeoService extends RangifflerGeoServiceGrpc.RangifflerGeoServiceImplBase {
-
-    private static final Logger LOG = LoggerFactory.getLogger(GrpcGeoService.class);
 
     private final GeoService geoService;
 
@@ -28,7 +28,7 @@ public class GrpcGeoService extends RangifflerGeoServiceGrpc.RangifflerGeoServic
     @Transactional(readOnly = true)
     @Override
     public void allCountries(com.google.protobuf.Empty request, StreamObserver<CountriesResponse> responseObserver) {
-        List<Country> countries = geoService.allCountries();
+        final List<Country> countries = geoService.allCountries();
         responseObserver.onNext(toProto(countries));
         responseObserver.onCompleted();
     }
@@ -36,7 +36,9 @@ public class GrpcGeoService extends RangifflerGeoServiceGrpc.RangifflerGeoServic
     @Transactional(readOnly = true)
     @Override
     public void getByCode(CodeRequest request, StreamObserver<CountryResponse> responseObserver) {
-        Country country = geoService.getByCode(request.getCode());
+        final String normalizedCountryCode = CountryCodeValidator.normalizeAndValidate(request.getCode());
+
+        final Country country = geoService.getByCode(normalizedCountryCode);
         responseObserver.onNext(toProto(country));
         responseObserver.onCompleted();
     }
@@ -44,46 +46,49 @@ public class GrpcGeoService extends RangifflerGeoServiceGrpc.RangifflerGeoServic
     @Transactional(readOnly = true)
     @Override
     public void getByCodes(CodesRequest request, StreamObserver<CountriesResponse> responseObserver) {
-      //  Span.current()
-        //        .setAttribute("geo.codes.count", request.getCodesCount());
-        List<Country> countries = geoService.getByCodes(request.getCodesList());
+        final List<String> requestedCountryCodes = request.getCodesList();
+        final List<String> normalizedCountryCodes = new ArrayList<>();
+
+        for (String requestedCode : requestedCountryCodes) {
+            String normalizedCountryCode = CountryCodeValidator.normalizeAndValidate(requestedCode);
+            normalizedCountryCodes.add(normalizedCountryCode);
+        }
+
+        final List<Country> countries = geoService.getByCodes(normalizedCountryCodes);
         responseObserver.onNext(toProto(countries));
         responseObserver.onCompleted();
     }
 
+    @Transactional(readOnly = true)
     @Override
-    public void statistics(StatRequest request, io.grpc.stub.StreamObserver<StatResponse> responseObserver) {
-        UUID userId = UUID.fromString(request.getUserId());
-        boolean withFriends = request.getWithFriends();
+    public void statistics(StatRequest request, StreamObserver<StatResponse> responseObserver) {
+        final UUID userId = UUID.fromString(request.getUserId());
+        final boolean withFriends = request.getWithFriends();
 
-        var stats = geoService.statByUserId(userId, withFriends);
+        final List<Stat> stats = geoService.statByUserId(userId, withFriends);
 
-        // маппинг в proto
-        var respB = StatResponse.newBuilder();
-        for (var s : stats) {
-            var country = s.country();
-            var countryB = CountryResponse.newBuilder()
+        StatResponse.Builder responseBuilder = StatResponse.newBuilder();
+        for (Stat s : stats) {
+            final Country country = s.country();
+            CountryResponse.Builder countryResponse = CountryResponse.newBuilder()
                     .setCode(country.code())
                     .setName(country.name())
-                    .setFlag(country.flag() == null ? "" : country.flag()) // не отдаём null в proto
-                    .build();
+                    .setFlag(country.flag());
 
-            respB.addStat(ru.sentidas.rangiffler.grpc.Stat.newBuilder()
+            responseBuilder.addStat(newBuilder()
                     .setCount(s.count())
-                    .setCountry(countryB)
+                    .setCountry(countryResponse.build())
                     .build());
         }
-
-        responseObserver.onNext(respB.build());
+        responseObserver.onNext(responseBuilder.build());
         responseObserver.onCompleted();
     }
 
-
     public static CountriesResponse toProto(List<Country> countries) {
         CountriesResponse.Builder b = CountriesResponse.newBuilder();
-                for(Country country : countries) {
-                    b.addCountries(toProto(country));
-                }
+        for (Country country : countries) {
+            b.addCountries(toProto(country));
+        }
         return b.build();
     }
 

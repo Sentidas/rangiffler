@@ -13,9 +13,6 @@ import java.util.UUID;
 
 public interface StatisticsRepository extends JpaRepository<StatisticEntity, UUID> {
 
-    List<StatisticEntity> findAllByUserId(UUID userId);
-
-    Optional<StatisticEntity> findByUserIdAndCountryId(UUID userId, UUID countryId);
 
     @Query("""
             select s.countryId as countryId, sum(s.count) as total
