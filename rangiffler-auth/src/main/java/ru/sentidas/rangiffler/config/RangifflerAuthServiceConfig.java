@@ -96,24 +96,6 @@ public class RangifflerAuthServiceConfig {
   }
 
   @Bean
-  @Profile({"staging", "prod"})
-  public LoginUrlAuthenticationEntryPoint loginUrlAuthenticationEntryPointHttps() {
-    LoginUrlAuthenticationEntryPoint entryPoint = new LoginUrlAuthenticationEntryPoint("/login");
-    PortMapperImpl portMapper = new PortMapperImpl();
-    portMapper.setPortMappings(Map.of(
-        serverPort, defaultHttpsPort,
-        "80", defaultHttpsPort,
-        "8081", "8443"
-    ));
-    PortResolverImpl portResolver = new PortResolverImpl();
-    portResolver.setPortMapper(portMapper);
-    entryPoint.setForceHttps(true);
-    entryPoint.setPortMapper(portMapper);
-    entryPoint.setPortResolver(portResolver);
-    return entryPoint;
-  }
-
-  @Bean
   @Profile({"local", "docker"})
   public LoginUrlAuthenticationEntryPoint loginUrlAuthenticationEntryPointHttp() {
     return new LoginUrlAuthenticationEntryPoint("/login");
