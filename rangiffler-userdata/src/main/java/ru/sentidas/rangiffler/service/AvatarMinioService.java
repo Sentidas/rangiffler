@@ -16,7 +16,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AvatarMinioService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AvatarMinioService.class);
 
     private final MinioClient minio;
 
@@ -26,7 +26,7 @@ public class AvatarMinioService {
     @Value("${minio.endpoint}")
     private String endpoint;
 
-    public String upload(UUID userId, byte[] bytes, String mime) throws Exception {
+    public String upload(UUID userId, byte[] bytes, String mime){
         String ext = switch (mime) {
             case "image/jpeg" -> "jpg";
             case "image/png"  -> "png";

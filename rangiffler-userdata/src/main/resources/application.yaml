@@ -10,8 +10,6 @@ grpc:
 spring:
   application:
     name: rangiffler-userdata
-  profiles:
-    active: local
   datasource:
     hikari:
       connection-timeout: 20000
@@ -65,9 +63,8 @@ app:
     bucket: rangiffler-media
     storage:
       # единый дефолт хранения; фактический режим выбирается на момент загрузки картинки
-      default: OBJECT
+      default: OBJECT # OBJECT или BLOB
 
-# ===== profile: local =====
 ---
 spring:
   config:
@@ -99,16 +96,20 @@ minio:
   access-key: root
   secret-key: rootroot
 
-# ===== profile: docker =====
 ---
 spring:
   config:
     activate:
       on-profile: docker
+  autoconfigure:
+    exclude:
+      - 'org.springframework.cloud.vault.config.VaultAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultObservationAutoConfiguration'
+      - 'org.springframework.cloud.vault.config.VaultReactiveAutoConfiguration'
   datasource:
-    url: jdbc:mysql://mysql:3306/rangiffler-userdata?serverTimezone=UTC&createDatabaseIfNotExist=true
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:root}
+    url: jdbc:mysql://rangiffler-all-db:3306/rangiffler-userdata?serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: root
+    password: root
     hikari:
       connection-timeout: 20000
       minimum-idle: 10
@@ -119,13 +120,18 @@ spring:
       connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:kafka:9092}
+    consumer:
+      group-id: 'userdata'
+      auto-offset-reset: earliest
 
 rangiffler-geo:
-  base-uri: http://rangiffler-geo:8085
+  base-uri: http://geo.rangiffler.dc:8085
 rangiffler-userdata:
-  base-uri: http://rangiffler-userdata:8088
+  base-uri: http://userdata.rangiffler.dc:8088
 rangiffler-photo:
-  base-uri: http://rangiffler-photo:8094
+  base-uri: http://photo.rangiffler.dc:8094
+rangiffler-event-log:
+  base-uri: http://event.rangiffler.dc:8094
 
 minio:
   endpoint: http://minio:9000
