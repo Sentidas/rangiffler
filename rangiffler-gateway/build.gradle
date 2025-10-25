@@ -13,8 +13,6 @@ dependencies {
     implementation project(':rangiffler-grpc-common')
     implementation project(':rangiffler-media-common')
 
-    implementation 'io.minio:minio:8.5.9'
-
     implementation("com.graphql-java:graphql-java-extended-scalars:22.0")
 
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -39,6 +37,9 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.ext.springOpenApiVersion}"
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // ===== Minio =====
+    implementation "io.minio:minio:${minioVersion}"
 }
 
 

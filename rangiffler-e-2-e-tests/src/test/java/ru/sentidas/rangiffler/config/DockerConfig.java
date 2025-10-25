@@ -7,6 +7,12 @@ import javax.annotation.Nonnull;
 enum DockerConfig implements Config {
     instance;
 
+    private static final String jdbc_params =
+            "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=utf8";
+
+    private static final String jdbc_prefix = "jdbc:mysql://rangiffler-all-db:3306/";
+
+
     @Nonnull
     @Override
     public String frontUrl() {
@@ -16,57 +22,55 @@ enum DockerConfig implements Config {
     @Nonnull
     @Override
     public String authUrl() {
-        return "http://auth.rangiffler.dc:9001/";
+        return "http://auth:9001/";
     }
-
-    @Override
-    public String authJdbcUrl() {
-        return "";
-    }
-
 
     @Nonnull
     @Override
     public String gatewayUrl() {
-        return "http://gateway.rangiffler.dc:8081/";
+        return "http://gateway:8081/";
     }
 
     @Nonnull
     @Override
     public String userdataUrl() {
-        return "http://userdata.rangiffler.dc:8088/";
-    }
-
-    @NotNull
-    @Override
-    public String userdataJdbcUrl() {
-        return "";
+        return "http://userdata:8088/";
     }
 
     @NotNull
     @Override
     public String geoUrl() {
-        return "http://geo.rangiffler.dc:8085/";
-    }
-
-    @NotNull
-    @Override
-    public String geoJdbcUrl() {
-        return "";
+        return "http://geo:8085/";
     }
 
     @NotNull
     @Override
     public String photoUrl() {
-        return "http://photo.rangiffler.dc:8094/";
+        return "http://photo:8094/";
+    }
+
+    @Override
+    public String authJdbcUrl() {
+        return jdbc_prefix + "rangiffler-auth" + jdbc_params;
+    }
+
+    @NotNull
+    @Override
+    public String userdataJdbcUrl() {
+        return jdbc_prefix + "rangiffler-userdata" + jdbc_params;
+    }
+
+    @NotNull
+    @Override
+    public String geoJdbcUrl() {
+        return jdbc_prefix + "rangiffler-geo" + jdbc_params;
     }
 
     @NotNull
     @Override
     public String photoJdbcUrl() {
-        return "";
+        return jdbc_prefix + "rangiffler-photo" + jdbc_params;
     }
-
 
     @Nonnull
     @Override
@@ -77,24 +81,24 @@ enum DockerConfig implements Config {
     @NotNull
     @Override
     public String geoGrpcAddress() {
-        return "geo.rangiffler.dc";
+        return "geo";
     }
 
     @NotNull
     @Override
     public String photoGrpcAddress() {
-        return "avatar.rangiffler.dc";
+        return "photo";
     }
 
     @NotNull
     @Override
     public String userdataGrpcAddress() {
-        return "userdata.rangiffler.dc";
+        return "userdata";
     }
 
     @NotNull
     @Override
     public String kafkaAddress() {
-        return "rangiffler_kafka:9092";
+        return "kafka:9092";
     }
 }

@@ -95,7 +95,7 @@ services:
       retries: 10
     networks: [ rangiffler-network-local ]
 
-  # --- авто-создание бакета для MinIO (добавлено) ---
+  # ==== Cоздание бакета 'rangiffler-media' для MinIO ====
   minio-init-local:
     image: minio/mc:latest
     container_name: minio-init-local

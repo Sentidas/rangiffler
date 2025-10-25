@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-
   # ===== DB → MySQL =====
   rangiffler-all-db:
     container_name: rangiffler-all-db
@@ -54,20 +53,25 @@ services:
         condition: service_healthy
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper-local:2181
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS=10000
       - KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS=10000
     restart: on-failure
+    healthcheck:
+      test: [ "CMD", "bash", "-lc", "kafka-topics --bootstrap-server localhost:9092 --list >/dev/null 2>&1" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
     networks:
       - rangiffler-network
 
   # ===== Сервисы rangiffler =====
-  auth.rangiffler.dc:
+  auth:
     container_name: auth.rangiffler.dc
     image: ${PREFIX}/rangiffler-auth-docker:latest
     ports:
@@ -82,11 +86,11 @@ services:
       rangiffler-all-db:
         condition: service_healthy
       kafka:
-        condition: service_started
-    networks:
-      - rangiffler-network
+        condition: service_healthy
+    networks: [ rangiffler-network ]
 
-  gateway.rangiffler.dc:
+
+  gateway:
     container_name: gateway.rangiffler.dc
     image: ${PREFIX}/rangiffler-gateway-docker:latest
     ports:
@@ -98,12 +102,11 @@ services:
       retries: 5
     restart: always
     depends_on:
-      auth.rangiffler.dc:
+      auth:
         condition: service_healthy
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
-  geo.rangiffler.dc:
+  geo:
     container_name: geo.rangiffler.dc
     image: ${PREFIX}/rangiffler-geo-docker:latest
     ports:
@@ -114,10 +117,9 @@ services:
         condition: service_healthy
       redis-geo:
         condition: service_started
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
-  photo.rangiffler.dc:
+  photo:
     container_name: photo.rangiffler.dc
     image: ${PREFIX}/rangiffler-photo-docker:latest
     ports:
@@ -128,27 +130,25 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
-  userdata.rangiffler.dc:
+  userdata:
     container_name: userdata.rangiffler.dc
     image: ${PREFIX}/rangiffler-userdata-docker:latest
     ports:
       - 8088:8088
     restart: always
     depends_on:
-      auth.rangiffler.dc:
+      auth:
         condition: service_healthy
       rangiffler-all-db:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
-  eventlog.rangiffler.dc:
-    container_name: eventlog.rangiffler.dc
+  eventlog:
+    container_name: event.rangiffler.dc
     image: ${PREFIX}/rangiffler-event-log-docker:latest
     restart: always
     depends_on:
@@ -156,8 +156,7 @@ services:
         condition: service_healthy
       kafka:
         condition: service_started
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
   frontend.rangiffler.dc:
     container_name: frontend.rangiffler.dc
@@ -170,10 +169,9 @@ services:
     ports:
       - 80:80
     depends_on:
-      gateway.rangiffler.dc:
+      gateway:
         condition: service_started
-    networks:
-      - rangiffler-network
+    networks: [ rangiffler-network ]
 
   # ===== Redis для GEO =====
   redis-geo:
@@ -192,12 +190,13 @@ services:
     container_name: minio
     image: minio/minio:latest
     environment:
+      - TZ=Europe/Moscow
       - MINIO_ROOT_USER=root
       - MINIO_ROOT_PASSWORD=rootroot
     command: ["server", "/data", "--console-address", ":9003"]
     ports:
-      - "9002:9000"   # API
-      - "9003:9003"   # Консоль доступна на http://localhost:9003
+      - "9002:9000"   # API → http://localhost:9002
+      - "9003:9003"   # Console → http://localhost:9003
     volumes:
       - rangiffler-minio:/data
     healthcheck:
@@ -205,31 +204,33 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
-    networks:
-        - rangiffler-network
+    networks: [ rangiffler-network ]
 
+  # ==== Cоздание бакета 'rangiffler-media' для MinIO ====
   minio-init:
-      image: minio/mc:latest
-      container_name: minio-init
-      depends_on:
-        minio:
-          condition: service_healthy
-      environment:
-        - MINIO_ROOT_USER=root
-        - MINIO_ROOT_PASSWORD=rootroot
-      entrypoint: [ "/bin/sh","-c" ]
-      command: |                                        
-        set -e
-        for i in $(seq 1 30); do
-          mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" && break
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      - TZ=Europe/Moscow
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=rootroot
+    entrypoint: [ "sh" ]
+    command:
+      - -ec
+      - |
+        for i in $(seq 1 60); do
+          mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && break  
           echo "Waiting for MinIO..." >&2
           sleep 2
         done
         mc mb -p local/rangiffler-media || true
         mc anonymous set download local/rangiffler-media || true
-      restart: "no"
-      networks:
-          - rangiffler-network
+    restart: "no"
+    networks:
+      - rangiffler-network
 
   # ===== Jaeger для трассировки =====
   jaeger:
@@ -337,7 +338,6 @@ networks:
 
 volumes:
   allure-results:
-    external: true
   rangiffler-redis-geo:
   rangiffler-minio:
 
