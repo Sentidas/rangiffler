@@ -1,6 +1,6 @@
-ru.sentidas.rangiffler.jupiter.extension.BrowserExtension
 ru.sentidas.rangiffler.jupiter.extension.CookiesExtension
 ru.sentidas.rangiffler.jupiter.extension.DatabasesExtension
+ru.sentidas.rangiffler.jupiter.extension.KafkaExtension
 ru.sentidas.rangiffler.jupiter.extension.TestMethodContextExtension
 #ru.sentidas.rangiffler.jupiter.extension.AllureBackendLogsExtension
 

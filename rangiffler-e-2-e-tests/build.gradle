@@ -3,7 +3,7 @@ buildscript {
         junitVersion = '5.11.4'
         allureVersion = '2.29.0'
         selenideVersion = '7.9.4'
-        okhttp3Version = '3.14.9'
+        okhttp3Version = '4.11.0'
         retrofitVersion = '2.11.0'
         apollographqlVersion = '0.0.2'
         logbackVersion = '1.4.11'
@@ -20,6 +20,9 @@ buildscript {
         wiremockVersion = '3.0.1'
         fakerVersion = '1.0.2'
         ashotVersion = '1.5.4'
+        gatewayIntrospectionUrl = System.getProperty("test.env") == "docker"
+                ? "http://gateway.rangiffler.dc:8081/graphql"
+                : "http://127.0.0.1:8081/graphql"
     }
 }
 
@@ -27,6 +30,7 @@ plugins {
     id 'io.qameta.allure' version '2.12.0'
     id 'io.qameta.allure-adapter' version '2.12.0'
     id 'com.github.edeandrea.xjc-generation' version '1.6'
+    id 'com.apollographql.apollo' version '4.3.2'
 }
 
 group = 'ru.sentidas'
@@ -40,26 +44,49 @@ allure {
     }
 }
 
+apollo {
+    service("rangiffler") {
+        generateKotlinModels.set(false)
+        packageName.set("ru.sentidas")
+        srcDir("src/test/graphql")
+        mapScalar("Date", "java.util.Date")
+        introspection {
+            endpointUrl.set("$gatewayIntrospectionUrl")
+            schemaFile.set(file("src/test/graphql/schema.graphqls"))
+        }
+        outputDirConnection {
+            connectToJavaSourceSet("test")
+        }
+    }
+}
+
 sourceSets {
     test {
         java {
             srcDir('src/test/java')
+            srcDir("$buildDir/generated/source/apollo/rangiffler")
         }
     }
 }
 
 dependencies {
+    testImplementation project(':rangiffler-grpc-common')
+    testImplementation project(':rangiffler-media-common')
+
     // Logs
     testImplementation "ch.qos.logback:logback-classic:${logbackVersion}"
     testImplementation "org.slf4j:slf4j-api:${slf4jVersion}"
+    testImplementation "org.slf4j:jul-to-slf4j:${slf4jVersion}"
     // JUnit
     testImplementation "org.junit.jupiter:junit-jupiter:${junitVersion}"
     // REST
     testImplementation "com.squareup.okhttp3:logging-interceptor:${okhttp3Version}"
     testImplementation "com.squareup.okhttp3:okhttp-urlconnection:${okhttp3Version}"
+    testImplementation "com.squareup.okhttp3:okhttp:${okhttp3Version}"
     testImplementation("com.squareup.retrofit2:retrofit:${retrofitVersion}") {
         exclude group: "com.squareup.okhttp3"
     }
+    testImplementation "com.squareup.retrofit2:converter-scalars:${retrofitVersion}"
     testImplementation("com.squareup.retrofit2:converter-jackson:${retrofitVersion}") {
         exclude group: "com.squareup.okhttp3"
     }
@@ -74,7 +101,8 @@ dependencies {
     testImplementation "com.atomikos:transactions-jta:6.0.0:jakarta"
     testImplementation "com.atomikos:transactions-jdbc:6.0.0"
     testImplementation "com.atomikos:transactions-hibernate4:6.0.0:jakarta"
-
+    //redis
+    testImplementation 'redis.clients:jedis:5.1.2'
 
 
     testImplementation "p6spy:p6spy:${p6spyVersion}"
@@ -103,6 +131,10 @@ dependencies {
     testImplementation 'com.google.code.findbugs:jsr305:3.0.2'
     testImplementation 'com.github.vertical-blank:sql-formatter:2.0.5'
     testImplementation 'com.github.h-thurow:simple-jndi:0.24.0'
+    // GraphQL
+    testImplementation "com.apollographql.java:client:${apollographqlVersion}"
+    testImplementation "com.apollographql.java:rx2:${apollographqlVersion}"
+    testImplementation 'com.apollographql.adapters:apollo-adapters-core:0.7.0'
     // gRPC
     testImplementation "io.grpc:grpc-api:${project.ext.grpcVersion}"
     testImplementation "io.grpc:grpc-stub:${project.ext.grpcVersion}"
@@ -112,7 +144,7 @@ dependencies {
     compileOnly 'jakarta.annotation:jakarta.annotation-api:1.3.5' // Java 9+ compatibility - Do NOT update to 2.0.0
     testImplementation "com.mysql:mysql-connector-j:8.4.0"
     testImplementation "net.coobird:thumbnailator:0.4.20"
-    testImplementation project(':rangiffler-grpc-common')
+
     // Kafka
     testImplementation "org.apache.kafka:kafka-clients:${kafkaClientsVersion}"
     // Wiremock
@@ -128,25 +160,85 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+tasks.named { it == "generateRangifflerApolloSources" }.configureEach {
+    dependsOn("downloadRangifflerApolloSchemaFromIntrospection")
+}
+
 tasks.register('printVersion') {
     doLast {
         println project.version
     }
 }
+tasks.named("compileTestJava").configure {
+    dependsOn("generateRangifflerApolloSources")
+}
 
+// ======================== ОСНОВНОЙ ПРОГОН ТЕСТОВ ========================
+// - запускает все обычные тесты
+// - ИСКЛЮЧАЕТ пост-проверку по тегу 'redis-postcheck', чтобы она не оказалась "в середине"
 test {
     options {
         systemProperties(System.getProperties())
     }
-    // ⬇️ вот эти 3 строки
+
+    // ваши системные проперти — оставляем
     systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
     systemProperty "com.atomikos.icatch.max_timeout", "300000"
     systemProperty "com.atomikos.icatch.enable_logging", "true"
     systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
-    // по желанию:
-    // systemProperty "com.atomikos.icatch.threaded_two_phase_commit", "true"
 
     testLogging.showStandardStreams = true
     testLogging.exceptionFormat = 'full'
-    useJUnitPlatform()
+
+    useJUnitPlatform {
+        // 🔴 ВАЖНО: исключаем тег пост-проверки из основного прогона
+     //   excludeTags 'redis-postcheck'
+    }
 }
+
+//// ======================== ПОСТ-ПРОВЕРКА REDIS ===========================
+//// - отдельная задача, которая запускает ТОЛЬКО тесты с тегом 'redis-postcheck'
+//// - тот же classpath и та же среда, что у обычного test
+//tasks.register('redisPostcheck', Test) {
+//    description = 'Пост-проверка Redis после всех тестов'
+//    group = 'verification'
+//
+//    // тот же набор классов и classpath, что у test
+//    testClassesDirs = sourceSets.test.output.classesDirs
+//    classpath = sourceSets.test.runtimeClasspath
+//
+//    useJUnitPlatform {
+//        // 🟢 Берём только пост-проверочные тесты
+//        includeTags 'redis-postcheck'
+//    }
+//
+//    // те же системные проперти — чтобы окружение совпадало
+//    options { systemProperties(System.getProperties()) }
+//    systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
+//    systemProperty "com.atomikos.icatch.max_timeout", "300000"
+//    systemProperty "com.atomikos.icatch.enable_logging", "true"
+//    systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
+//
+//    // без параллельных forkов — стабильнее для финальной проверки
+//    maxParallelForks = 1
+//
+//    testLogging.showStandardStreams = true
+//    testLogging.exceptionFormat = 'full'
+//}
+//
+//// =================== СВЯЗЬ: «ПОСЛЕ test ЗАПУСТИ postcheck» =============
+//// - finalizedBy гарантирует запуск redisPostcheck ПОСЛЕ завершения test
+//// - сработает и из Gradle CLI, и из IDEA при делегировании тестов Gradle’у
+//tasks.named('test') {
+//    finalizedBy tasks.named('redisPostcheck')
+//}
+//
+//// (опционально) Включить в check явную зависимость от test
+//// check и так потянет test (а finalizedBy запустит postcheck).
+//// Оставляю для наглядности жизненного цикла.
+//tasks.named('check') {
+//    dependsOn tasks.named('test')
+//}
+//
+
+

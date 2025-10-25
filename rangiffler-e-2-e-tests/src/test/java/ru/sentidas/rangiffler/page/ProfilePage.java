@@ -3,17 +3,18 @@ package ru.sentidas.rangiffler.page;
 import com.codeborne.selenide.Condition;
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
+import org.openqa.selenium.Keys;
 import ru.sentidas.rangiffler.page.component.SelectField;
 
 import javax.annotation.Nonnull;
 import java.awt.image.BufferedImage;
+import java.time.Duration;
 
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.$;
 import static ru.sentidas.rangiffler.condition.ScreenshotConditions.image;
 
 public class ProfilePage extends BasePage<ProfilePage> {
-
 
     public static final String URL = GFG.frontUrl() + "profile";
 
@@ -31,20 +32,20 @@ public class ProfilePage extends BasePage<ProfilePage> {
 
 
     public ProfilePage checkUsername(String expectedUsername) {
-        usernameInput.shouldHave(value(expectedUsername));
+        usernameInput.shouldHave(exactValue(expectedUsername));
         usernameInput.shouldHave(disabled);   // 2) элемент задизейблен
         usernameInput.shouldHave(Condition.attribute("disabled"));// 4) (дополнительно) у инпута присутствует атрибут disabled
         return this;
     }
 
     public ProfilePage checkFirstname(String expectedFirstname) {
-        firstnameInput.shouldHave(value(expectedFirstname));
+        firstnameInput.shouldHave(exactValue(expectedFirstname));
         firstnameInput.shouldHave(enabled);   // 2) элемент  не задизейблен
         return this;
     }
 
     public ProfilePage checkSurname(String expectedSurname) {
-        surnameInput.shouldHave(value(expectedSurname));
+        surnameInput.shouldHave(exactValue(expectedSurname));
         surnameInput.shouldHave(enabled);   // 2) элемент задизейблен
         return this;
     }
@@ -62,14 +63,35 @@ public class ProfilePage extends BasePage<ProfilePage> {
     }
 
     public ProfilePage setFirstname(String firstname) {
-        firstnameInput.clear();
+        String os = System.getProperty("os.name").toLowerCase();
+        String selectAllChord = os.contains("mac") ? Keys.chord(Keys.COMMAND, "a")
+                : Keys.chord(Keys.CONTROL, "a");
+
+        firstnameInput.shouldBe(visible, enabled)
+                .scrollIntoView(true)
+                .click();
+        firstnameInput.sendKeys(selectAllChord);
+        firstnameInput.sendKeys(Keys.BACK_SPACE);
+
         firstnameInput.setValue(firstname);
+        firstnameInput.shouldHave(value(firstname), Duration.ofSeconds(5));
         return this;
     }
 
-    public ProfilePage setSurname(String expectedSurname) {
-        surnameInput.clear();
-        surnameInput.setValue(expectedSurname);
+
+    public ProfilePage setSurname(String surname) {
+        String os = System.getProperty("os.name").toLowerCase();
+        String selectAllChord = os.contains("mac") ? Keys.chord(Keys.COMMAND, "a")
+                : Keys.chord(Keys.CONTROL, "a");
+
+        surnameInput.shouldBe(visible, enabled)
+                .scrollIntoView(true)
+                .click();
+        surnameInput.sendKeys(selectAllChord);
+        surnameInput.sendKeys(Keys.BACK_SPACE);
+
+        surnameInput.setValue(surname);
+        surnameInput.shouldHave(value(surname), Duration.ofSeconds(5));
         return this;
     }
 

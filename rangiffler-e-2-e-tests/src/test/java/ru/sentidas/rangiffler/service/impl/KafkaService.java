@@ -88,7 +88,7 @@ public class KafkaService implements Runnable {
                             photoStore.put(e.userId() + ":" + e.countryCode(), e);
                             break;
                         }
-                        case "rangiffler.activity": {
+                        case "rangiffler_activity": {
                             ActivityEvent e = om.readValue(json, ActivityEvent.class);
                             activityStore.put(e.eventId(), e);
                             break;

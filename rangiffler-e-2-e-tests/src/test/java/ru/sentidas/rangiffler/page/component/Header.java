@@ -23,7 +23,6 @@ public class Header extends BaseComponent<Header> {
   private final SelenideElement iconProfile = $("[data-testid=AccountCircleRoundedIcon]");
   private final SelenideElement iconFeed= $("[data-testid=PublicRoundedIcon]");
   private final SelenideElement iconPeople = $("[data-testid=PersonSearchRoundedIcon]");
-//  private final ElementsCollection menuItems = menu.$$("li");
 
   @Step("Open People page")
   @Nonnull
@@ -52,7 +51,6 @@ public class Header extends BaseComponent<Header> {
     exitBtn.click();
     return new LoginPage();
   }
-
 
 
   @Step("Go to main page")

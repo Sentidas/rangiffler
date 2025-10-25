@@ -1,76 +1,142 @@
 package ru.sentidas.rangiffler.page;
 
-import com.codeborne.selenide.*;
+import com.codeborne.selenide.CollectionCondition;
+import com.codeborne.selenide.ElementsCollection;
+import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
-import org.openqa.selenium.WebElement;
-import ru.sentidas.rangiffler.page.component.CreatePhoto;
-import ru.sentidas.rangiffler.page.component.EditPhoto;
-import ru.sentidas.rangiffler.page.component.Header;
+import org.assertj.core.api.Assertions;
+import ru.sentidas.rangiffler.page.component.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
+import java.awt.image.BufferedImage;
 import java.time.Duration;
 
 import static com.codeborne.selenide.CollectionCondition.sizeGreaterThan;
 import static com.codeborne.selenide.Condition.*;
-import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$$;
+import static com.codeborne.selenide.Selenide.*;
+import static ru.sentidas.rangiffler.condition.PhotoConditions.hasCountryAndDescription;
+import static ru.sentidas.rangiffler.condition.ScreenshotConditions.image;
 
 public class FeedPage extends BasePage<FeedPage> {
 
     public static final String URL = GFG.frontUrl() + "my-travels";
-    private final CreatePhoto editPhoto = new CreatePhoto();
 
-    protected final Header header = new Header();
+    private final Header header = new Header();
+    private final Pagination pagination = new Pagination($x("//div[button[text()='Previous'] and button[text()='Next']]"));
+    private final Map map = new Map($("figure.worldmap__figure-container"));
+    private final SelenideElement mapLocator = $("figure.worldmap__figure-container");
 
     @Nonnull
     public Header getHeader() {
         return header;
     }
 
-    private final ElementsCollection buttons = $$("button.MuiButtonBase-root");
-    private final ElementsCollection cards = $$("div.MuiPaper-elevation3");
-    private final ElementsCollection buttonsInCards = $$("div.MuiPaper-elevation3 button.MuiButtonBase-root");
-    private final ElementsCollection countiesPost = $$("div.MuiPaper-elevation3 h3");
-    private final ElementsCollection descriptionsPost = $$("div.MuiPaper-elevation3 div.MuiPaper-elevation3 p.photo-card__content");
-
-    private final SelenideElement withFriendsBtn = $("button[value=friends]");
-    private final SelenideElement onlyMysBtn = $("button[value=my]");
-    private final SelenideElement likeBtn = $("button[label=like]");
-    private final SelenideElement likeIcon = $("[data-testid=FavoriteOutlinedIcon]");
-    // div.MuiPaper-elevation3
-    @Step("Add new photo")
     @Nonnull
-    public CreatePhoto addPhoto() {
-        buttons.find(text("Add photo")).click();
-        return new CreatePhoto();
+    public Pagination pagination() {
+        return pagination;
     }
 
-    @Step("Edit photo")
     @Nonnull
-    public EditPhoto editFirstPhoto() {
-        cards.find((text("Edit"))).click();
-        return new EditPhoto();
+    public Map map() {
+        return map;
     }
 
-    @Step("Edit photo")
+    @Step("Select new photo country: '{0}'")
     @Nonnull
-    public FeedPage clickFeedWithFriend() {
-        withFriendsBtn.click();
+    public FeedPage checkMap(BufferedImage expected) {
+        mapLocator.scrollIntoView("{block:'center', inline:'center'}")
+                .shouldBe(visible);
+        map.waitMapReady();
+        mapLocator.shouldHave(image(expected));
+
         return this;
     }
 
-    @Step("Edit photo")
+    public boolean isMyActive() {
+        String pressed = $("[value='my']").getAttribute("aria-pressed");
+        return "true".equals(pressed);
+    }
+
+    private final ElementsCollection buttons = $$("button.MuiButtonBase-root");
+    private final ElementsCollection cards = $$("div.MuiPaper-elevation3");
+    private final SelenideElement loader = $("svg.MuiCircularProgress-svg");
+    private final SelenideElement cardsContainer = $("div.MuiGrid-container");
+    private final SelenideElement withFriendsBtn = $("button[value=friends]");
+    private final SelenideElement onlyMysBtn = $("button[value=my]");
+
+    private SelenideElement nextBtn() {
+        return buttons.find(text("Next"));
+    }
+
+    private SelenideElement previousBtn() {
+        return buttons.find(text("Previous"));
+    }
+
+
+    public FeedPage shouldHaveNoPagination() {
+        pagination.shouldBe(Pagination.Prev.HIDDEN, Pagination.Next.HIDDEN);
+        return this;
+    }
+
+    public FeedPage shouldHavePagination(Pagination.Prev prevStat, Pagination.Next nextStat) {
+        pagination.shouldBe(prevStat, nextStat);
+        return this;
+    }
+
+    public FeedPage addPhoto(String path, String countryName, @Nullable String description) {
+        CreatePhoto dialog = addPhoto();
+        dialog.uploadNewImage(path)
+                .setNewCountry(countryName);
+
+        if (description != null) {
+            dialog.setPhotoDescription(description);
+        }
+        return dialog.save();
+    }
+
+    public FeedPage addPhoto(String path, String code) {
+        CreatePhoto dialog = addPhoto();
+        dialog.uploadNewImage(path)
+                .setNewCountry(code);
+
+        return dialog.save();
+    }
+
+
+    public void waitLoadingFinished() {
+        if (loader.exists()) {
+            loader.should(disappear, Duration.ofSeconds(7));
+        }
+        cardsContainer.should(exist, Duration.ofSeconds(10));
+    }
+
+    @Step("Add new photo")
+    @Nonnull
+    public CreatePhoto addPhoto() {
+        SelenideElement btn = buttons.find(text("Add photo"))
+                .shouldBe(visible, enabled);
+        // чтобы AppBar не перекрывал: прокрутить в центр вьюпорта
+        btn.scrollIntoView("{behavior: \"instant\", block: \"center\", inline: \"center\"}");
+        btn.click();
+        return new CreatePhoto();
+    }
+
+    @Step("openFriendsFeed")
+    @Nonnull
+    public FeedPage openFriendsFeed() {
+        withFriendsBtn.shouldBe(visible, Duration.ofSeconds(7)).click();
+        return this;
+    }
+
+    @Step("like photo")
     @Nonnull
     public FeedPage likePhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$("button[aria-label=like]")
                 .shouldBe(visible, enabled)
@@ -78,16 +144,14 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
-    @Step("Edit photo")
+    @Step("checkUnSuccessLikesPhoto")
     @Nonnull
     public FeedPage checkUnSuccessLikesPhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$("p.MuiTypography-root")
                 .shouldBe(visible, enabled)
@@ -96,35 +160,32 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
-    @Step("Edit photo")
-    @Nonnull
-    public String checkAllLikes(String countryName, @Nullable String description) {
+    @Step("checkAllLikes")
+    public int checkCountLikes(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         String text = card.$("p.MuiTypography-root")
                 .shouldBe(visible, enabled)
                 .getText();
 
-        return text;
+        int count = Integer.parseInt(text.replace(" likes", "").trim());
+
+        return count;
     }
 
 
-@Step("Edit photo")
+    @Step("checkSuccessLikesPhoto")
     @Nonnull
     public FeedPage checkSuccessLikesPhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$("p.MuiTypography-root")
                 .shouldBe(visible, enabled)
@@ -136,11 +197,9 @@ public class FeedPage extends BasePage<FeedPage> {
     public FeedPage assertCardNotLiked(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$("p.MuiTypography-root")
                 .shouldBe(visible, enabled);
@@ -153,11 +212,9 @@ public class FeedPage extends BasePage<FeedPage> {
     public FeedPage assertCardLiked(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$("p.MuiTypography-root")
                 .shouldBe(visible, enabled);
@@ -167,104 +224,58 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
-    @Step("Edit photo")
+    @Step("Open my feed")
     @Nonnull
-    public FeedPage clickMyTravels() {
-        onlyMysBtn.click();
+    public FeedPage openMyFeed() {
+        onlyMysBtn.shouldBe(visible, Duration.ofSeconds(7)).click();
         return this;
     }
 
-    /** Кастомный предикат: в одной карточке h3 == countryName И p.photo-card__content == description */
-    private WebElementCondition cardHas(@Nonnull String countryName, @Nullable String description) {
-        return new WebElementCondition("h3==country AND p.photo-card__content==desc") {
-            @Override
-            public CheckResult check(Driver driver, WebElement element) {
-                SelenideElement card = $(element);
-
-                // название страны (<h3>)
-                String countryHeader = card.$("h3").text().trim();
-
-                // Описание (<p.photo-card__content>) может отсутствовать
-                SelenideElement descriptionElement = card.$("p.photo-card__content");
-                boolean descriptionElementExists = descriptionElement.exists();
-                String descriptionText = descriptionElementExists ? descriptionElement.text().trim() : null;
-
-
-                boolean matches;
-                if (description == null) {
-                    // Ожидаем, что описания нет или оно пустое
-                    matches = countryHeader.equals(countryName) && (descriptionText == null || descriptionText.isEmpty());
-
-                } else {
-                    // Ожидаем точное совпадение текста описания
-                    matches = countryHeader.equals(countryName) && descriptionText.equals(description);
-                }
-                // actualValue попадёт в сообщение об ошибке, если условие не выполнится
-                String actualValueForError =
-                        "h3='" + countryHeader + "', p=" +
-                                (descriptionText == null ? "<absent>" : "'" + descriptionText + "'");
-                return new CheckResult(matches, actualValueForError);
-            }
-        };
-    }
-
     public EditPhoto editPhoto(String countryName, @Nullable String description) {
-        // 1) Ждём, что на странице появились карточки вообще
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 2) Ждём, что среди них есть нужная (country + optional description)
-        ElementsCollection matches = cards.filterBy(cardHas(countryName, description))
+        ElementsCollection matches = cards.filterBy(hasCountryAndDescription(countryName, description))
                 .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
-        // 3) Берём первую подходящую карточку и кликаем Edit
         SelenideElement card = matches.first().shouldBe(visible);
         card.$$("button.MuiButtonBase-root")
                 .findBy(exactText("Edit"))
                 .shouldBe(visible, enabled)
                 .click();
 
-        // 4) Дождёмся, что модалка реально открылась
         return new EditPhoto().checkThatComponentLoaded();
     }
-//
-//    /** Использование: редактировать карточку по паре (страна + описание) */
-//    public EditPhoto editPhoto(String countryName, String description) {
-//        cards.findBy(cardHas(countryName, description))
-//              //  .should(exist, Duration.ofSeconds(15))
-//                .should(visible, Duration.ofSeconds(15))
-//                .$$("button.MuiButtonBase-root")
-//                .findBy(text("Edit"))
-//                .click();
-//        return new EditPhoto();
-//    }
 
-
-
-    @Step("Edit photo")
-    @Nonnull
-    public FeedPage deleteFirstPhoto() {
-        cards.find(text("Delete")).click();
-        return new FeedPage();
-    }
-
-
-
-    /** Использование: удалить карточку по паре (страна + описание) */
-    public void deletePhoto(String countryName, String description) {
-        ElementsCollection target = cards.filterBy(cardHas(countryName, description));
+    public FeedPage deletePhoto(String countryName, String description) {
+        ElementsCollection target = cards.filterBy(hasCountryAndDescription(countryName, description));
         target.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15)); // дождались, что цель есть
 
         target.first().$$("button.MuiButtonBase-root")
                 .findBy(text("Delete"))
                 .shouldBe(enabled)
                 .click();
+
+        waitLoadingFinished();
+
+        return this;
+    }
+
+    public FeedPage deletePhotoByNumber(int number) {
+        ElementsCollection target = cards;
+        target.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15)); // дождались, что цель есть
+
+        target.get(number - 1).$$("button.MuiButtonBase-root")
+                .findBy(text("Delete"))
+                .shouldBe(enabled)
+                .click();
+        return this;
     }
 
     @Step("Check that page is loaded")
     @Nonnull
     public FeedPage checkThatPageLoaded() {
         System.out.println("успешная загрузка страницы my_travel");
-       // header.getSelf().should(visible).shouldHave(text("angiffler"));
+        // header.getSelf().should(visible).shouldHave(text("angiffler"));
 //        statComponent.getSelf().should(visible).shouldHave(text("Statistics"));
 //        spendingTable.getSelf().should(visible).shouldHave(text("History of Spendings"));
         return this;
@@ -273,16 +284,50 @@ public class FeedPage extends BasePage<FeedPage> {
     @Step("Click submit button to create new spending")
     @Nonnull
     public FeedPage checkExistPost(@Nonnull String countryName, @Nullable String description) {
-        cards.filterBy(cardHas(countryName, description))
-                .shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
+        cards.filterBy(hasCountryAndDescription(countryName, description))
+                .shouldHave(
+                        sizeGreaterThan(0).because(
+                                "Post was expected but not found 'country = " +
+                                        countryName + "', description = " + description + "'"
+                        ),
+                        Duration.ofSeconds(7)
+                );
         return this;
+    }
+
+    @Step("Click submit button to create new spending")
+    @Nonnull
+    public FeedPage checkThatPostFirst(@Nonnull String countryName, @Nullable String description) {
+        goFirstPage();
+        SelenideElement firstPost = cardsContainer.$$("div.MuiPaper-elevation3").first();
+        firstPost.$("h3").shouldHave(text(countryName));
+        firstPost.$(".photo-card__content").shouldHave(text(description));
+        return this;
+    }
+
+    private void goFirstPage() {
+        SelenideElement previous = previousBtn();
+        if (previous.exists() && isEffectivelyEnabled(previous)) {
+            previous.click();
+        }
+    }
+
+    private boolean isEffectivelyEnabled(SelenideElement btn) {
+        btn.shouldBe(visible);
+        boolean enabled = btn.isEnabled();
+        boolean muiDisabled = btn.has(cssClass("Mui-disabled"));
+
+        return enabled && !muiDisabled;
     }
 
     @Step("Assert card is absent (country + optional description)")
     @Nonnull
     public FeedPage checkNotExistPost(@Nonnull String countryName, @Nullable String description) {
-        cards.filterBy(cardHas(countryName, description))
-                .shouldHave(CollectionCondition.size(0));
+        cards.filterBy(hasCountryAndDescription(countryName, description))
+                .shouldHave(CollectionCondition.size(0).because(
+                        "Post was not expected but is still present " +
+                                "(country='" + countryName + "', description='" + description + "')"
+                ), Duration.ofSeconds(7));
         return this;
     }
 }

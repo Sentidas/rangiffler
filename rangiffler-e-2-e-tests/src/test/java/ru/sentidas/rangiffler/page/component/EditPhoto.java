@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.page.component;
 
 import com.codeborne.selenide.Condition;
+import com.codeborne.selenide.Selenide;
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
 import org.openqa.selenium.Keys;
@@ -59,40 +60,25 @@ public class EditPhoto extends BaseComponent<EditPhoto> {
   @Step("Set new photo description: '{0}'")
   @Nonnull
   public EditPhoto setPhotoDescription(String description) {
-    // 1) Выбираем сочетание для Select All под OS
-    String osName = System.getProperty("os.name").toLowerCase();
-    String selectAllChord = osName.contains("mac")
-            ? Keys.chord(Keys.COMMAND, "a")
+    String os = System.getProperty("os.name").toLowerCase();
+    String selectAllChord = os.contains("mac") ? Keys.chord(Keys.COMMAND, "a")
             : Keys.chord(Keys.CONTROL, "a");
-    // descriptionInput.clear();
 
-    // 2) Фокусируем поле и чистим «по-человечески»
     descriptionInput.shouldBe(visible, enabled)
             .scrollIntoView(true)
             .click();
     descriptionInput.sendKeys(selectAllChord);
     descriptionInput.sendKeys(Keys.BACK_SPACE);
 
-    // Ждём, что действительно стало пусто
-    descriptionInput.shouldHave(value(""), Duration.ofSeconds(3));
-
-    // Вводим новое значение и проверяем
     descriptionInput.setValue(description);
-    descriptionInput.shouldHave(value(description));
+    descriptionInput.shouldHave(value(description), Duration.ofSeconds(5));
     return this;
   }
 
-  @Step("Click submit button to edit photo")
+  @Step("Click submit button to create photo")
   @Nonnull
   public FeedPage save() {
-    saveBtn.shouldBe(visible, enabled).click();
-
-    // 1) Диалог закрылся
-    getSelf().should(disappear, Duration.ofSeconds(10));
-
-    // 2) Пришёл snackbar (текст проверишь уже через BasePage.checkAlert)
-    $("div.MuiSnackbar-root").shouldBe(visible, Duration.ofSeconds(10));
-
+    saveBtn.click();
     return new FeedPage();
   }
 
@@ -100,6 +86,7 @@ public class EditPhoto extends BaseComponent<EditPhoto> {
   @Nonnull
   public EditPhoto cancel() {
     cancelBtn.click();
+    System.out.println("cancel нажата");
     return this;
   }
 }

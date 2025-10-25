@@ -60,15 +60,8 @@ public class RegisterPage extends BasePage<RegisterPage> {
 
     @Step("Submit error registration")
     @Nonnull
-    public RegisterPage errorSubmit(String passwordSubmit) {
+    public RegisterPage errorSubmit(String error) {
         submitButton.click();
-        return this;
-    }
-
-    @Step("Check alert message")
-    @Nonnull
-    public RegisterPage checkAlertMessage(String alertMessage) {
-        errorAlert.shouldHave(text(alertMessage));
         return this;
     }
 

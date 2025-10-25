@@ -1,4 +1,6 @@
 <configuration>
+    <!-- Синхронизируем уровни Logback с JUL и перенаправляем вывод JUL -->
+    <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator" resetJUL="true"/>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
@@ -16,6 +18,9 @@
 
     <logger name="ru.sentidas.rangiffler.kafka.KafkaConsumer" level="warn"/>
     <logger name="ru.sentidas.rangiffler.jupiter.extension.AllureDockerExtension" level="debug"/>
+
+    <!-- (опционально) приглушим болтливый отчёт Selenide про вложения -->
+    <logger name="com.codeborne.selenide.impl.AttachmentPrinter" level="warn"/>
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

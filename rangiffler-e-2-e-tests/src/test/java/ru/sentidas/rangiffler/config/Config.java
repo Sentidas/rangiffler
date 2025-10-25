@@ -68,6 +68,6 @@ public interface Config {
   }
 
   default List<String> kafkaTopics() {
-    return List.of("rangiffler_user", "rangiffler_photo", "rangiffler.activity");
+    return List.of("rangiffler_user", "rangiffler_photo", "rangiffler_activity");
   }
 }

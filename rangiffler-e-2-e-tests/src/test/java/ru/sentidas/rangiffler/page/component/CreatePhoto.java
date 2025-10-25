@@ -68,11 +68,20 @@ public class CreatePhoto extends BaseComponent<CreatePhoto> {
 
   @Step("Click submit button to create new spending")
   @Nonnull
-  public FeedPage savePhoto() {
-    saveBtn.shouldBe(visible, enabled).click();
-    getSelf().should(disappear, Duration.ofSeconds(10));
-    $("div.MuiSnackbar-root").shouldBe(visible, Duration.ofSeconds(10));
-    return new FeedPage();
+  public CreatePhoto savePhotoUnsuccessful() {
+    saveBtn.click();
+    return this;
+  }
+
+  @Step("Click submit button to create new spending")
+  @Nonnull
+  public FeedPage save() {
+    saveBtn.click();
+    self.should(disappear, Duration.ofSeconds(5));  // модалка закрылась
+    // 🔽 ВАЖНО: дождаться, что фид обновился после мутации (несколько GetFeed подряд)
+    FeedPage page = new FeedPage();
+    page.waitLoadingFinished();
+    return page;
   }
 
   @Step("Click submit button to create new spending")

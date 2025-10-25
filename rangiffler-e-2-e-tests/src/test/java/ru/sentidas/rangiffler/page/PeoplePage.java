@@ -6,38 +6,43 @@ import ru.sentidas.rangiffler.page.component.SearchField;
 
 import javax.annotation.Nonnull;
 
+import static com.codeborne.selenide.CollectionCondition.sizeGreaterThan;
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selenide.$;
-import static com.codeborne.selenide.Selenide.$$;
 
-public class PeoplePage extends BasePage<PeoplePage>{
+public class PeoplePage extends BasePage<PeoplePage> {
 
     public static final String URL = GFG.frontUrl() + "people";
     private final SelenideElement totalTab = $("div[aria-label='People tabs']");
 
     private final SearchField searchInput = new SearchField();
     private final SelenideElement peopleTable = $("#simple-tabpanel-all");
-    private final SelenideElement friendTable = $("#all");
+    private final SelenideElement friendTable = $("#simple-tabpanel-friends");
+    private final SelenideElement outcomeTable = $("#simple-tabpanel-outcome");
+    private final SelenideElement incomeTable = $("#simple-tabpanel-income");
     private final SelenideElement alertNoUser = $("p.MuiTypography-h6");
     private final SelenideElement iconNoUser = $("[data-testid=PeopleOutlineOutlinedIcon]");
 
-  public PeoplePage openTab(PeopleTab tab) {
-      return openTabByText(tab.label);
-  }
+    private SelenideElement currentTable;
 
-    private PeoplePage openTabByText(String label) {
+
+    public PeoplePage openTab(PeopleTab tab) {
+        return selectTableByTab(tab);
+    }
+
+    private PeoplePage selectTableByTab(PeopleTab tab) {
         // 1) находим сам таб по тексту
-        SelenideElement tab = totalTab.$$("button[role=tab]")
-                .find(exactText(label))
+        SelenideElement button = totalTab.$$("button[role=tab]")
+                .find(exactText(tab.label))
                 .shouldBe(visible, enabled);
 // 2) кликаем и ждём, что он стал выбранным
-        tab.click();
-        tab.shouldHave(attribute("aria-selected", "true"));
-        SelenideElement  activePanel = $$("[role=tabpanel]").find(visible).shouldBe(visible);
+        button.click();
+        button.shouldHave(attribute("aria-selected", "true"));
 
+        currentTable = $("#" + tab.tableId).shouldBe(visible);
         return this;
-  }
+    }
 
 
     @Override
@@ -45,28 +50,6 @@ public class PeoplePage extends BasePage<PeoplePage>{
         totalTab.$("button").shouldHave(text("All people"));
         return this;
     }
-
-    public PeoplePage selectAllUsers() throws InterruptedException {
-        totalTab.$("button").shouldHave(text("All people")).click();
-        Thread.sleep(3000);
-        return this;
-    }
-
-    public PeoplePage selectOutcomeInvitation() {
-        totalTab.$("button").shouldHave(text("Outcome invitations")).click();
-        return this;
-    }
-
-    public PeoplePage selectIncomeInvitation() {
-        totalTab.$("button").shouldHave(text("Income invitations")).click();
-        return this;
-    }
-
-    public PeoplePage selectFriends() {
-        totalTab.$("button").shouldHave(text("Friends")).click();
-        return this;
-    }
-
 
 
     @Step("Send invitation to user: '{0}'")
@@ -78,49 +61,91 @@ public class PeoplePage extends BasePage<PeoplePage>{
         return this;
     }
 
-    public String sendFriendInvitationToFirstUser() {
-        // FIX: берём первую строку из tbody
-        SelenideElement row = peopleTable.$(".MuiTable-root")
-                .$("tbody").$$("tr").first()
+    @Step("Send invitation to user: '{0}'")
+    @Nonnull
+    public PeoplePage acceptInvitationToUser(String username) {
+        searchInput.search(username);
+        SelenideElement friendRow = incomeTable.$$("tr").find(text(username));
+        friendRow.$(byText("Accept")).click();
+        return this;
+    }
+
+    @Step("Send invitation to user: '{0}'")
+    @Nonnull
+    public PeoplePage declineInvitationToUser(String username) {
+        searchInput.search(username);
+        SelenideElement friendRow = incomeTable.$$("tr").find(text(username));
+        friendRow.$(byText("Decline")).click();
+        return this;
+    }
+
+    @Step("Send invitation to user: '{0}'")
+    @Nonnull
+    public PeoplePage removeFriend(String username) {
+        searchInput.search(username);
+        SelenideElement friendRow = friendTable.$$("tr").find(text(username));
+        friendRow.$(byText("Remove")).click();
+        return this;
+    }
+
+    private SelenideElement rowByUsername(String username) {
+        return currentTable.$("table.MuiTable-root").$("tbody").$$("tr")
+                .find(text(username))
                 .shouldBe(visible);
+    }
 
-        // username в первой текстовой ячейке <td>
-        String username = row.$$("td").first().getText();
-
-        // FIX: клик строго по кнопке
-        row.$("button").shouldHave(text("Add")).shouldBe(visible, enabled).click();
-
-        // можно сразу дождаться "Waiting..." в этой строке
-        row.shouldHave(text("Waiting..."));
-        return username;
+    private SelenideElement rowByFirstUsername() {
+        return currentTable.$("table.MuiTable-root").$("tbody").$$("tr")
+                .shouldBe(sizeGreaterThan(0))
+                .first();
     }
 
     @Step("Check invitation status for user: '{0}'")
     @Nonnull
     public PeoplePage checkInvitationSentToUser(String username) {
-       // searchInput.search(username);
-        SelenideElement friendRow = peopleTable.$$("tr").find(text(username));
-        friendRow.shouldHave(text("Waiting..."));
+        searchInput.search(username);
+        rowByUsername(username).shouldHave(text("Waiting..."));
         return this;
     }
 
-
-    @Step("Check that user with username '{0}' is present")
+    @Step("Check invitation status for user: '{0}'")
     @Nonnull
-    public PeoplePage checkExistingUser(String username) {
+    public PeoplePage checkAcceptInvitationFromUser(String username) {
         searchInput.search(username);
-        peopleTable.$$("tr").find(text(username)).should(visible);
+        rowByUsername(username).shouldHave(text("Remove"));
+        return this;
+    }
+
+    @Step("Check invitation status for user: '{0}'")
+    @Nonnull
+    public PeoplePage checkFriend(String username) {
+        searchInput.search(username);
+        rowByUsername(username).shouldHave(text("Remove"));
         return this;
     }
 
     @Step("Check that user with username '{0}' is present")
     @Nonnull
-    public PeoplePage checkNoExistingUser(String username) throws InterruptedException {
+    public PeoplePage checkExistingUser(String username, PeopleTab tab) {
+        selectTableByTab(tab);
         searchInput.search(username);
+        rowByUsername(username);
+        return this;
+    }
+
+    @Step("Check that user with username '{0}' is present")
+    @Nonnull
+    public PeoplePage checkNoExistingUser(String username) {
+        searchInput.search(username);
+        currentTable.$("table.MuiTable-root").$("tbody").$$("tr")
+                .find(text(username))
+                .shouldNot(
+                        exist.because("User was not expected but is present in current tab (username='" + username + "')")
+
+                );
         alertNoUser.should(visible);
         iconNoUser.should(visible);
-        alertNoUser.shouldHave(exactText("T7here are no users yet"));
-        Thread.sleep(3000);
+        alertNoUser.shouldHave(exactText("There are no users yet"));
         return this;
     }
 }
