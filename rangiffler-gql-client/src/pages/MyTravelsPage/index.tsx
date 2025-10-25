@@ -2,7 +2,7 @@ import {Box, Button, Container, Typography} from "@mui/material";
 import {PhotoContainer} from "../../components/PhotoContainer";
 import {WorldMap} from "../../components/WorldMap";
 import {Toggle} from "../../components/Toggle";
-import {useState} from "react";
+import {useEffect, useState} from "react";  // ADDED: useEffect
 import {useGetFeed} from "../../hooks/useGetFeed";
 import {useDialog} from "../../context/DialogContext.tsx";
 import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
@@ -10,7 +10,22 @@ import {formInitialState} from "../../components/PhotoModal/formValidate.ts";
 export const MyTravelsPage = () => {
     const [withFriends, setWithFriends] = useState(false);
     const [page, setPage] = useState(0);
+
+    // // ADDED: при смене режима (мои/друзья) всегда начинаем с первой страницы
+    // useEffect(() => {
+    //     setPage(0);
+    // }, [withFriends]);
+
+
     const {photos, stat, hasNextPage, hasPreviousPage, loading, fetchMore} = useGetFeed({page, withFriends});
+
+// ▼ ДОБАВИТЬ ЭТОТ useEffect
+    useEffect(() => {
+        // если текущая страница опустела (после удаления) и это не первая — шагаем на предыдущую
+        if (!loading && photos.length === 0 && page > 0) {
+            setPage(page - 1);
+        }
+    }, [loading, photos.length, page]);
 
     const dialog = useDialog();
 
@@ -26,7 +41,7 @@ export const MyTravelsPage = () => {
         fetchMore({
             variables: {
                 page: page + 1,
-                size: 10,
+                size: 12, // CHANGED: было 10 → 12, чтобы совпадало с initial useQuery
                 withFriends,
             },
         });
@@ -37,7 +52,7 @@ export const MyTravelsPage = () => {
         fetchMore({
             variables: {
                 page: page - 1,
-                size: 10,
+                size: 12, // CHANGED: было 10 → 12, чтобы совпадало с initial useQuery
                 withFriends,
             },
         });

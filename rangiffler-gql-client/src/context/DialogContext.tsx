@@ -35,6 +35,7 @@ import {useCreatePhoto} from "../hooks/useCreatePhoto.ts";
 import {useSnackBar} from "./SnackBarContext.tsx";
 import {useUpdatePhoto} from "../hooks/useUpdatePhoto.ts";
 
+
 const Transition = forwardRef(function Transition(
     props: TransitionProps & {
         children: ReactElement;
@@ -61,6 +62,66 @@ interface DialogContextProps {
     children: ReactNode;
 }
 
+/* -------------------- ДОБАВЛЕНО: узкая обработка "лимитного" ответа бэка и авторизация-------------------- */
+function limitSuffixFromBackend(e: any): string {
+    const result = e?.networkError?.result;
+    if (result?.error === 'PAYLOAD_TOO_LARGE_STRING') {
+        const msg = typeof result?.message === 'string' ? result.message.trim() : '';
+        return msg || 'Limit exceeded';
+    }
+    return '';
+}
+
+// 415 Unsupported Media Type (формат картинки)
+function unsupportedFormatSuffixFromBackend(e: any): string {
+    // 1) REST-вариант (если когда-то придёт 415 с JSON телом)
+    const result = e?.networkError?.result;
+    if (result?.error === 'UNSUPPORTED_IMAGE_FORMAT') {
+        const msg = typeof result?.message === 'string' ? result.message.trim() : '';
+        return msg || 'Unsupported image format';
+    }
+
+    // 2) GraphQL-вариант (HTTP 200, ошибки в graphQLErrors[])
+    const gqlErrors: any[] = Array.isArray(e?.graphQLErrors) ? e.graphQLErrors : [];
+    for (const err of gqlErrors) {
+        const ext = err?.extensions;
+        if (ext?.error === 'UNSUPPORTED_IMAGE_FORMAT') {
+                  // берём пользовательский текст только из верхнего message
+                    const msg = typeof err?.message === 'string' ? err.message.trim() : '';
+                return msg || 'Unsupported image format';
+                }
+    }
+
+    // 3) На всякий случай: «голый» 415 без тела
+    const status = e?.networkError?.status ?? e?.networkError?.statusCode;
+    if (status === 415) return 'Unsupported image format';
+
+    return '';
+}
+
+function authSuffixFromBackend(e: any): string {
+    const r = e?.networkError?.result;
+    if (r?.error === 'UNAUTHORIZED') {
+        const msg = typeof r?.message === 'string' ? r.message.trim() : '';
+        return msg || 'Authorization required';
+    }
+    const status = e?.networkError?.status ?? e?.networkError?.statusCode;
+    if (status === 401) return 'Authorization required';
+  //  return '';
+    // GraphQL-вариант (HTTP 200, ошибки в graphQLErrors[])
+     const gqlErrors: any[] = Array.isArray(e?.graphQLErrors) ? e.graphQLErrors : [];
+      for (const err of gqlErrors) {
+           const ext = err?.extensions;
+          if (ext?.error === 'UNAUTHORIZED') {
+                  const msg = typeof err?.message === 'string' ? err.message.trim() : '';
+                 return msg || 'Authorization required';
+               }
+         }
+    return '';
+}
+/* -------------------------------------------------------------------------------------------- */
+
+
 const DialogProvider: FC<DialogContextProps> = ({children}) => {
     const [open, setOpen] = useState<boolean>(false);
     const [dialogData, setDialogData] = useState<DialogDataInterface>();
@@ -69,13 +130,30 @@ const DialogProvider: FC<DialogContextProps> = ({children}) => {
     const snackbar = useSnackBar();
 
     const {createPhoto} = useCreatePhoto({
-        onError: () => snackbar.showSnackBar("Can not create new post", "error"),
+        onError: (e: any) => {
+            const base = "Can not create new post";
+            const limit = limitSuffixFromBackend(e);
+            const auth  = authSuffixFromBackend(e);
+            const unsupported = unsupportedFormatSuffixFromBackend(e); // ← добавлено
+            const suffix = limit || auth || unsupported;               // ← добавлено
+            snackbar.showSnackBar(suffix ? `${base}. ${suffix}` : base, "error");
+        },
+
+      //  onError: () => snackbar.showSnackBar("Can not create new post", "error"),
         onCompleted: () => snackbar.showSnackBar("New post created", "success"),
         withFriends: dialogData?.withFriends,
     });
 
     const {updatePhoto} = useUpdatePhoto({
-        onError: () => snackbar.showSnackBar("Can not update post", "error"),
+        onError: (e: any) => {
+            const base = "Can not update post";
+            const limit = limitSuffixFromBackend(e);
+            const auth  = authSuffixFromBackend(e);
+            const unsupported = unsupportedFormatSuffixFromBackend(e); // ← добавлено
+            const suffix = limit || auth || unsupported;               // ← добавлено
+            snackbar.showSnackBar(suffix ? `${base}. ${suffix}` : base, "error");
+        },
+      //  onError: () => snackbar.showSnackBar("Can not update post", "error"),
         onCompleted: () => snackbar.showSnackBar("Post updated", "success"),
     });
 

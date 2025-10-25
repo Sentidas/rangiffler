@@ -32,7 +32,15 @@ export const PhotoCard: FC<PhotoCardInterface> = ({photo, onEditClick, withFrien
 
     const {likePhoto} = useLikePhoto({
         onError: () => snackbar.showSnackBar("Post was not liked", "error"),
-        onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
+        // onCompleted: () => snackbar.showSnackBar("Post was succesfully liked", "success"),
+        onCompleted: (data) => {
+            const isLikedNow = data.photo.likes.likes.some(l => l.user === user!.id);
+            snackbar.showSnackBar(
+                isLikedNow ? "Post was successfully liked"
+                    : "Post was successfully unliked",
+                "success"
+            );
+        },
     });
 
     const handleDeletePhoto = () => {
