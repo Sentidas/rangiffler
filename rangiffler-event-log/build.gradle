@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.2'
+    id 'com.google.cloud.tools.jib' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
@@ -37,6 +38,48 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.kafka:spring-kafka-test'
 }
+
+
+sourceSets {
+    main {
+        java {
+            srcDir('src/main/java')
+        }
+    }
+}
+
+jib {
+    container {
+        jvmFlags = ["-Dspring.profiles.active=${System.env.PROFILE}"]
+        environment = [
+                'VAULT_TOKEN': "${System.env.VAULT_TOKEN}".toString(),
+                'TZ'         : 'Europe/Moscow'
+        ]
+        creationTime = 'USE_CURRENT_TIMESTAMP'
+        labels = [
+                'maintainer': 'Sentidas',
+                'version'   : "${project.version}".toString()
+        ]
+    }
+    from {
+        image = "${project.ext.dockerImage}"
+        platforms {
+            platform {
+                architecture = "${project.ext.dockerArch}"
+                os = 'linux'
+            }
+        }
+    }
+    to {
+        image = "${project.ext.dockerHubName}/${project.name}-${System.env.PROFILE}"
+        tags = ['latest', "${project.version}"]
+    }
+}
+
+tasks.jib.dependsOn test
+tasks.jibDockerBuild.dependsOn test
+
+
 
 tasks.named('test') {
     useJUnitPlatform()

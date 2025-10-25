@@ -12,11 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.sentidas.rangiffler.data.entity.LogEventEntity;
 import ru.sentidas.rangiffler.data.repository.LogEventRepository;
 
-import ru.sentidas.rangiffler.events.ActivityEvent;
-import ru.sentidas.rangiffler.events.ActivityHeaders;
+import ru.sentidas.rangiffler.ActivityEvent;
+import ru.sentidas.rangiffler.ActivityHeaders;
 
 import java.time.Instant;
-import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
