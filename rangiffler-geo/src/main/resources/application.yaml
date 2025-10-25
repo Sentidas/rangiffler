@@ -8,8 +8,6 @@ grpc:
 spring:
   application:
     name: rangiffler-geo
-  profiles:
-    active: local
   datasource:
     hikari:
       connection-timeout: 20000
@@ -56,6 +54,14 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
 ---
 spring:
   config:
@@ -75,6 +81,12 @@ spring:
     url: 'jdbc:mysql://127.0.0.1:3306/rangiffler-geo?serverTimezone=UTC&createDatabaseIfNotExist=true'
     username: root
     password: root
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 200ms
+
 grpc:
   client:
     grpcUserdataClient:
@@ -83,25 +95,46 @@ grpc:
     grpcPhotoClient:
       address: 'static://localhost:8095'
       negotiationType: PLAINTEXT
+
 rangiffler-geo:
   base-uri: 'http://127.0.0.1:8085'
 rangiffler-userdata:
   base-uri: 'http://127.0.0.1:8088'
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
+
 ---
 spring:
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://rangiffler-all-db:3306/rangiffler-geo?serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: root
+    password: root
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+        group-id: 'geo'
+        auto-offset-reset: earliest
   data:
     redis:
-      host: 127.0.0.1
+      host: redis-geo
       port: 6379
-  cache:
-    type: redis   # говорим Spring: кэш хранить в Redis, а не в памяти
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus,metrics  # открываем нужные эндпоинты Actuator
-  endpoint:
-    health:
-      show-details: always  # чтобы /actuator/health показывал детали (в т.ч. redis)
+      timeout: 200ms
+
+grpc:
+  client:
+    grpcUserdataClient:
+      address: static://userdata.rangiffler.dc:8087
+      negotiationType: PLAINTEXT
+    grpcPhotoClient:
+      address: static://photo.rangiffler.dc:8095
+      negotiationType: PLAINTEXT
+
+rangiffler-geo:
+  base-uri: http://geo.rangiffler.dc:8085
+rangiffler-userdata:
+  base-uri: http://userdata.rangiffler.dc:8088
+rangiffler-photo:
+  base-uri: http://photo.rangiffler.dc:8094
