@@ -1,10 +1,9 @@
-package ru.sentidas.rangiffler.events;
+package ru.sentidas.rangiffler;
 
 import com.fasterxml.jackson.annotation.*;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 

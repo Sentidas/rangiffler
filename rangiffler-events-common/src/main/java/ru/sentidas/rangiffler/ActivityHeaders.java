@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.events;
+package ru.sentidas.rangiffler;
 
 public final class ActivityHeaders {
     private ActivityHeaders() {}

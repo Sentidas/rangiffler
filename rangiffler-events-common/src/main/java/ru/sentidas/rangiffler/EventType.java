@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.events;
+package ru.sentidas.rangiffler;
 
 import com.fasterxml.jackson.annotation.JsonEnumDefaultValue;
 

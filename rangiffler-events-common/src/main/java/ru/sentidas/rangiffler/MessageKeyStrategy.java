@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.events;
+package ru.sentidas.rangiffler;
 
 import java.util.UUID;
 
