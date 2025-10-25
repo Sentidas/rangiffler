@@ -1,0 +1,343 @@
+version: "3.9"
+
+services:
+
+  # ===== DB → MySQL =====
+  rangiffler-all-db:
+    container_name: rangiffler-all-db
+    image: mysql:8.0
+    environment:
+      - CREATE_DATABASES=rangiffler-auth,rangiffler-userdata,rangiffler-geo,rangiffler-photo,rangiffler-event
+      - MYSQL_ROOT_PASSWORD=root
+      - TZ=Europe/Moscow
+    volumes:
+      - ./mysql/script:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "MYSQL_PWD=$${MYSQL_ROOT_PASSWORD} mysqladmin ping -h 127.0.0.1 -uroot --silent || exit 1" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - 3306:3306
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_0900_ai_ci"
+      - "--innodb_flush_method=O_DIRECT"
+      - "--innodb_flush_log_at_trx_commit=1"
+    networks:
+      - rangiffler-network
+
+  # ===== Zookeeper + Kafka =====
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.3.2
+    ports:
+      - 2181:2181
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8080/commands/stat" ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    networks:
+      - rangiffler-network
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:7.3.2
+    ports:
+      - 9092:9092
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper-local:2181
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS=10000
+      - KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS=10000
+    restart: on-failure
+    networks:
+      - rangiffler-network
+
+  # ===== Сервисы rangiffler =====
+  auth.rangiffler.dc:
+    container_name: auth.rangiffler.dc
+    image: ${PREFIX}/rangiffler-auth-docker:latest
+    ports:
+      - 9001:9001
+    healthcheck:
+      test: "wget --spider http://localhost:9001/actuator/health || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    depends_on:
+      rangiffler-all-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - rangiffler-network
+
+  gateway.rangiffler.dc:
+    container_name: gateway.rangiffler.dc
+    image: ${PREFIX}/rangiffler-gateway-docker:latest
+    ports:
+      - 8081:8081
+    healthcheck:
+      test: "wget --spider http://localhost:8081/actuator/health || exit 1"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: always
+    depends_on:
+      auth.rangiffler.dc:
+        condition: service_healthy
+    networks:
+      - rangiffler-network
+
+  geo.rangiffler.dc:
+    container_name: geo.rangiffler.dc
+    image: ${PREFIX}/rangiffler-geo-docker:latest
+    ports:
+      - 8085:8085
+    restart: always
+    depends_on:
+      rangiffler-all-db:
+        condition: service_healthy
+      redis-geo:
+        condition: service_started
+    networks:
+      - rangiffler-network
+
+  photo.rangiffler.dc:
+    container_name: photo.rangiffler.dc
+    image: ${PREFIX}/rangiffler-photo-docker:latest
+    ports:
+      - 8094:8094
+    restart: always
+    depends_on:
+      rangiffler-all-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - rangiffler-network
+
+  userdata.rangiffler.dc:
+    container_name: userdata.rangiffler.dc
+    image: ${PREFIX}/rangiffler-userdata-docker:latest
+    ports:
+      - 8088:8088
+    restart: always
+    depends_on:
+      auth.rangiffler.dc:
+        condition: service_healthy
+      rangiffler-all-db:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - rangiffler-network
+
+  eventlog.rangiffler.dc:
+    container_name: eventlog.rangiffler.dc
+    image: ${PREFIX}/rangiffler-event-log-docker:latest
+    restart: always
+    depends_on:
+      rangiffler-all-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - rangiffler-network
+
+  frontend.rangiffler.dc:
+    container_name: frontend.rangiffler.dc
+    image: ${PREFIX}/rangiffler-gql-client-docker:latest
+    build:
+      context: ./rangiffler-gql-client
+      dockerfile: ./Dockerfile
+      args:
+        NPM_COMMAND: build:docker
+    ports:
+      - 80:80
+    depends_on:
+      gateway.rangiffler.dc:
+        condition: service_started
+    networks:
+      - rangiffler-network
+
+  # ===== Redis для GEO =====
+  redis-geo:
+    container_name: redis-geo
+    image: redis:latest
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - rangiffler-redis-geo:/data
+    networks:
+      - rangiffler-network
+
+  # ===== MinIO для хранения фото =====
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    environment:
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=rootroot
+    command: ["server", "/data", "--console-address", ":9003"]
+    ports:
+      - "9002:9000"   # API
+      - "9003:9003"   # Консоль доступна на http://localhost:9003
+    volumes:
+      - rangiffler-minio:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+        - rangiffler-network
+
+  minio-init:
+      image: minio/mc:latest
+      container_name: minio-init
+      depends_on:
+        minio:
+          condition: service_healthy
+      environment:
+        - MINIO_ROOT_USER=root
+        - MINIO_ROOT_PASSWORD=rootroot
+      entrypoint: [ "/bin/sh","-c" ]
+      command: |                                        
+        set -e
+        for i in $(seq 1 30); do
+          mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" && break
+          echo "Waiting for MinIO..." >&2
+          sleep 2
+        done
+        mc mb -p local/rangiffler-media || true
+        mc anonymous set download local/rangiffler-media || true
+      restart: "no"
+      networks:
+          - rangiffler-network
+
+  # ===== Jaeger для трассировки =====
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686" # UI
+      - "4317:4317"   # OTLP gRPC
+    networks:
+      - rangiffler-network
+
+  # ===== Тестовая инфраструктура (по профилю test) =====
+  selenoid:
+    profiles: [ test ]
+    container_name: selenoid
+    image: aerokube/selenoid:1.11.3
+    platform: linux/${ARCH}
+    volumes:
+      - ./selenoid:/etc/selenoid
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - TZ=Europe/Moscow
+    restart: unless-stopped
+    command: [
+      "-conf", "/etc/selenoid/browsers.json",
+      "-limit", "3",
+      "-video-output-dir", "/opt/selenoid/video",
+      "-log-output-dir", "/opt/selenoid/logs",
+      "-container-network", "rangiffler-network"
+    ]
+    ports:
+      - 4444:4444
+    networks:
+      - rangiffler-network
+
+  selenoid-ui:
+    profiles: [ test ]
+    container_name: selenoid-ui
+    image: aerokube/selenoid-ui:1.10.11
+    depends_on:
+      - selenoid
+    restart: unless-stopped
+    ports:
+      - 9091:8080
+    command: [ "--selenoid-uri", "http://selenoid:4444" ]
+    networks:
+      - rangiffler-network
+
+  rangiffler-e-2-e:
+    profiles: [ test ]
+    container_name: rangiffler-e-2-e
+    image: ${PREFIX}/rangiffler-e-2-e-tests:latest
+    build:
+      context: ./
+      dockerfile: ./rangiffler-e-2-e-tests/Dockerfile
+    environment:
+      - ALLURE_DOCKER_API=${ALLURE_DOCKER_API}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - BUILD_URL=${BUILD_URL}
+      - HEAD_COMMIT_MESSAGE=${HEAD_COMMIT_MESSAGE}
+      - EXECUTION_TYPE=${EXECUTION_TYPE}
+    volumes:
+      - allure-results:/rangiffler/rangiffler-e-2-e-tests/build/allure-results
+      - ./rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid:/rangiffler/rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid
+    depends_on:
+      frontend.rangiffler.dc:
+        condition: service_started
+    networks:
+      - rangiffler-network
+
+  allure:
+    profiles: [ test ]
+    container_name: allure
+    image: frankescobar/allure-docker-service:2.27.0
+    depends_on:
+      - rangiffler-e-2-e
+    environment:
+      - CHECK_RESULTS_EVERY_SECONDS=5
+      - KEEP_HISTORY=1
+    ports:
+      - 5050:5050
+    volumes:
+      - allure-results:/app/allure-results
+    networks:
+      - rangiffler-network
+
+  allure-ui:
+    profiles: [ test ]
+    container_name: allure-ui
+    image: frankescobar/allure-docker-service-ui:7.0.3
+    depends_on:
+      - allure
+    environment:
+      - ALLURE_DOCKER_PUBLIC_API_URL=http://localhost:5050
+    ports:
+      - 5252:5252
+    networks:
+      - rangiffler-network
+
+networks:
+  rangiffler-network:
+    driver: bridge
+
+volumes:
+  allure-results:
+    external: true
+  rangiffler-redis-geo:
+  rangiffler-minio:
+

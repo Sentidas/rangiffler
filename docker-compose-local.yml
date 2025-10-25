@@ -1,0 +1,143 @@
+version: "3.9"
+
+services:
+  # ===== MySQL (данные живут между перезапусками) =====
+  rangiffler-all-db-local:
+    container_name: rangiffler-all-db-local
+    image: mysql:8.0
+    environment:
+      - CREATE_DATABASES=rangiffler-auth,rangiffler-userdata,rangiffler-geo,rangiffler-photo,rangiffler-event
+      - MYSQL_ROOT_PASSWORD=root
+      - TZ=Europe/Moscow
+    volumes:
+      - rangiffler-mysql-local:/var/lib/mysql
+      - ./mysql/script:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "MYSQL_PWD=$${MYSQL_ROOT_PASSWORD} mysqladmin ping -h 127.0.0.1 -uroot --silent || exit 1" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "3306:3306"
+    command:
+      - "--default-authentication-plugin=mysql_native_password"
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_0900_ai_ci"
+      - "--innodb_flush_method=O_DIRECT"
+      - "--innodb_flush_log_at_trx_commit=1"
+    networks: [ rangiffler-network-local ]
+
+  # ===== ZooKeeper + Kafka =====
+  zookeeper-local:
+    container_name: zookeeper-local
+    image: confluentinc/cp-zookeeper:7.3.2
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=2181
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://127.0.0.1:8080/commands/stat" ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    ports:
+      - "2181:2181"
+    networks: [ rangiffler-network-local ]
+
+  kafka-local:
+    container_name: kafka-local
+    image: confluentinc/cp-kafka:7.3.2
+    depends_on:
+      zookeeper-local:
+        condition: service_healthy
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper-local:2181/rangiffler
+      - KAFKA_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS=10000
+      - KAFKA_ZOOKEEPER_CONNECTION_TIMEOUT_MS=10000
+    restart: on-failure
+    ports:
+      - "9092:9092"
+    networks: [ rangiffler-network-local ]
+
+  # ===== Redis (persist) =====
+  redis-geo-local:
+    container_name: redis-geo-local
+    image: redis:latest
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - rangiffler-redis-geo-local:/data
+    networks: [ rangiffler-network-local ]
+
+  # ===== MinIO  =====
+  minio-local:
+    container_name: minio-local
+    image: minio/minio:latest
+    environment:
+      - TZ=Europe/Moscow
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=rootroot
+    command: ["server", "/data", "--console-address", ":9003"]
+    ports:
+      - "9002:9000"   # API → http://localhost:9002
+      - "9003:9003"   # Console → http://localhost:9003
+    volumes:
+      - rangiffler-minio-local:/data
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/ready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [ rangiffler-network-local ]
+
+  # --- авто-создание бакета для MinIO (добавлено) ---
+  minio-init-local:
+    image: minio/mc:latest
+    container_name: minio-init-local
+    depends_on:
+      minio-local:
+        condition: service_healthy
+    environment:
+      - TZ=Europe/Moscow
+      - MINIO_ROOT_USER=root
+      - MINIO_ROOT_PASSWORD=rootroot
+    entrypoint: [ "sh" ]
+    command:
+      - -ec
+      - |
+        for i in $(seq 1 60); do
+          mc alias set local http://minio-local:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && break
+          echo "Waiting for MinIO..." >&2
+          sleep 2
+        done
+        mc mb -p local/rangiffler-media || true
+        mc anonymous set download local/rangiffler-media || true
+    restart: "no"
+    networks: [ rangiffler-network-local ]
+
+
+  # ===== Jaeger =====
+  jaeger-local:
+    container_name: jaeger-local
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # UI
+      - "4317:4317"    # OTLP gRPC
+    networks: [ rangiffler-network-local ]
+
+networks:
+  rangiffler-network-local:
+    driver: bridge
+    name: rangiffler-network-local
+
+volumes:
+  rangiffler-mysql-local: {}
+  rangiffler-redis-geo-local: {}
+  rangiffler-minio-local: {}
