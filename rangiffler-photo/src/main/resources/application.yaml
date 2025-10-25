@@ -4,13 +4,12 @@ server:
 grpc:
   server:
     port: 8095
-    max-inbound-message-size: 33554432   # 32 MiB, выберите запас: 8/16/32
+    # 32 MiB запас по gRPC-пейлоаду для фото
+    max-inbound-message-size: 33554432
 
 spring:
   application:
     name: rangiffler-photo
-  profiles:
-    active: local
   datasource:
     hikari:
       connection-timeout: 20000
@@ -39,6 +38,11 @@ spring:
     show-sql: true
     generate-ddl: true
     open-in-view: false
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
 
 logging:
   file:
@@ -56,6 +60,11 @@ logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
+app:
+  media:
+    bucket: rangiffler-media
+    storage:
+      default: OBJECT  # OBJECT или BLOB
 ---
 spring:
   config:
@@ -72,6 +81,7 @@ spring:
     password: root
   kafka:
     bootstrap-servers: 'localhost:9092'
+
 grpc:
   client:
     grpcUserdataClient:
@@ -80,13 +90,14 @@ grpc:
     grpcGeoClient:
       address: 'static://localhost:8086'
       negotiationType: PLAINTEXT
+
 rangiffler-geo:
   base-uri: 'http://127.0.0.1:8085'
 rangiffler-userdata:
   base-uri: 'http://127.0.0.1:8088'
 rangiffler-photo:
   base-uri: 'http://127.0.0.1:8094'
----
+
 minio:
   endpoint: http://localhost:9002
   access-key: root
@@ -94,14 +105,50 @@ minio:
 
 app:
   media:
-    bucket: rangiffler-media
     public-base-url: http://localhost:9002/rangiffler-media
-    storage:
-      default: OBJECT  # OBJECT или BLOB
 
+---
 spring:
-  servlet:
-    multipart:
-      max-file-size: 100MB
-      max-request-size: 100MB
+  config:
+    activate:
+      on-profile: docker
+  datasource:
+    url: jdbc:mysql://rangiffler-all-db:3306/rangiffler-photo?serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    hikari:
+      connection-timeout: 20000
+      minimum-idle: 10
+      maximum-pool-size: 30
+      idle-timeout: 10000
+      max-lifetime: 1000
+      auto-commit: true
+      connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci
 
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+grpc:
+  client:
+    grpcUserdataClient:
+      address: 'static://userdata.rangiffler.dc:8087'
+      negotiationType: PLAINTEXT
+    grpcGeoClient:
+      address: 'static://geo.rangiffler.dc:8086'
+      negotiationType: PLAINTEXT
+
+rangiffler-geo:
+  base-uri: 'http://geo.rangiffler.dc:8085'
+rangiffler-userdata:
+  base-uri: 'http://userdata.rangiffler.dc:8088'
+rangiffler-photo:
+  base-uri: 'http://photo.rangiffler.dc:8094'
+
+minio:
+  endpoint: http://minio:9000
+  access-key: ${MINIO_ACCESS_KEY:root}
+  secret-key: ${MINIO_SECRET_KEY:rootroot}
+
+app:
+  media:
+    public-base-url: http://localhost:9002/rangiffler-media

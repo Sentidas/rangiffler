@@ -16,7 +16,7 @@ import ru.sentidas.rangiffler.MessageKeyStrategy;
 public class ActivityPublisher {
 
     private final KafkaTemplate<String, ActivityEvent> template;
-    @Value("${app.activity-topic:rangiffler.activity}")
+    @Value("${app.activity-topic:rangiffler_activity}")
     private String topic;
 
     @Value("${app.events-version:v1}")
