@@ -72,5 +72,4 @@ public class PhotoMutationController {
         String username = principal.getClaim("sub");
         return grpcPhotoClient.deletePhoto(username, id);
     }
-
 }

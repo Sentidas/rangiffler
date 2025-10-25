@@ -23,7 +23,7 @@ public class CountryQueryController {
     }
 
     @QueryMapping
-    public List<Country> countries(@AuthenticationPrincipal Jwt principal) {
+    public List<Country> countries() {
         return geoClient.countries();
     }
 }

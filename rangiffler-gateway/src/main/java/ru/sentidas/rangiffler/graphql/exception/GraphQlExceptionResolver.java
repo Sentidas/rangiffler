@@ -15,7 +15,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.graphql.execution.DataFetcherExceptionResolverAdapter;
 import org.springframework.graphql.execution.ErrorType;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.InvalidImageFormatException;
 import ru.sentidas.rangiffler.error.domain.CountryNotFoundException;
