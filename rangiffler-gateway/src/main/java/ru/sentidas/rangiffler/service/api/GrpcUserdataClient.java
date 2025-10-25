@@ -1,22 +1,64 @@
 package ru.sentidas.rangiffler.service.api;
 
-import ru.sentidas.rangiffler.model.ggl.input.FriendshipInput;
-import ru.sentidas.rangiffler.model.ggl.input.UserGql;
-import ru.sentidas.rangiffler.model.ggl.input.UserGqlInput;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.sentidas.rangiffler.model.input.FriendshipInput;
+import ru.sentidas.rangiffler.model.UserGql;
+import ru.sentidas.rangiffler.model.input.UserGqlInput;
 import ru.sentidas.rangiffler.service.utils.GrpcCall;
 import ru.sentidas.rangiffler.service.utils.UserProtoMapper;
 import net.devh.boot.grpc.client.inject.GrpcClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.grpc.*;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
 public class GrpcUserdataClient {
 
     private static final String SERVICE = "rangiffler-userdata";
+
+    @Autowired
+    public GrpcUserdataClient(
+            @Value("${app.public-base-url:}") String baseUrl
+    ) {
+        UserProtoMapper.setBaseUrl(baseUrl);
+    }
+
+    /**
+     * ОДИН bulk-вызов: список UUID → Map<UUID, username>
+     */
+    public Map<UUID, String> getUsernamesByIds(List<UUID> ids) {
+        // строим proto-запрос
+        UserIdsRequest.Builder rb = UserIdsRequest.newBuilder();
+        for (UUID id : ids) {
+            if (id != null) {
+                rb.addUserIds(id.toString());
+            }
+        }
+        // один gRPC-вызов
+        UsernamesResponse resp = GrpcCall.run(() -> stub.usernamesByIds(rb.build()), SERVICE);
+
+        Map<UUID, String> result = new HashMap<>(resp.getItemsCount());
+        for (UsernamesResponse.Item it : resp.getItemsList()) {
+            result.put(UUID.fromString(it.getUserId()), it.getUsername());
+        }
+        return result;
+    }
+
+    public String getUsernameById(UUID id) {
+        UserIdRequest request = UserIdRequest.newBuilder()
+                .setUserId(id.toString())
+                .build();
+
+        UserResponse resp = GrpcCall.run(() -> stub.currentUserById(request), SERVICE);
+        return resp.getUsername();
+    }
 
     @GrpcClient("grpcUserdataClient")
     private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
@@ -28,16 +70,6 @@ public class GrpcUserdataClient {
                 .build();
 
         UserResponse userResponse = GrpcCall.run(() -> stub.currentUser(request), SERVICE);
-        return UserProtoMapper.fromProto(userResponse);
-    }
-
-    public UserGql currentUserById(String id) {
-
-        UserIdRequest request = UserIdRequest.newBuilder()
-                .setUserId(id)
-                .build();
-
-        UserResponse userResponse = GrpcCall.run(() -> stub.currentUserById(request), SERVICE);
         return UserProtoMapper.fromProto(userResponse);
     }
 
@@ -81,16 +113,6 @@ public class GrpcUserdataClient {
         return UserProtoMapper.fromProto(response);
     }
 
-    public String getUsernameById(UUID userId) {
-
-        UserIdRequest request = UserIdRequest.newBuilder()
-                .setUserId(userId.toString())
-                .build();
-
-        UserResponse userResponse = GrpcCall.run(() -> stub.currentUserById(request), SERVICE);
-        return userResponse.getUsername();
-    }
-
     public UUID getIdByUsername(String username) {
 
         UsernameRequest request = UsernameRequest.newBuilder()
@@ -100,20 +122,13 @@ public class GrpcUserdataClient {
         UserResponse userResponse = GrpcCall.run(() -> stub.currentUser(request), SERVICE);
         return UUID.fromString(userResponse.getId());
     }
-//
-//    public UserGql addFriend(String username, String targetUsername) {
-//        FriendshipRequest request = FriendshipRequest.newBuilder()
-//                .setUsername(username)
-//                .setTargetUsername(targetUsername)
-//                .build();
-//        UserResponse response = GrpcCall.run(() -> stub.addFriend(request), SERVICE);
-//        return UserProtoMapper.fromProto(response);
-//    }
 
     public UserGql deleteFriend(String username, FriendshipInput friendshipInput) {
         if (friendshipInput.user() == null) {
             throw new IllegalArgumentException("ID targetUsername is required");
         }
+
+        String friendShipInputUsername = getUsernameById(friendshipInput.user());
 
         FriendshipRequest request = FriendshipRequest.newBuilder()
                 .setUsername(username)
@@ -123,7 +138,7 @@ public class GrpcUserdataClient {
 
         UserGql userGql = new UserGql(
                 friendshipInput.user(),
-                username, null, null, null, null, null, null);
+                friendShipInputUsername, null, null, null, null, null, null);
 
         return userGql;
     }

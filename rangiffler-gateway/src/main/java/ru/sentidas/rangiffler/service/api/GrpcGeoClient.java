@@ -1,10 +1,9 @@
 package ru.sentidas.rangiffler.service.api;
 
 import com.google.protobuf.Empty;
-import io.opentelemetry.api.trace.Span;
 import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.model.Stat;
-import ru.sentidas.rangiffler.model.ggl.input.Country;
+import ru.sentidas.rangiffler.model.Country;
 import ru.sentidas.rangiffler.service.utils.GrpcCall;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.stereotype.Component;
@@ -13,7 +12,7 @@ import java.util.List;
 
 
 @Component
-public class GrpcGeoClient implements GeoClient {
+public class GrpcGeoClient {
 
     private static final String SERVICE = "rangiffler-geo";
     private static final Empty EMPTY = Empty.getDefaultInstance();
@@ -26,8 +25,6 @@ public class GrpcGeoClient implements GeoClient {
         this.grpcUserdataClient = grpcUserdataClient;
     }
 
-
-    @Override
     public Country getByCode(String code) {
         CodeRequest request = CodeRequest.newBuilder()
                 .setCode(code)
@@ -37,9 +34,7 @@ public class GrpcGeoClient implements GeoClient {
         return fromProto(response);
     }
 
-    @Override
     public List<Country> getByCodes(List<String> codes) {
-     //   Span.current().setAttribute("geo.codes.count", codes.size());
         CodesRequest request = CodesRequest.newBuilder()
                 .addAllCodes(codes)
                 .build();
@@ -48,13 +43,11 @@ public class GrpcGeoClient implements GeoClient {
         return fromProto(response);
     }
 
-    @Override
     public List<Country> countries() {
         CountriesResponse countries = GrpcCall.run(() -> stub.allCountries(EMPTY), SERVICE);
         return fromProto(countries);
     }
 
-    @Override
     public List<Stat> stat(String username, boolean withFriends) {
         String userId = grpcUserdataClient.currentUser(username).id().toString();
         StatRequest request = StatRequest.newBuilder()

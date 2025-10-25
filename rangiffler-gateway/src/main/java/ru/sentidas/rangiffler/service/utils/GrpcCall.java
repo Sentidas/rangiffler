@@ -1,6 +1,5 @@
 package ru.sentidas.rangiffler.service.utils;
 
-import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -8,9 +7,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.function.Supplier;
 
 public final class GrpcCall {
-    private GrpcCall() {}
+    private GrpcCall() {
+    }
 
-    public static <T>T run(Supplier<T> call, String serviceName) {
+    public static <T> T run(Supplier<T> call, String serviceName) {
         try {
             return call.get();
         } catch (StatusRuntimeException e) {
@@ -20,7 +20,7 @@ public final class GrpcCall {
 
     public static void runVoid(Runnable call, String serviceName) {
         try {
-             call.run();
+            call.run();
         } catch (StatusRuntimeException e) {
             throw status(serviceName, e);
         }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.model.Like;
 import ru.sentidas.rangiffler.model.Photo;
-import ru.sentidas.rangiffler.model.ggl.input.PhotoInput;
+import ru.sentidas.rangiffler.model.input.PhotoInput;
 import ru.sentidas.rangiffler.service.utils.GrpcCall;
 
 import java.util.Date;
@@ -97,7 +97,6 @@ public class GrpcPhotoClient {
         if (requesterId == null) {
             throw new IllegalStateException("User id is null for username=" + requesterUsername);
         }
-        System.out.println("requesterId в Gateway " + requesterId);
 
         DeletePhotoRequest request = DeletePhotoRequest.newBuilder()
                 .setId(photoId.toString())
@@ -174,18 +173,16 @@ public class GrpcPhotoClient {
                 : 0;
 
         // В gRPC src = относительный ключ (object key) из БД, например "photos/.../file.png"
-        String key = response.getSrc();
-        String src = key;
-
-        if (key != null && !key.isBlank() && !key.startsWith("http")) {
-            // Абсолютный URL на gateway, чтобы фронт на :3001 не пытался обслужить /media сам
-            if (BASE_URL != null && !BASE_URL.isBlank()) {
-                src = BASE_URL + "/media/" + key;
-            } else {
-                // Фолбэк: относительный URL, если BASE_URL не задан
-                src = "/media/" + key;
-            }
+        String src = response.getSrc();
+        if (src != null && src.startsWith("data:")) {
+            // оставить как есть — НЕ заменять на application/octet-stream
+        } else if (src != null && !src.isBlank()) {
+            // OBJECT режим — собрать абсолютный URL
+            src = (BASE_URL != null && !BASE_URL.isBlank())
+                    ? BASE_URL + "/media/" + src
+                    : "/media/" + src;
         }
+
         ru.sentidas.rangiffler.model.Likes likesWrapper = new ru.sentidas.rangiffler.model.Likes(total, likeList);
 
         return new Photo(
