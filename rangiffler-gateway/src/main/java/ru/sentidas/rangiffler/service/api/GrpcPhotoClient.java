@@ -14,6 +14,7 @@ import ru.sentidas.rangiffler.model.Like;
 import ru.sentidas.rangiffler.model.Photo;
 import ru.sentidas.rangiffler.model.input.PhotoInput;
 import ru.sentidas.rangiffler.service.utils.GrpcCall;
+import ru.sentidas.rangiffler.service.utils.ProtoMapper;
 
 import java.util.Date;
 import java.util.List;
@@ -27,21 +28,16 @@ public class GrpcPhotoClient {
 
     private final GrpcUserdataClient grpcUserdataClient;
 
-    // Базовый публичный адрес gateway для сборки абсолютных URL, например: http://127.0.0.1:8081
-    private static String BASE_URL = "";
-
-    @Autowired
-    public GrpcPhotoClient(
-            GrpcUserdataClient grpcUserdataClient,
-            @Value("${app.public-base-url:}") String baseUrl
-    ) {
-        this.grpcUserdataClient = grpcUserdataClient;
-        // убрать хвостовые слэши и сохранить в статике для использования в статических мапперах
-        BASE_URL = baseUrl == null ? "" : baseUrl.replaceAll("/+$", "");
-    }
+    @Value("${app.public-base-url}")
+    private String publicBaseUrl;
 
     @GrpcClient("grpcPhotoClient")
     private RangifflerPhotoServiceGrpc.RangifflerPhotoServiceBlockingStub stub;
+
+    @Autowired
+    public GrpcPhotoClient(GrpcUserdataClient grpcUserdataClient) {
+        this.grpcUserdataClient = grpcUserdataClient;
+    }
 
     public Photo createPhoto(String username, PhotoInput photoInput) {
         final String userId = grpcUserdataClient.currentUser(username).id().toString();
@@ -63,7 +59,7 @@ public class GrpcPhotoClient {
             request.setDescription(photoInput.description());
         }
         PhotoResponse response = GrpcCall.run(() -> stub.createPhoto(request.build()), SERVICE);
-        return fromProto(response);
+        return fromProto(response, publicBaseUrl);
     }
 
     public Photo updatePhoto(String username, PhotoInput photoInput) {
@@ -80,15 +76,12 @@ public class GrpcPhotoClient {
             request.setSrc(photoInput.src());
         }
 
-
-
         if (photoInput.country() != null && photoInput.country().code() != null) {
             request.setCountryCode(photoInput.country().code());
-
         }
 
         PhotoResponse response = GrpcCall.run(() -> stub.updatePhoto(request.build()), SERVICE);
-        return fromProto(response);
+        return fromProto(response, publicBaseUrl);
     }
 
     public boolean deletePhoto(String requesterUsername, UUID photoId) {
@@ -119,7 +112,7 @@ public class GrpcPhotoClient {
 
 
         PhotosPageResponse response = GrpcCall.run(() -> stub.getUserPhotos(request), SERVICE);
-        return fromProto(response);
+        return fromProto(response, publicBaseUrl);
     }
 
     public Slice<Photo> feedPhotos(String username, Pageable pageable) {
@@ -132,7 +125,7 @@ public class GrpcPhotoClient {
                 .build();
 
         PhotosPageResponse response = GrpcCall.run(() -> stub.getFeedPhotos(request), SERVICE);
-        return fromProto(response);
+        return fromProto(response, publicBaseUrl);
     }
 
     public Photo toggleLike(String username, UUID photoId) {
@@ -144,14 +137,14 @@ public class GrpcPhotoClient {
                 .build();
 
         PhotoResponse response = GrpcCall.run(() -> stub.toggleLike(request), SERVICE);
-        return fromProto(response);
+        return fromProto(response, publicBaseUrl);
     }
 
 
-    public static Slice<Photo> fromProto(PhotosPageResponse response) {
+    public static Slice<Photo> fromProto(PhotosPageResponse response, String baseUrl) {
         List<Photo> content = response.getContentList()
                 .stream()
-                .map(GrpcPhotoClient::fromProto)
+                .map(r -> fromProto(r, baseUrl))
                 .toList();
 
         boolean hasNext = !response.getLast();
@@ -161,27 +154,16 @@ public class GrpcPhotoClient {
         );
     }
 
-    public static Photo fromProto(PhotoResponse response) {
+    public static Photo fromProto(PhotoResponse response, String baseUrl) {
         Date createdDate = new Date(Timestamps.toMillis(response.getCreationDate()));
 
         List<Like> likeList = response.hasLikes()
                 ? response.getLikes().getLikesList().stream().map(GrpcPhotoClient::mapLike).toList()
                 : List.of();
 
-        int total = response.hasLikes()
-                ? response.getLikes().getTotal()
-                : 0;
+        int total = response.hasLikes() ? response.getLikes().getTotal() : 0;
 
-        // В gRPC src = относительный ключ (object key) из БД, например "photos/.../file.png"
-        String src = response.getSrc();
-        if (src != null && src.startsWith("data:")) {
-            // оставить как есть — НЕ заменять на application/octet-stream
-        } else if (src != null && !src.isBlank()) {
-            // OBJECT режим — собрать абсолютный URL
-            src = (BASE_URL != null && !BASE_URL.isBlank())
-                    ? BASE_URL + "/media/" + src
-                    : "/media/" + src;
-        }
+        String src = ProtoMapper.normalizeMediaPath(response.getSrc(), baseUrl);
 
         ru.sentidas.rangiffler.model.Likes likesWrapper = new ru.sentidas.rangiffler.model.Likes(total, likeList);
 

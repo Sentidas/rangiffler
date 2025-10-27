@@ -1,17 +1,16 @@
 package ru.sentidas.rangiffler.service.api;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import ru.sentidas.rangiffler.model.input.FriendshipInput;
-import ru.sentidas.rangiffler.model.UserGql;
-import ru.sentidas.rangiffler.model.input.UserGqlInput;
-import ru.sentidas.rangiffler.service.utils.GrpcCall;
-import ru.sentidas.rangiffler.service.utils.UserProtoMapper;
 import net.devh.boot.grpc.client.inject.GrpcClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Component;
 import ru.sentidas.rangiffler.grpc.*;
+import ru.sentidas.rangiffler.model.UserGql;
+import ru.sentidas.rangiffler.model.input.FriendshipInput;
+import ru.sentidas.rangiffler.model.input.UserGqlInput;
+import ru.sentidas.rangiffler.service.utils.GrpcCall;
+import ru.sentidas.rangiffler.service.utils.ProtoMapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -23,25 +22,24 @@ public class GrpcUserdataClient {
 
     private static final String SERVICE = "rangiffler-userdata";
 
-    @Autowired
-    public GrpcUserdataClient(
-            @Value("${app.public-base-url:}") String baseUrl
-    ) {
-        UserProtoMapper.setBaseUrl(baseUrl);
-    }
+    @Value("${app.public-base-url}")
+    private String publicBaseUrl;
+
+    @GrpcClient("grpcUserdataClient")
+    private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
 
     /**
      * ОДИН bulk-вызов: список UUID → Map<UUID, username>
      */
     public Map<UUID, String> getUsernamesByIds(List<UUID> ids) {
-        // строим proto-запрос
+
         UserIdsRequest.Builder rb = UserIdsRequest.newBuilder();
         for (UUID id : ids) {
             if (id != null) {
                 rb.addUserIds(id.toString());
             }
         }
-        // один gRPC-вызов
+
         UsernamesResponse resp = GrpcCall.run(() -> stub.usernamesByIds(rb.build()), SERVICE);
 
         Map<UUID, String> result = new HashMap<>(resp.getItemsCount());
@@ -60,9 +58,6 @@ public class GrpcUserdataClient {
         return resp.getUsername();
     }
 
-    @GrpcClient("grpcUserdataClient")
-    private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
-
     public UserGql currentUser(String username) {
 
         UsernameRequest request = UsernameRequest.newBuilder()
@@ -70,31 +65,31 @@ public class GrpcUserdataClient {
                 .build();
 
         UserResponse userResponse = GrpcCall.run(() -> stub.currentUser(request), SERVICE);
-        return UserProtoMapper.fromProto(userResponse);
+        return ProtoMapper.fromProto(userResponse, publicBaseUrl);
     }
 
     public Slice<UserGql> friends(String username, PageRequest pageRequest, String searchQuery) {
         UserPageRequest request = buildPageRequest(username, pageRequest, searchQuery);
         UsersPageResponse response = GrpcCall.run(() -> stub.allFriendsPage(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public Slice<UserGql> incomeInvitations(String username, PageRequest pageRequest, String searchQuery) {
         UserPageRequest request = buildPageRequest(username, pageRequest, searchQuery);
         UsersPageResponse response = GrpcCall.run(() -> stub.incomeInvitations(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public Slice<UserGql> outcomeInvitations(String username, PageRequest pageRequest, String searchQuery) {
         UserPageRequest request = buildPageRequest(username, pageRequest, searchQuery);
         UsersPageResponse response = GrpcCall.run(() -> stub.outcomeInvitations(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public Slice<UserGql> allUsers(String username, PageRequest pageRequest, String searchQuery) {
         UserPageRequest request = buildPageRequest(username, pageRequest, searchQuery);
         UsersPageResponse response = GrpcCall.run(() -> stub.allUsersPage(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public UserGql updateUser(String username, UserGqlInput input) {
@@ -110,7 +105,7 @@ public class GrpcUserdataClient {
         }
 
         UserResponse response = GrpcCall.run(() -> stub.updateUser(request.build()), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public UUID getIdByUsername(String username) {
@@ -152,7 +147,7 @@ public class GrpcUserdataClient {
                 .setUser(friendshipInput.user().toString())
                 .build();
         UserResponse response = GrpcCall.run(() -> stub.createFriendshipRequest(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public UserGql acceptInvitation(String username, FriendshipInput friendshipInput) {
@@ -164,7 +159,7 @@ public class GrpcUserdataClient {
                 .setUser(friendshipInput.user().toString())
                 .build();
         UserResponse response = GrpcCall.run(() -> stub.acceptFriendshipRequest(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     public UserGql rejectInvitation(String username, FriendshipInput friendshipInput) {
@@ -176,7 +171,7 @@ public class GrpcUserdataClient {
                 .setUser(friendshipInput.user().toString())
                 .build();
         UserResponse response = GrpcCall.run(() -> stub.declineFriendshipRequest(request), SERVICE);
-        return UserProtoMapper.fromProto(response);
+        return ProtoMapper.fromProto(response, publicBaseUrl);
     }
 
     private static UserPageRequest buildPageRequest(String username, PageRequest page, String searchQuery) {

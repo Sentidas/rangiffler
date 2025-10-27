@@ -82,6 +82,8 @@ public class UserQueryController {
     public UserGql user(@AuthenticationPrincipal Jwt principal,
                         @Nonnull DataFetchingEnvironment env) {
         checkSubQueries(env, 1, "friends");
+        checkSubQueries(env, 1, "incomeInvitations");
+        checkSubQueries(env, 1, "outcomeInvitations");
         final String username = principal.getClaim("sub");
         return grpcUserdataClient.currentUser(username);
     }

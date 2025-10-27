@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.config.media;
+package ru.sentidas.rangiffler.media;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

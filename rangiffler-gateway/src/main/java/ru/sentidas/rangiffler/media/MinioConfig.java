@@ -1,4 +1,4 @@
-package ru.sentidas.rangiffler.config.media;
+package ru.sentidas.rangiffler.media;
 
 import io.minio.MinioClient;
 import org.springframework.beans.factory.annotation.Value;

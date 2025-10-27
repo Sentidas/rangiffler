@@ -1,5 +1,7 @@
 package ru.sentidas.rangiffler.controller.mutation;
 
+import ru.sentidas.rangiffler.ImageFormatValidator;
+import ru.sentidas.rangiffler.InvalidImageFormatException;
 import ru.sentidas.rangiffler.model.UserGql;
 import ru.sentidas.rangiffler.model.input.FriendshipInput;
 import ru.sentidas.rangiffler.model.input.UserGqlInput;
@@ -17,16 +19,26 @@ import org.springframework.stereotype.Controller;
 public class UserMutationController {
 
     private final GrpcUserdataClient grpcUserdataClient;
+    private final ImageFormatValidator imageFormatValidator;
+
 
     @Autowired
-    public UserMutationController(GrpcUserdataClient grpcUserdataClient) {
+    public UserMutationController(GrpcUserdataClient grpcUserdataClient,
+                                  ImageFormatValidator imageFormatValidator) {
         this.grpcUserdataClient = grpcUserdataClient;
+        this.imageFormatValidator = imageFormatValidator;
     }
 
     @MutationMapping
     public UserGql user(@AuthenticationPrincipal Jwt principal,
                         @Argument UserGqlInput input) {
         String username = principal.getClaim("sub");
+        if (input.avatar() != null && !input.avatar().isBlank()) {
+            if (!imageFormatValidator.isDataUrl(input.avatar())) {
+                throw new InvalidImageFormatException("`avatar` must be data URL", imageFormatValidator.allowedMime());
+            }
+            imageFormatValidator.validateDataUrlOrThrow(input.avatar());
+        }
         return grpcUserdataClient.updateUser(username, input);
     }
 
