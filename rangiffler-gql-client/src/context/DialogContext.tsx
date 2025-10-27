@@ -92,7 +92,7 @@ function unsupportedFormatSuffixFromBackend(e: any): string {
                 }
     }
 
-    // 3) На всякий случай: «голый» 415 без тела
+    // 3) «голый» 415 без тела
     const status = e?.networkError?.status ?? e?.networkError?.statusCode;
     if (status === 415) return 'Unsupported image format';
 
