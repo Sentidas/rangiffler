@@ -23,7 +23,7 @@ buildscript {
         fakerVersion = '1.0.2'
         ashotVersion = '1.5.4'
         assertjVersion = '3.27.3'
-        commonsIoVersion  = '2.16.1'
+        commonsIoVersion = '2.16.1'
         jsr305Version = '3.0.2'
         sqlFormatterVersion = '2.0.5'
         simpleJndiVersion = '0.24.0'
@@ -169,44 +169,56 @@ tasks.register('printVersion') {
 tasks.named("compileTestJava").configure {
     dependsOn("generateRangifflerApolloSources")
 }
+// ---- Основная конфигурация тестовых задач ----
+tasks.withType(Test).configureEach {
 
-test {
+    //  системные свойства (-Dключ=значение)
     options {
         systemProperties(System.getProperties())
     }
-//    systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
-//    systemProperty "com.atomikos.icatch.max_timeout", "300000"
-//    systemProperty "com.atomikos.icatch.enable_logging", "true"
-//    systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
-//
-//    testLogging.showStandardStreams = true
-//    testLogging.exceptionFormat = 'full'
 
-    useJUnitPlatform {
+    // настройки Atomikos (JTA транзакции)
+    // systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
+    // systemProperty "com.atomikos.icatch.max_timeout", "300000"
+    // systemProperty "com.atomikos.icatch.enable_logging", "true"
+    // systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
+
+    // Подробный вывод тестов в консоль
+    testLogging {
+        showStandardStreams = true          // System.out / System.err
+        exceptionFormat = 'full'            // Полные стектрейсы ошибок
+        events "passed", "skipped", "failed", "standardOut", "standardError"
     }
+
+    useJUnitPlatform()
 }
 
+// ---- Базовая задача test ----
+// Делает test псевдонимом для testLocal
+tasks.named('test') {
+    dependsOn tasks.named('testLocal')  // Запуск test вызывает testLocal
+    enabled = false                     // Самостоятельно test не выполняется
+}
+
+// ---- Тесты для Docker-профиля ----
 tasks.register('testDocker', Test) {
     systemProperty "test.env", System.getProperty("test.env", "docker")
 
     useJUnitPlatform {
-        // список исключаемых тегов для docker-профиля на текущий момент (скрины для selenide не сделаны, кафка подвисает долго в докере)
+        // По умолчанию исключены долгие или нестабильные тесты в Docker
         def defaultExcludes = "screenshots,kafka"
 
-        // читаем значения из -D (если заданы), иначе берём дефолты
+        // значения из -D (если заданы), иначе берём дефолты
         def excludeRaw = System.getProperty('excludeTags', defaultExcludes)
         def includeRaw = System.getProperty('includeTags', '')
 
-        if (excludeRaw) {
-            excludeTags(excludeRaw.split(','))
-        }
-        if (includeRaw) {
-            includeTags(includeRaw.split(','))
-        }
+        if (excludeRaw) excludeTags(excludeRaw.split(','))
+        if (includeRaw) includeTags(includeRaw.split(','))
         // Если includeTags пуст — выполнятся все тесты, кроме тех, что в excludeTags.
     }
 }
 
+// ---- Тесты для локальной среды ----
 tasks.register('testLocal', Test) {
     systemProperty "test.env", System.getProperty("test.env", "local")
 
@@ -215,11 +227,7 @@ tasks.register('testLocal', Test) {
         def excludeRaw = System.getProperty('excludeTags', '')
         def includeRaw = System.getProperty('includeTags', '')
 
-        if (excludeRaw) {
-            excludeTags(excludeRaw.split(','))
-        }
-        if (includeRaw) {
-            includeTags(includeRaw.split(','))
-        }
+        if (excludeRaw) excludeTags(excludeRaw.split(','))
+        if (includeRaw) includeTags(includeRaw.split(','))
     }
 }

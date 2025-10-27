@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Локальный запуск: инфраструктура в Docker + сервисы, фронт и тесты локально
 set -euo pipefail
 
 PROJECT="rangiffler"
@@ -44,7 +45,7 @@ open_url() {
 }
 
 # ---- Очистка перед запуском ----
-echo "==> Предочистка контейнеров проекта (без удаления томов)"
+echo "==> Очистка контейнеров проекта (без удаления томов)"
 docker compose -p "$PROJECT" -f "$COMPOSE_FILE" down --remove-orphans || true
 
 # ---- Запуск / Остановка ----
@@ -75,25 +76,25 @@ stop_front() {
 }
 
 stop_all() {
-  echo "==> Останавливаем фронт и сервисы"
+  echo "==> Остановка фронта и сервисов"
   stop_front
   stop_services
   docker compose -p "$PROJECT" -f "$COMPOSE_FILE" down --remove-orphans || true
 }
 
 # ---- Инфраструктура ----
-echo "==> Поднимаем Docker инфраструктуру"
+echo "==> Старт Docker-инфраструктуры"
 docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d --wait || docker compose -p "$PROJECT" -f "$COMPOSE_FILE" up -d
 
 # ---- Gradle ----
-echo "==> Останавливаем Gradle daemon (если был)"
+echo "==> Остановка Gradle daemon (если запущен)"
 ./gradlew --stop || true
 
 # ---- Запуск ----
 start_services
-echo "==> Ждём readiness gateway..."
+echo "==> Ожидание готовности gateway..."
 if ! wait_http "http://127.0.0.1:8081/actuator/health" 240 2; then
-  echo "Gateway не отвечает."
+  echo "Gateway не отвечает"
   tail -n 100 rangiffler-gateway/build/bootrun.log || true
   exit 1
 fi
@@ -110,7 +111,7 @@ fi
 
 # ---- Автостоп ----
 if [[ "$AUTO_STOP" -eq 1 ]]; then
-  echo "==> Флаг --stop активирован: останавливаем всё"
+  echo "==> Флаг --stop активирован: остановка всех процессов"
   stop_all
 fi
 
