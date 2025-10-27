@@ -4,7 +4,6 @@ import com.codeborne.selenide.CollectionCondition;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import io.qameta.allure.Step;
-import org.assertj.core.api.Assertions;
 import ru.sentidas.rangiffler.page.component.*;
 
 import javax.annotation.Nonnull;
@@ -26,6 +25,7 @@ public class FeedPage extends BasePage<FeedPage> {
     private final Pagination pagination = new Pagination($x("//div[button[text()='Previous'] and button[text()='Next']]"));
     private final Map map = new Map($("figure.worldmap__figure-container"));
     private final SelenideElement mapLocator = $("figure.worldmap__figure-container");
+    private final SelenideElement headerMap = $("h2.MuiTypography-h4");
 
     @Nonnull
     public Header getHeader() {
@@ -122,14 +122,14 @@ public class FeedPage extends BasePage<FeedPage> {
         return new CreatePhoto();
     }
 
-    @Step("openFriendsFeed")
+    @Step("Open friends feed")
     @Nonnull
     public FeedPage openFriendsFeed() {
         withFriendsBtn.shouldBe(visible, Duration.ofSeconds(7)).click();
         return this;
     }
 
-    @Step("like photo")
+    @Step("Like photo")
     @Nonnull
     public FeedPage likePhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
@@ -144,7 +144,7 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
-    @Step("checkUnSuccessLikesPhoto")
+    @Step("Check unsuccess likes photo")
     @Nonnull
     public FeedPage checkUnSuccessLikesPhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
@@ -160,7 +160,7 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
-    @Step("checkAllLikes")
+    @Step("Check all likes")
     public int checkCountLikes(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
@@ -173,12 +173,10 @@ public class FeedPage extends BasePage<FeedPage> {
                 .getText();
 
         int count = Integer.parseInt(text.replace(" likes", "").trim());
-
         return count;
     }
 
-
-    @Step("checkSuccessLikesPhoto")
+    @Step("Check success likes photo")
     @Nonnull
     public FeedPage checkSuccessLikesPhoto(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
@@ -194,6 +192,7 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
+    @Step("Assert card not liked")
     public FeedPage assertCardNotLiked(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
@@ -209,6 +208,7 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
+    @Step("Assert card liked")
     public FeedPage assertCardLiked(String countryName, @Nullable String description) {
         cards.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
@@ -246,6 +246,7 @@ public class FeedPage extends BasePage<FeedPage> {
         return new EditPhoto().checkThatComponentLoaded();
     }
 
+    @Step("Delete photo")
     public FeedPage deletePhoto(String countryName, String description) {
         ElementsCollection target = cards.filterBy(hasCountryAndDescription(countryName, description));
         target.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15)); // дождались, что цель есть
@@ -260,9 +261,10 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
+    @Step("Delete photo")
     public FeedPage deletePhotoByNumber(int number) {
         ElementsCollection target = cards;
-        target.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15)); // дождались, что цель есть
+        target.shouldHave(sizeGreaterThan(0), Duration.ofSeconds(15));
 
         target.get(number - 1).$$("button.MuiButtonBase-root")
                 .findBy(text("Delete"))
@@ -274,10 +276,7 @@ public class FeedPage extends BasePage<FeedPage> {
     @Step("Check that page is loaded")
     @Nonnull
     public FeedPage checkThatPageLoaded() {
-        System.out.println("успешная загрузка страницы my_travel");
-        // header.getSelf().should(visible).shouldHave(text("angiffler"));
-//        statComponent.getSelf().should(visible).shouldHave(text("Statistics"));
-//        spendingTable.getSelf().should(visible).shouldHave(text("History of Spendings"));
+        headerMap.shouldHave(text("Travels map"));
         return this;
     }
 
@@ -305,6 +304,17 @@ public class FeedPage extends BasePage<FeedPage> {
         return this;
     }
 
+    @Step("Assert card is absent (country + optional description)")
+    @Nonnull
+    public FeedPage checkNotExistPost(@Nonnull String countryName, @Nullable String description) {
+        cards.filterBy(hasCountryAndDescription(countryName, description))
+                .shouldHave(CollectionCondition.size(0).because(
+                        "Post was not expected but is still present " +
+                                "(country='" + countryName + "', description='" + description + "')"
+                ), Duration.ofSeconds(7));
+        return this;
+    }
+
     private void goFirstPage() {
         SelenideElement previous = previousBtn();
         if (previous.exists() && isEffectivelyEnabled(previous)) {
@@ -318,16 +328,5 @@ public class FeedPage extends BasePage<FeedPage> {
         boolean muiDisabled = btn.has(cssClass("Mui-disabled"));
 
         return enabled && !muiDisabled;
-    }
-
-    @Step("Assert card is absent (country + optional description)")
-    @Nonnull
-    public FeedPage checkNotExistPost(@Nonnull String countryName, @Nullable String description) {
-        cards.filterBy(hasCountryAndDescription(countryName, description))
-                .shouldHave(CollectionCondition.size(0).because(
-                        "Post was not expected but is still present " +
-                                "(country='" + countryName + "', description='" + description + "')"
-                ), Duration.ofSeconds(7));
-        return this;
     }
 }

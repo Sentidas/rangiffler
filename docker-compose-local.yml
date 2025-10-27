@@ -138,6 +138,9 @@ networks:
     name: rangiffler-network-local
 
 volumes:
-  rangiffler-mysql-local: {}
-  rangiffler-redis-geo-local: {}
-  rangiffler-minio-local: {}
+  rangiffler-mysql-local:
+    name: rangiffler-mysql-local
+  rangiffler-redis-geo-local:
+    name: rangiffler-redis-geo-local
+  rangiffler-minio-local:
+    name: rangiffler-minio-local

@@ -28,7 +28,7 @@ buildscript {
         sqlFormatterVersion = '2.0.5'
         simpleJndiVersion = '0.24.0'
         gatewayIntrospectionUrl = System.getProperty("test.env") == "docker"
-                ? "http://gateway:8081/graphql"
+                ? "http://gateway.rangiffler.dc:8081/graphql"
                 : "http://127.0.0.1:8081/graphql"
     }
 }
@@ -174,14 +174,52 @@ test {
     options {
         systemProperties(System.getProperties())
     }
-    systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
-    systemProperty "com.atomikos.icatch.max_timeout", "300000"
-    systemProperty "com.atomikos.icatch.enable_logging", "true"
-    systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
-
-    testLogging.showStandardStreams = true
-    testLogging.exceptionFormat = 'full'
+//    systemProperty "com.atomikos.icatch.default_jta_timeout", "60000"
+//    systemProperty "com.atomikos.icatch.max_timeout", "300000"
+//    systemProperty "com.atomikos.icatch.enable_logging", "true"
+//    systemProperty "com.atomikos.icatch.log_base_dir", "${buildDir}/atomikos"
+//
+//    testLogging.showStandardStreams = true
+//    testLogging.exceptionFormat = 'full'
 
     useJUnitPlatform {
+    }
+}
+
+tasks.register('testDocker', Test) {
+    systemProperty "test.env", System.getProperty("test.env", "docker")
+
+    useJUnitPlatform {
+        // список исключаемых тегов для docker-профиля на текущий момент (скрины для selenide не сделаны, кафка подвисает долго в докере)
+        def defaultExcludes = "screenshots,kafka"
+
+        // читаем значения из -D (если заданы), иначе берём дефолты
+        def excludeRaw = System.getProperty('excludeTags', defaultExcludes)
+        def includeRaw = System.getProperty('includeTags', '')
+
+        if (excludeRaw) {
+            excludeTags(excludeRaw.split(','))
+        }
+        if (includeRaw) {
+            includeTags(includeRaw.split(','))
+        }
+        // Если includeTags пуст — выполнятся все тесты, кроме тех, что в excludeTags.
+    }
+}
+
+tasks.register('testLocal', Test) {
+    systemProperty "test.env", System.getProperty("test.env", "local")
+
+    useJUnitPlatform {
+        // по умолчанию локально не исключаем ничего
+        def excludeRaw = System.getProperty('excludeTags', '')
+        def includeRaw = System.getProperty('includeTags', '')
+
+        if (excludeRaw) {
+            excludeTags(excludeRaw.split(','))
+        }
+        if (includeRaw) {
+            includeTags(includeRaw.split(','))
+        }
     }
 }

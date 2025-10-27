@@ -11,18 +11,8 @@ import java.util.UUID;
 @Component
 public class GrpcUserdataClient {
 
-    private static final String SERVICE = "rangiffler-userdata";
-
     @GrpcClient("grpcUserdataClient")
     private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
-
-    public User currentUser(String username) {
-        UsernameRequest request = UsernameRequest.newBuilder()
-                .setUsername(username)
-                .build();
-        UserResponse userResponse = stub.currentUser(request);
-        return UserProtoMapper.fromProto(userResponse);
-    }
 
     public String usernameById(UUID userId) {
         UserIdRequest request = UserIdRequest.newBuilder().setUserId(userId.toString()).build();

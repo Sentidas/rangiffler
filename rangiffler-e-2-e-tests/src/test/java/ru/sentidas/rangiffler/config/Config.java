@@ -51,6 +51,11 @@ public interface Config {
   }
 
   @Nonnull
+  static String projectId() {
+    return "rangiffler";
+  }
+
+  @Nonnull
   String photoGrpcAddress();
 
   @Nonnull
@@ -65,6 +70,14 @@ public interface Config {
 
   default int userdataGrpcPort() {
     return 8087;
+  }
+
+  @Nonnull
+  String allureDockerUrl();
+
+  @Nonnull
+  default String ghUrl() {
+    return "https://api.github.com/";
   }
 
   default List<String> kafkaTopics() {

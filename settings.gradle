@@ -5,9 +5,10 @@ include 'rangiffler-userdata'
 include 'rangiffler-geo'
 include 'rangiffler-photo'
 include 'rangiffler-e-2-e-tests'
+include 'rangiffler-event-log'
 include 'rangiffler-grpc-common'
 include 'rangiffler-events-common'
 include 'rangiffler-media-common'
-include 'rangiffler-event-log'
+
 
 

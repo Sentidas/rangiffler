@@ -4,6 +4,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import ru.sentidas.rangiffler.grpc.*;
 import ru.sentidas.rangiffler.jupiter.annotaion.Photo;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
@@ -23,6 +24,7 @@ import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL;
 import static ru.sentidas.rangiffler.utils.ImageDataUrl.DATA_URL2;
 
 @GrpcTest
+@Tag("kafka")
 @DisplayName("Grpc_Geo: statistics")
 public class StatisticsTest extends BaseTest {
 

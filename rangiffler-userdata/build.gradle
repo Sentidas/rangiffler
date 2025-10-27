@@ -56,7 +56,7 @@ sourceSets {
 
 jib {
     container {
-        ports = ['8088']
+        ports = ['8088', '8087']
         jvmFlags = ["-Dspring.profiles.active=${System.env.PROFILE}"]
         environment = [
                 'VAULT_TOKEN': "${System.env.VAULT_TOKEN}".toString(),

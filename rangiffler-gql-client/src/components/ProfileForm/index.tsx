@@ -21,12 +21,79 @@ import {useUpdateUser} from "../../hooks/useUpdateUser";
 import {useSnackBar} from "../../context/SnackBarContext";
 import {SessionContext} from "../../context/SessionContext";
 
+/* -------------------- ДОБАВЛЕНО: парсеры "суффиксов" ошибок с бэка -------------------- */
+function limitSuffixFromBackend(e: any): string {
+    const result = e?.networkError?.result;
+    if (result?.error === 'PAYLOAD_TOO_LARGE_STRING') {
+        const msg = typeof result?.message === 'string' ? result.message.trim() : '';
+        return msg || 'Limit exceeded';
+    }
+    return '';
+}
+
+function unsupportedFormatSuffixFromBackend(e: any): string {
+    // 1) Вариант REST с телом
+    const result = e?.networkError?.result;
+    if (result?.error === 'UNSUPPORTED_IMAGE_FORMAT') {
+        const msg = typeof result?.message === 'string' ? result.message.trim() : '';
+        return msg || 'Unsupported image format';
+    }
+    // 2) Вариант GraphQL (HTTP 200, ошибки в graphQLErrors[])
+    const gqlErrors: any[] = Array.isArray(e?.graphQLErrors) ? e.graphQLErrors : [];
+    for (const err of gqlErrors) {
+        const ext = err?.extensions;
+        if (ext?.error === 'UNSUPPORTED_IMAGE_FORMAT') {
+            const msg = typeof err?.message === 'string' ? err.message.trim() : '';
+            return msg || 'Unsupported image format';
+        }
+    }
+    // 3) «Голый» 415 без тела
+    const status = e?.networkError?.status ?? e?.networkError?.statusCode;
+    if (status === 415) return 'Unsupported image format';
+    return '';
+}
+
+function authSuffixFromBackend(e: any): string {
+    const r = e?.networkError?.result;
+    if (r?.error === 'UNAUTHORIZED') {
+        const msg = typeof r?.message === 'string' ? r.message.trim() : '';
+        return msg || 'Authorization required';
+    }
+    const status = e?.networkError?.status ?? e?.networkError?.statusCode;
+    if (status === 401) return 'Authorization required';
+    // GraphQL-вариант (HTTP 200, ошибки в graphQLErrors[])
+    const gqlErrors: any[] = Array.isArray(e?.graphQLErrors) ? e.graphQLErrors : [];
+    for (const err of gqlErrors) {
+        const ext = err?.extensions;
+        if (ext?.error === 'UNAUTHORIZED') {
+            const msg = typeof err?.message === 'string' ? err.message.trim() : '';
+            return msg || 'Authorization required';
+        }
+    }
+    return '';
+}
+/* -------------------- КОНЕЦ: парсеры "суффиксов" ошибок с бэка -------------------- */
+
 export const ProfileForm = () => {
     const {countries} = useCountries();
     const {user} = useContext(SessionContext);
     const snackbar = useSnackBar();
+
+
+    // const {updateUser} = useUpdateUser({
+    //     onError: () => snackbar.showSnackBar("Can not update user", "error"),
+    //     onCompleted: () => snackbar.showSnackBar("Your profile is successfully updated", "success"),
+    // });
+
     const {updateUser} = useUpdateUser({
-        onError: () => snackbar.showSnackBar("Can not update user", "error"),
+        onError: (e: any) => {
+            const base = "Can not update user";
+            const limit = limitSuffixFromBackend(e);
+            const auth = authSuffixFromBackend(e);
+            const unsupported = unsupportedFormatSuffixFromBackend(e);
+            const suffix = limit || auth || unsupported;
+            snackbar.showSnackBar(suffix ? `${base}. ${suffix}` : base, "error");
+        },
         onCompleted: () => snackbar.showSnackBar("Your profile is successfully updated", "success"),
     });
 

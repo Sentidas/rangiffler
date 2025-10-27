@@ -2,6 +2,7 @@ package ru.sentidas.rangiffler.test.web.user;
 
 import com.codeborne.selenide.Selenide;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import ru.sentidas.rangiffler.jupiter.annotaion.User;
 import ru.sentidas.rangiffler.jupiter.annotaion.meta.WebTest;

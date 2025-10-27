@@ -1,6 +1,7 @@
 package ru.sentidas.rangiffler.jupiter.annotaion.meta;
 
 import io.qameta.allure.junit5.AllureJunit5;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtendWith;
 import ru.sentidas.rangiffler.jupiter.extension.*;
 
@@ -11,6 +12,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
+@Tag("grpc")
 @ExtendWith({
         AllureJunit5.class,
         UserExtension.class,

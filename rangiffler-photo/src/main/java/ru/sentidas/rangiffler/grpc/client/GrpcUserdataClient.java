@@ -17,26 +17,6 @@ public class GrpcUserdataClient {
     @GrpcClient("grpcUserdataClient")
     private RangifflerUserdataServiceGrpc.RangifflerUserdataServiceBlockingStub stub;
 
-    public String getUsernameById(UUID userId) {
-
-        UserIdRequest request = UserIdRequest.newBuilder()
-                .setUserId(userId.toString())
-                .build();
-
-        UserResponse userResponse = GrpcCall.run(() -> stub.currentUserById(request), SERVICE);
-        return userResponse.getUsername();
-    }
-
-    public UUID getIdByUsername(String username) {
-
-        UsernameRequest request = UsernameRequest.newBuilder()
-                .setUsername(username)
-                .build();
-
-        UserResponse userResponse = GrpcCall.run(() -> stub.currentUser(request), SERVICE);
-        return UUID.fromString(userResponse.getId());
-    }
-
     public List<UUID> friendIdsAll(UUID userId) {
         UserIdRequest request = UserIdRequest.newBuilder()
                 .setUserId(userId.toString())

@@ -2,6 +2,7 @@ package ru.sentidas.rangiffler.test.web.travelMap;
 
 import com.codeborne.selenide.Selenide;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.Photo;
@@ -17,6 +18,7 @@ import java.util.UUID;
 import static ru.sentidas.rangiffler.utils.AnnotationHelper.*;
 
 @WebTest
+@Tag("kafka")
 @DisplayName("Web_Статистика по странам")
 public class StatisticTest {
 
@@ -42,7 +44,7 @@ public class StatisticTest {
     @User
     @ApiLogin
     @DisplayName("0->1: Мои фото - тултип появляется после добавления первого фото")
-    void countryTooltipAppearsWhenFirstPhotoAdded(AppUser user) {
+    void countryTooltipAppearsWhenFirstPhotoAdded() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().absentTooltip(SPAIN);
 
@@ -54,7 +56,7 @@ public class StatisticTest {
     @User
     @ApiLogin
     @DisplayName("0→1:Фото с друзьями — тултип появляется после добавления моего первого фото")
-    void countryTooltipAppearsWhenFirstPhotoAdded_FeedWithFriends(AppUser user) {
+    void countryTooltipAppearsWhenFirstPhotoAdded_FeedWithFriends() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().absentTooltip(SPAIN);
 
@@ -70,7 +72,7 @@ public class StatisticTest {
     })
     @ApiLogin
     @DisplayName("1→2: Мои фото/Фото с друзьями — счётчик увеличивается после добавления моего второго фото (Canada)")
-    void countryTooltipAppearsOnFriendsTabAfterAddingMyPhoto(AppUser user) {
+    void countryTooltipAppearsOnFriendsTabAfterAddingMyPhoto() {
         FeedPage page = new FeedPage();
         assertTooltipOnBothTabs(page, CANADA, 1);
 
@@ -105,7 +107,7 @@ public class StatisticTest {
     })
     @ApiLogin
     @DisplayName("1->1: Мои фото: Тултип остаётся без изменений при удалении моего фото другой страны")
-    void countryTooltipRemainsWhenOtherCountryDeleted(AppUser user) {
+    void countryTooltipRemainsWhenOtherCountryDeleted() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().expectedTooltip(RUSSIA, 1);
 
@@ -143,7 +145,7 @@ public class StatisticTest {
     })
     @ApiLogin
     @DisplayName("1->1: Мои фото: Тултип переносится на новую страну после изменения страны у фото")
-    void countryTooltipMovesToNewCountryAfterUpdate(AppUser user) {
+    void countryTooltipMovesToNewCountryAfterUpdate() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().expectedTooltip(CANADA, 1);
 
@@ -162,7 +164,7 @@ public class StatisticTest {
     })
     @ApiLogin
     @DisplayName("Тултип не меняется при обновлении только описания")
-    void countryTooltipUnchangedWhenOnlyDescriptionUpdated(AppUser user) {
+    void countryTooltipUnchangedWhenOnlyDescriptionUpdated() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().expectedTooltip(CANADA, 1);
 
@@ -179,7 +181,7 @@ public class StatisticTest {
     })
     @ApiLogin
     @DisplayName("Тултип не меняется при обновлении только фото")
-    void countryTooltipUnchangedWhenOnlyImageUpdated(AppUser user) {
+    void countryTooltipUnchangedWhenOnlyImageUpdated() {
         FeedPage feedPage = new FeedPage();
         feedPage.map().expectedTooltip(CANADA, 1);
 

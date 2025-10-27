@@ -54,7 +54,7 @@ sourceSets {
 
 jib {
     container {
-        ports = ['8085']
+        ports = ['8085', '8086']
         jvmFlags = ["-Dspring.profiles.active=${System.env.PROFILE}"]
         environment = [
                 'VAULT_TOKEN': "${System.env.VAULT_TOKEN}".toString(),
@@ -62,7 +62,7 @@ jib {
         ]
         creationTime = 'USE_CURRENT_TIMESTAMP'
         labels = [
-                'maintainer': 'Sentidas',
+                'maintainer': 'sentidas',
                 'version'   : "${project.version}".toString()
         ]
     }

@@ -30,20 +30,19 @@ public class AllureAppender extends StdoutLogger {
                      String url) {
     if (StringUtils.isBlank(sql)) return;
 
-    // Безопасно выясняем "имя БД" только для подписи
     String db = "db";
     try {
-      // сначала пытаемся "3306/<db>?..."
+
       String candidate = substringBetween(url, "3306/", "?");
       if (StringUtils.isBlank(candidate)) {
-        // если у URL нет '?', возьмём хвост после последнего '/'
+
         candidate = substringAfterLast(url, "/");
       }
       if (StringUtils.isNotBlank(candidate)) {
         db = candidate;
       }
     } catch (Throwable ignored) {
-      // подпись не критична
+
     }
 
     String title = (sql.split("\\s+")[0].toUpperCase()) + " query to: " + db;
@@ -55,10 +54,6 @@ public class AllureAppender extends StdoutLogger {
       );
       processor.addAttachment(data, new FreemarkerAttachmentRenderer(TEMPLATE));
     } catch (Throwable t) {
-//      // Никогда не валим тест из-за отчётности — логнём в консоль по-старому
-//      super.logSQL(connectionId, now, elapsed, category, prepared, sql, url);
-      // раньше было: super.logSQL(...); — это и сыпало SQL в консоль
-      // делаем тихо, максимум логируем саму ошибку без SQL:
       org.slf4j.LoggerFactory.getLogger(getClass())
               .warn("Allure SQL attachment failed: {}", t.toString());
     }

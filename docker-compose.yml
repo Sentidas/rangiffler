@@ -12,10 +12,11 @@ services:
     volumes:
       - ./mysql/script:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD-SHELL", "MYSQL_PWD=$${MYSQL_ROOT_PASSWORD} mysqladmin ping -h 127.0.0.1 -uroot --silent || exit 1" ]
-      interval: 3s
-      timeout: 3s
-      retries: 10
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent || exit 1" ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 90s
     ports:
       - 3306:3306
     command:
@@ -71,7 +72,7 @@ services:
       - rangiffler-network
 
   # ===== Сервисы rangiffler =====
-  auth:
+  auth.rangiffler.dc:
     container_name: auth.rangiffler.dc
     image: ${PREFIX}/rangiffler-auth-docker:latest
     ports:
@@ -90,7 +91,7 @@ services:
     networks: [ rangiffler-network ]
 
 
-  gateway:
+  gateway.rangiffler.dc:
     container_name: gateway.rangiffler.dc
     image: ${PREFIX}/rangiffler-gateway-docker:latest
     ports:
@@ -102,15 +103,16 @@ services:
       retries: 5
     restart: always
     depends_on:
-      auth:
+      auth.rangiffler.dc:
         condition: service_healthy
     networks: [ rangiffler-network ]
 
-  geo:
+  geo.rangiffler.dc:
     container_name: geo.rangiffler.dc
     image: ${PREFIX}/rangiffler-geo-docker:latest
     ports:
       - 8085:8085
+      - 8086:8086
     restart: always
     depends_on:
       rangiffler-all-db:
@@ -119,11 +121,12 @@ services:
         condition: service_started
     networks: [ rangiffler-network ]
 
-  photo:
+  photo.rangiffler.dc:
     container_name: photo.rangiffler.dc
     image: ${PREFIX}/rangiffler-photo-docker:latest
     ports:
       - 8094:8094
+      - 8095:8095
     restart: always
     depends_on:
       rangiffler-all-db:
@@ -132,14 +135,15 @@ services:
         condition: service_completed_successfully
     networks: [ rangiffler-network ]
 
-  userdata:
+  userdata.rangiffler.dc:
     container_name: userdata.rangiffler.dc
     image: ${PREFIX}/rangiffler-userdata-docker:latest
     ports:
       - 8088:8088
+      - 8087:8087
     restart: always
     depends_on:
-      auth:
+      auth.rangiffler.dc:
         condition: service_healthy
       rangiffler-all-db:
         condition: service_healthy
@@ -147,7 +151,7 @@ services:
         condition: service_completed_successfully
     networks: [ rangiffler-network ]
 
-  eventlog:
+  eventlog.rangiffler.dc:
     container_name: event.rangiffler.dc
     image: ${PREFIX}/rangiffler-event-log-docker:latest
     restart: always
@@ -169,7 +173,7 @@ services:
     ports:
       - 80:80
     depends_on:
-      gateway:
+      gateway.rangiffler.dc:
         condition: service_started
     networks: [ rangiffler-network ]
 
@@ -222,12 +226,12 @@ services:
       - -ec
       - |
         for i in $(seq 1 60); do
-          mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && break  
+          mc alias set docker http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && break  
           echo "Waiting for MinIO..." >&2
           sleep 2
         done
-        mc mb -p local/rangiffler-media || true
-        mc anonymous set download local/rangiffler-media || true
+        mc mb -p docker/rangiffler-media || true
+        mc anonymous set download docker/rangiffler-media || true
     restart: "no"
     networks:
       - rangiffler-network
@@ -261,7 +265,7 @@ services:
       "-limit", "3",
       "-video-output-dir", "/opt/selenoid/video",
       "-log-output-dir", "/opt/selenoid/logs",
-      "-container-network", "rangiffler-network"
+      "-container-network", "rangiffler_rangiffler-network"
     ]
     ports:
       - 4444:4444
@@ -294,6 +298,7 @@ services:
       - BUILD_URL=${BUILD_URL}
       - HEAD_COMMIT_MESSAGE=${HEAD_COMMIT_MESSAGE}
       - EXECUTION_TYPE=${EXECUTION_TYPE}
+      - INCLUDE_TAGS
     volumes:
       - allure-results:/rangiffler/rangiffler-e-2-e-tests/build/allure-results
       - ./rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid:/rangiffler/rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid

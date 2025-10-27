@@ -96,4 +96,10 @@ enum LocalConfig implements Config {
   public String userdataGrpcAddress() {
     return "127.0.0.1";
   }
+
+  @Nonnull
+  @Override
+  public String allureDockerUrl() {
+    return "http://allure:5050/";
+  }
 }

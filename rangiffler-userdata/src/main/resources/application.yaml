@@ -125,11 +125,11 @@ spring:
       auto-offset-reset: earliest
 
 rangiffler-geo:
-  base-uri: 'http://geo:8085'
+  base-uri: 'http://geo.rangiffler.dc:8085'
 rangiffler-userdata:
-  base-uri: 'http://userdata:8088'
+  base-uri: 'http://userdata.rangiffler.dc:8088'
 rangiffler-photo:
-  base-uri: 'http://photo:8094'
+  base-uri: 'http://photo.rangiffler.dc:8094'
 
 minio:
   endpoint: http://minio:9000

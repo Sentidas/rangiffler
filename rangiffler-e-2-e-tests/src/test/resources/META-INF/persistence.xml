@@ -2,31 +2,43 @@
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
              version="2.1">
+
+    <persistence-unit name="jdbc:mysql://rangiffler-all-db:3306/rangiffler-auth" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-auth</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.auth.AuthorityEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.auth.AuthUserEntity</class>
+        <properties>
+            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
+            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
     <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-auth" transaction-type="JTA">
         <jta-data-source>java:comp/env/jdbc/rangiffler-auth</jta-data-source>
         <class>ru.sentidas.rangiffler.data.entity.auth.AuthorityEntity</class>
         <class>ru.sentidas.rangiffler.data.entity.auth.AuthUserEntity</class>
-
         <properties>
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="false" />
-            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
         </properties>
     </persistence-unit>
 
-    <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-geo" transaction-type="JTA">
-        <jta-data-source>java:comp/env/jdbc/rangiffler-geo</jta-data-source>
-        <class>ru.sentidas.rangiffler.data.entity.geo.StatisticEntity</class>
-        <class>ru.sentidas.rangiffler.data.entity.geo.CountryEntity</class>
-
+    <persistence-unit name="jdbc:mysql://rangiffler-all-db:3306/rangiffler-userdata" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-userdata</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.userdata.UserEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.userdata.FriendshipEntity</class>
         <properties>
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="false" />
-            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
         </properties>
     </persistence-unit>
 
@@ -34,27 +46,66 @@
         <jta-data-source>java:comp/env/jdbc/rangiffler-userdata</jta-data-source>
         <class>ru.sentidas.rangiffler.data.entity.userdata.UserEntity</class>
         <class>ru.sentidas.rangiffler.data.entity.userdata.FriendshipEntity</class>
-
-        <properties>
-            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
-            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
-            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="false" />
-            <property name="hibernate.format_sql" value="true" />
-        </properties>
-
-    </persistence-unit> <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-photo" transaction-type="JTA">
-        <jta-data-source>java:comp/env/jdbc/rangiffler-photo</jta-data-source>
-        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoEntity</class>
-        <class>ru.sentidas.rangiffler.data.entity.photo.LikeEntity</class>
-        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoLikeId</class>
-
         <properties>
             <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
             <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
-            <property name="hibernate.show_sql"   value="false" />
-            <property name="hibernate.format_sql" value="true" />
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="jdbc:mysql://rangiffler-all-db:3306/rangiffler-geo" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-geo</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.geo.StatisticEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.geo.CountryEntity</class>
+        <properties>
+            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
+            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-geo" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-geo</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.geo.StatisticEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.geo.CountryEntity</class>
+        <properties>
+            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
+            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="jdbc:mysql://rangiffler-all-db:3306/rangiffler-photo" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-photo</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.photo.LikeEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoLikeId</class>
+        <properties>
+            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
+            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
+        </properties>
+    </persistence-unit>
+
+    <persistence-unit name="jdbc:mysql://localhost:3306/rangiffler-photo" transaction-type="JTA">
+        <jta-data-source>java:comp/env/jdbc/rangiffler-photo</jta-data-source>
+        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.photo.LikeEntity</class>
+        <class>ru.sentidas.rangiffler.data.entity.photo.PhotoLikeId</class>
+        <properties>
+            <property name="hibernate.transaction.jta.platform" value="com.atomikos.icatch.jta.hibernate4.AtomikosPlatform"/>
+            <property name="hibernate.connection.handling_mode" value="DELAYED_ACQUISITION_AND_RELEASE_AFTER_TRANSACTION"/>
+            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQL8Dialect"/>
+            <property name="hibernate.show_sql" value="false"/>
+            <property name="hibernate.format_sql" value="true"/>
         </properties>
     </persistence-unit>
 

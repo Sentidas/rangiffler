@@ -2,6 +2,7 @@ package ru.sentidas.rangiffler.test.web.user;
 
 import com.codeborne.selenide.Selenide;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import ru.sentidas.rangiffler.jupiter.annotaion.ApiLogin;
 import ru.sentidas.rangiffler.jupiter.annotaion.ScreenShotTest;
@@ -38,6 +39,7 @@ public class ProfileTest {
     @Test
     @User
     @ApiLogin
+    @Tag("screenshots")
     @DisplayName("Пустой профиль заполняется корректно: имя, фамилия, страна, аватар и алерт об успехе")
     @ScreenShotTest(value = "screenshots/expected-avatar.png")
     void fillEmptyProfileShouldPersistAllFieldsAndShowSuccessAlertWhenUserSaves(AppUser user, BufferedImage expectedAvatar) {

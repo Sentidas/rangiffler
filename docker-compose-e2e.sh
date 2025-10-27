@@ -12,6 +12,19 @@ docker compose down
 docker_containers=$(docker ps -a -q)
 docker_images=$(docker images --format '{{.Repository}}:{{.Tag}}' | grep 'rangiffler')
 
+#   ./docker-compose-dev.sh
+#   ./docker-compose-dev.sh web,grpc
+#   ./docker-compose-dev.sh web, grpc
+RAW_TAGS="${*:-}"
+if [[ -n "$RAW_TAGS" ]]; then
+  INCLUDE_TAGS="${RAW_TAGS//[[:space:]]/}"
+  export INCLUDE_TAGS
+  echo "INCLUDE_TAGS=${INCLUDE_TAGS}"
+else
+  unset INCLUDE_TAGS || true
+  echo "INCLUDE_TAGS=<ALL docker-safe>"
+fi
+
 if [ ! -z "$docker_containers" ]; then
   echo "### Stop containers: $docker_containers ###"
   docker stop $docker_containers

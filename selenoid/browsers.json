@@ -5,16 +5,22 @@
       "125.0": {
         "image": "selenoid/vnc_chrome:125.0",
         "port": "4444",
-        "env": [
-          "TZ=Europe/Moscow"
-        ]
+        "goog:chromeOptions": {
+          "args": ["--lang=ru-RU"],
+          "prefs": {
+            "intl.accept_languages": "ru-RU,ru"
+          }
+        }
       },
       "127.0": {
         "image": "selenoid/vnc_chrome:127.0",
         "port": "4444",
-        "env": [
-          "TZ=Europe/Moscow"
-        ]
+        "goog:chromeOptions": {
+          "args": ["--lang=ru-RU"],
+          "prefs": {
+            "intl.accept_languages": "ru-RU,ru"
+          }
+        }
       }
     }
   }
