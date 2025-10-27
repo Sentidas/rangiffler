@@ -6,19 +6,19 @@ COMPOSE_FILE="docker-compose-local.yml"
 
 # ---- Парсинг аргументов ----
 AUTO_STOP=0
-ALLURE_MODE=""
 TAGS_RAW=""
 
-if [[ "${@: -1}" == "--stop" ]]; then
+# если последний аргумент == --stop → включаем автоостановку
+last="${!#}"
+if [[ $# -gt 0 && "$last" == --stop ]]; then
   AUTO_STOP=1
+  # убираем последний аргумент (--stop)
   set -- "${@:1:$(($#-1))}"
 fi
 
+# остальные аргументы считаем тегами для e2e
 for arg in "$@"; do
-  case "$arg" in
-    --allure=report|--allure=serve) ALLURE_MODE="${arg#--allure=}" ;;
-    *) TAGS_RAW+="${arg} " ;;
-  esac
+  TAGS_RAW+="${arg} "
 done
 TAGS="${TAGS_RAW//[[:space:]]/}"; TAGS="${TAGS//,,/,}"; TAGS="${TAGS#,}"; TAGS="${TAGS%,}"
 
@@ -107,24 +107,6 @@ if [[ -n "$TAGS" ]]; then
 else
   ./gradlew :rangiffler-e-2-e-tests:testLocal --no-daemon -Dtest.env=local
 fi
-
-# ---- Allure ----
-RESULTS_DIR="$(pwd)/rangiffler-e-2-e-tests/build/allure-results"
-REPORT_DIR="$(pwd)/rangiffler-e-2-e-tests/build/reports/allure-report"
-
-case "$ALLURE_MODE" in
-  report)
-    echo "==> Генерирую Allure-отчёт"
-    ./gradlew :rangiffler-e-2-e-tests:allureReport --no-daemon
-    [[ -f "${REPORT_DIR}/index.html" ]] && open_url "file://${REPORT_DIR}/index.html" || true
-    ;;
-  serve)
-    echo "==> Запускаю Allure server"
-    ./gradlew :rangiffler-e-2-e-tests:allureServe --no-daemon &
-    sleep 5
-    open_url "http://localhost:8080"
-    ;;
-esac
 
 # ---- Автостоп ----
 if [[ "$AUTO_STOP" -eq 1 ]]; then
