@@ -21,11 +21,11 @@ public class IncomeInvitationsTest extends BaseGraphQlTest {
     @ApiLogin
     @DisplayName("GetInvitations: корректные поля входящих приглашений")
     void getInvitationsMustReturnCorrectFields(@Token String bearerToken) {
-        GetIncomeInvitationsQuery.Data response = userApi.getInvitations(bearerToken, 0, 10);
+        GetIncomeInvitationsQuery.Data response = userApi.getIncomeInvitations(bearerToken, 0, 10);
 
         assertAll("income invitations",
                 () -> assertNotNull(response.user.incomeInvitations.edges, "edges must not be null"),
-                () -> assertTrue(response.user.incomeInvitations.edges.size() > 0, "must not be empty")
+                () -> assertFalse(response.user.incomeInvitations.edges.isEmpty(), "must not be empty")
         );
 
         int index = 0;
@@ -45,7 +45,7 @@ public class IncomeInvitationsTest extends BaseGraphQlTest {
     @ApiLogin
     @DisplayName("GetInvitations: пустой список, если нет входящих приглашений")
     void getInvitationsMustReturnEmptyWhenNoInvitations(@Token String bearerToken) {
-        GetIncomeInvitationsQuery.Data response = userApi.getInvitations(bearerToken, 0, 10);
+        GetIncomeInvitationsQuery.Data response = userApi.getIncomeInvitations(bearerToken, 0, 10);
         assertEquals(0, response.user.incomeInvitations.edges.size());
     }
 }
