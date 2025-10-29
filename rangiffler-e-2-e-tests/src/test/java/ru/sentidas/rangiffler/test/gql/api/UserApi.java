@@ -4,6 +4,7 @@ import com.apollographql.apollo.api.ApolloResponse;
 import com.apollographql.java.client.ApolloCall;
 import com.apollographql.java.client.ApolloClient;
 import com.apollographql.java.rx2.Rx2Apollo;
+import io.qameta.allure.Step;
 import ru.sentidas.*;
 import ru.sentidas.type.CountryInput;
 import ru.sentidas.type.UserInput;
@@ -16,6 +17,7 @@ public class UserApi {
         this.apolloClient = apollo;
     }
 
+    @Step("GQL UpdateUser: firstname={firstname}, surname={surname}, country={countryCode}")
     public UpdateUserMutation.Data updateUser(String token,
                                               String firstname,
                                               String surname,
@@ -39,6 +41,7 @@ public class UserApi {
         return resp.dataOrThrow();
     }
 
+    @Step("GQL UpdateUser without auth: firstname={firstname}, surname={surname}, country={countryCode}")
     public ApolloResponse<UpdateUserMutation.Data> tryUpdateUserWithoutAuth(String firstname,
                                                                             String surname,
                                                                             String avatarDataUrl,
@@ -57,7 +60,7 @@ public class UserApi {
         return Rx2Apollo.single(call).blockingGet();
     }
 
-
+    @Step("GQL GetUser")
     public GetUserQuery.Data getUser(String token) {
         GetUserQuery query = GetUserQuery.builder().build();
         ApolloCall<GetUserQuery.Data> call = apolloClient.query(query)
@@ -67,6 +70,7 @@ public class UserApi {
         return resp.dataOrThrow();
     }
 
+    @Step("GQL GetOutcomeInvitations: page={page}, size={size}")
     public GetOutcomeInvitationsQuery.Data getOutcomeInvitations(String bearerToken, int page, int size) {
         GetOutcomeInvitationsQuery query = GetOutcomeInvitationsQuery.builder()
                 .page(page)
@@ -79,7 +83,8 @@ public class UserApi {
         return response.dataOrThrow();
     }
 
-    public GetIncomeInvitationsQuery.Data getInvitations(String bearerToken, int page, int size) {
+    @Step("GQL GetIncomeInvitations: page={page}, size={size}")
+    public GetIncomeInvitationsQuery.Data getIncomeInvitations(String bearerToken, int page, int size) {
         GetIncomeInvitationsQuery query = GetIncomeInvitationsQuery.builder()
                 .page(page)
                 .size(size)
@@ -91,6 +96,7 @@ public class UserApi {
         return response.dataOrThrow();
     }
 
+    @Step("GQL GetFriends: page={page}, size={size}")
     public GetFriendsQuery.Data getFriends(String bearerToken, int page, int size) {
         GetFriendsQuery query = GetFriendsQuery.builder()
                 .page(page)
