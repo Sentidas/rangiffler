@@ -25,7 +25,7 @@ public class IncomeInvitationsTest extends BaseGraphQlTest {
 
         assertAll("income invitations",
                 () -> assertNotNull(response.user.incomeInvitations.edges, "edges must not be null"),
-                () -> assertTrue(response.user.incomeInvitations.edges.size() > 0, "must not be empty")
+                () -> assertFalse(response.user.incomeInvitations.edges.isEmpty(), "must not be empty")
         );
 
         int index = 0;
