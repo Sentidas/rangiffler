@@ -300,7 +300,6 @@ services:
       - EXECUTION_TYPE=${EXECUTION_TYPE}
       - INCLUDE_TAGS
     volumes:
-      - allure-results:/rangiffler/rangiffler-e-2-e-tests/build/allure-results
       - ./rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid:/rangiffler/rangiffler-e-2-e-tests/.screen-output/screenshots/selenoid
     depends_on:
       frontend.rangiffler.dc:
@@ -315,12 +314,10 @@ services:
     depends_on:
       - rangiffler-e-2-e
     environment:
-      - CHECK_RESULTS_EVERY_SECONDS=5
+      - CHECK_RESULTS_EVERY_SECONDS=NONE
       - KEEP_HISTORY=1
     ports:
       - 5050:5050
-    volumes:
-      - allure-results:/app/allure-results
     networks:
       - rangiffler-network
 
