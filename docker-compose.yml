@@ -12,19 +12,13 @@ services:
     volumes:
       - ./mysql/script:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent || exit 1" ]
-      interval: 5s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 10s
       timeout: 5s
-      retries: 60
+      retries: 30
       start_period: 90s
     ports:
       - 3306:3306
-    command:
-      - "--default-authentication-plugin=mysql_native_password"
-      - "--character-set-server=utf8mb4"
-      - "--collation-server=utf8mb4_0900_ai_ci"
-      - "--innodb_flush_method=O_DIRECT"
-      - "--innodb_flush_log_at_trx_commit=1"
     networks:
       - rangiffler-network
 

@@ -42,11 +42,11 @@ jobs:
           : # run e2e tests
           docker compose up -d
           docker ps -a
-          docker wait rangiffler-e-2-e
-          exit_code=$(docker inspect -f '{{.State.ExitCode}}' rangiffler-e-2-e)
+          docker wait niffler-e-2-e
+          exit_code=$(docker inspect -f '{{.State.ExitCode}}' niffler-e-2-e)
           echo "E2E_EXIT_CODE=$exit_code" >> $GITHUB_OUTPUT
           echo "### Test logs ###"
-          docker logs rangiffler-e-2-e
+          docker logs niffler-e-2-e
           if [ "$exit_code" -eq "0" ]; then
             echo "Tests passed successfully!"
             exit 0
