@@ -20,8 +20,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ env.GITHUB_SHA }}
+
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -42,6 +41,26 @@ jobs:
           : # run e2e tests
           docker compose up -d
           docker ps -a
+
+          echo "### Waiting MySQL to be healthy or exited (up to 90s) ###"
+          for i in $(seq 1 30); do
+            st=$(docker inspect -f '{{.State.Status}}' rangiffler-all-db 2>/dev/null || echo "unknown")
+            hs=$(docker inspect -f '{{.State.Health.Status}}' rangiffler-all-db 2>/dev/null || echo "none")
+            echo "DB state: $st (health: $hs) [${i}/30]"
+            # выходим, как только контейнер либо упал, либо стал healthy
+            if [ "$st" = "exited" ] || [ "$hs" = "healthy" ]; then
+              break
+            fi
+            sleep 3
+          done
+
+          echo "### MySQL final state ###"
+          docker inspect rangiffler-all-db --format 'status={{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}} started={{.State.StartedAt}} finished={{.State.FinishedAt}}' || true
+
+          echo "### MySQL logs (FULL) ###"
+          docker logs rangiffler-all-db || true
+          
+          
           docker wait rangiffler-e-2-e
           exit_code=$(docker inspect -f '{{.State.ExitCode}}' rangiffler-e-2-e)
           echo "E2E_EXIT_CODE=$exit_code" >> $GITHUB_OUTPUT
