@@ -23,7 +23,7 @@ allprojects {
 
 subprojects {
     ext {
-        dockerHubName = "sentidas"
+        dockerHubName = "sentidas1"
 
         lombokVersion = '1.18.34'
         springKafkaVersion = '3.3.2'
