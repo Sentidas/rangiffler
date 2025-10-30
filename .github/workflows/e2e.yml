@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROFILE: docker
-      PREFIX: qaguru
+      PREFIX: sentidas1
       ARCH: amd64
       FRONT: rangiffler-ng-client
       COMPOSE_PROFILES: test
@@ -60,8 +60,8 @@ jobs:
         with:
           script: |
             const exitCode = ${{ steps.e2e.outputs.E2E_EXIT_CODE }}
-            const reportUrl = 'https://allure.rangiffler-stage.qa.guru/api/allure-docker-service/projects/rangiffler-bakhareva/reports/latest/index.html'
-            const historyUrl = 'https://allure.rangiffler-stage.qa.guru/allure-docker-service-ui/projects/rangiffler-bakhareva'
+            const reportUrl = 'https://allure.niffler-stage.qa.guru/api/allure-docker-service/projects/rangiffler-sentidas/reports/latest/index.html'
+            const historyUrl = 'https://allure.niiffler-stage.qa.guru/allure-docker-service-ui/projects/rangiffler-sentidas'
             const message = exitCode == '0' ?
               `✅ TEST RUN PASSED ✅ There is the [report](${reportUrl})\n🕓 All reports [history](${historyUrl})` :
               `🔴 TEST RUN FAILED 🔴 There is the [report](${reportUrl})\n🕓 All reports [history](${historyUrl})`
@@ -71,7 +71,3 @@ jobs:
               repo: context.repo.repo,
               body: message
             })
-          
-
-          args:
-          entrypoint:
